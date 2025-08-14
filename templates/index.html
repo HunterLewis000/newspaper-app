@@ -45,11 +45,11 @@
     <button onclick="deleteArticle({{ article.id }})" style="color:red;">Delete</button>
   </td>
   <td>
-    <form id="upload-form-{{ article.id }}" enctype="multipart/form-data">
+    <form id="upload-form-{{ article.id }}" class="upload-form" enctype="multipart/form-data">
       <input type="file" name="file">
       <button type="button" onclick="uploadFile({{ article.id }})">Upload</button>
       {% if article.file_key %}
-        <a href="{{ url_for('preview_file', article_id=article.id) }}" target="_blank">Preview</a>
+        <a href="{{ url_for('preview_file', article_id=article.id) }}" class="preview-link" target="_blank">Preview</a>
       {% endif %}
     </form>
   </td>
