@@ -30,26 +30,33 @@
     </tr>
   </thead>
   <tbody>
-    {% for article in articles %}
-    <tr id="row-{{ article.id }}">
-      <td class="title">{{ article.title }}</td>
-      <td class="author">{{ article.author }}</td>
-      <td class="status">
-        <select onchange="updateStatus({{ article.id }}, this.value)">
-          <option value="Not Started" {% if article.status == 'Not Started' %}selected{% endif %}>Not Started</option>
-          <option value="Done" {% if article.status == 'Done' %}selected{% endif %}>Done</option>
-          <option value="Edited" {% if article.status == 'Edited' %}selected{% endif %}>Edited</option>
-          <option value="Published" {% if article.status == 'Published' %}selected{% endif %}>Published</option>
-        </select>
-      </td>
-      <td class="deadline" data-deadline="{{ article.deadline }}">{{ article.deadline }}</td>
-      <td>
-        <button onclick="toggleEdit({{ article.id }})" id="edit-btn-{{ article.id }}">Edit</button>
-        <button onclick="deleteArticle({{ article.id }})" style="color:red;">Delete</button>
-      </td>
-    </tr>
-    {% endfor %}
-  </tbody>
+  {% for article in articles %}
+  <tr id="row-{{ article.id }}">
+    <td class="title">{{ article.title }}</td>
+    <td class="author">{{ article.author }}</td>
+    <td class="status">
+      <select onchange="updateStatus({{ article.id }}, this.value)">
+        <option value="Not Started" {% if article.status == 'Not Started' %}selected{% endif %}>Not Started</option>
+        <option value="Done" {% if article.status == 'Done' %}selected{% endif %}>Done</option>
+        <option value="Edited" {% if article.status == 'Edited' %}selected{% endif %}>Edited</option>
+        <option value="Published" {% if article.status == 'Published' %}selected{% endif %}>Published</option>
+      </select>
+    </td>
+    <td class="deadline" data-deadline="{{ article.deadline }}">{{ article.deadline }}</td>
+    <td>
+      <button onclick="toggleEdit({{ article.id }})" id="edit-btn-{{ article.id }}">Edit</button>
+      <button onclick="deleteArticle({{ article.id }})" style="color:red;">Delete</button>
+      <form id="upload-form-{{ article.id }}" action="/upload/{{ article.id }}" method="POST" enctype="multipart/form-data" style="display:inline;">
+        <input type="file" name="file" required>
+        <button type="submit">Upload</button>
+      </form>
+      {% if article.file_key %}
+        <a href="{{ url_for('preview_file', article_id=article.id) }}" target="_blank">Preview</a>
+      {% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+</tbody>
 </table>
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js" integrity="sha384-A9xjF58i..." crossorigin="anonymous"></script>
