@@ -189,37 +189,7 @@
   }
 
 
-  function uploadFile(articleId) {
-    const form = document.getElementById(`upload-form-${articleId}`);
-    const formData = new FormData(form);
-
-    fetch(`/upload/${articleId}`, {
-        method: 'POST',
-        body: formData
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            alert('File uploaded!');
-            
-            // Remove existing preview link if present
-            const existingLink = form.querySelector('.preview-link');
-            if (existingLink) existingLink.remove();
-
-            // Add new preview link
-            const link = document.createElement('a');
-            link.href = data.file_url;
-            link.textContent = data.filename;
-            link.target = "_blank";
-            link.className = 'preview-link';
-            form.appendChild(link);
-
-        } else {
-            alert('Upload failed: ' + (data.message || 'Unknown error'));
-        }
-    });
-}
-
+  
 
 function deleteFile(fileId) {
     if (!confirm("Delete this file?")) return;
