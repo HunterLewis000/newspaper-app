@@ -130,36 +130,3 @@ td.title, td.author {
   text-overflow: clip; /* Show "..." at the end */
 }
 
-/* Optional: Keep the table layout stable */
-table {
-  table-layout: fixed;   /* Fixes columns width to max-width values */
-  width: 100%;
-}
-/* File upload and preview in table */
-td form.upload-form {
-  display: flex;
-  flex-direction: column; /* stack file input and button */
-  gap: 4px;               /* small space between input/button */
-  max-width: 180px;       /* prevent overflow */
-}
-
-td form.upload-form input[type="file"],
-td form.upload-form button {
-  width: 100%;
-  box-sizing: border-box;
-  font-size: 0.9rem;
-  padding: 4px 6px;
-}
-
-/* Preview link styling */
-td a.preview-link {
-  margin-top: 4px;
-  font-size: 0.85rem;
-  color: #3b82f6;
-  text-decoration: none;
-}
-
-td a.preview-link:hover {
-  text-decoration: underline;
-}
-
