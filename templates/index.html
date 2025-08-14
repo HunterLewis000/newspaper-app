@@ -46,16 +46,18 @@
   </td>
   <td>
     <ul id="file-list-{{ article.id }}">
-        {% if article.file_key %}
-             <a href="{{ url_for('preview_file', article_id=article.id) }}" class="preview-link" target="_blank">
-             {{ article.file_key.split('/')[-1] }}
-             </a>
-        {% endif %}
-    </ul>
-    <form id="upload-form-{{ article.id }}" class="upload-form" enctype="multipart/form-data" onsubmit="uploadFile(event, {{ article.id }})">
-        <input type="file" name="file" required>
-        <button type="submit">Upload</button>
-    </form>
+    {% for f in article.files %}
+        <li id="file-{{ f.id }}">
+            <a href="{{ url_for('preview_file', file_id=f.id) }}" target="_blank">{{ f.filename }}</a>
+            <button onclick="deleteFile({{ f.id }})" style="color:red;">X</button>
+        </li>
+    {% endfor %}
+</ul>
+<form id="upload-form-{{ article.id }}" class="upload-form" enctype="multipart/form-data" onsubmit="uploadFile(event, {{ article.id }})">
+    <input type="file" name="file" required>
+    <button type="submit">Upload</button>
+</form>
+
 </td>
 </tr>
 {% endfor %}
@@ -121,7 +123,8 @@
   }
 
 
-  function uploadFile(articleId) {
+  function uploadFile(event, articleId) {
+    event.preventDefault();
     const form = document.getElementById(`upload-form-${articleId}`);
     const formData = new FormData(form);
 
@@ -133,11 +136,21 @@
     .then(data => {
         if (data.success) {
             alert('File uploaded!');
+
+            // Add preview link to file list
+            const ul = document.getElementById(`file-list-${articleId}`);
+            const li = document.createElement('li');
+            li.id = `file-${data.file_id}`;
+            li.innerHTML = `<a href="${data.file_url}" target="_blank">${data.filename}</a>
+                            <button onclick="deleteFile(${data.file_id})" style="color:red;">X</button>`;
+            ul.appendChild(li);
+
         } else {
             alert('Upload failed: ' + (data.message || 'Unknown error'));
         }
     });
 }
+
   // Update status
   function updateStatus(articleId, newStatus) {
     fetch(`/update_status/${articleId}`, {

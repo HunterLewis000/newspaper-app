@@ -58,26 +58,22 @@ def upload_file(article_id):
 
     s3_key = f"articles/{article_id}/{file.filename}"
     s3_client.upload_fileobj(file, BUCKET_NAME, s3_key)
-    article.file_key = s3_key
+
+    new_file = ArticleFile(article_id=article.id, filename=file.filename, s3_key=s3_key)
+    db.session.add(new_file)
     db.session.commit()
 
-    # Generate URL for preview
-    preview_url = url_for('preview_file', article_id=article.id)
+    file_url = url_for('preview_file', file_id=new_file.id)
 
-    # Emit to clients if needed
     socketio.emit('file_uploaded', {
-        'id': article_id,
-        'file_key': s3_key,
-        'filename': file.filename,
-        'file_url': preview_url
+        'articleId': article.id,
+        'file_id': new_file.id,
+        'filename': new_file.filename,
+        'file_url': file_url
     })
 
-    return jsonify(
-        success=True,
-        file_key=s3_key,
-        filename=file.filename,
-        file_url=preview_url
-    )
+    return jsonify(success=True, file_id=new_file.id, filename=new_file.filename, file_url=file_url)
+
 
 # Preview file route
 @app.route('/preview_file/<int:file_id>')
@@ -97,6 +93,7 @@ def preview_file(file_id):
     else:
         content = file_obj.read().decode('utf-8')
         return f"<pre>{content}</pre>"
+
 
 # Delete file route
 @app.route('/delete_file/<int:file_id>', methods=['POST'])
