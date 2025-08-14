@@ -5,6 +5,8 @@ from flask_socketio import SocketIO
 import os
 from io import BytesIO
 from flask_migrate import Migrate
+from docx import Document  # For .docx preview
+from tempfile import NamedTemporaryFile
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://newspaper_db_47wk_user:2WQbescUw19AeDpYVPPGZzFeVnyePdiV@dpg-d2e1sv3e5dus73feem00-a.ohio-postgres.render.com/newspaper_db_47wk'
@@ -74,7 +76,6 @@ def upload_file(article_id):
 
     return jsonify(success=True, file_id=new_file.id, filename=new_file.filename, file_url=file_url)
 
-
 @app.route('/files/<int:article_id>')
 def list_files(article_id):
     article = Article.query.get_or_404(article_id)
@@ -98,14 +99,44 @@ def preview_file(file_id):
     s3_client.download_fileobj(BUCKET_NAME, file.s3_key, file_obj)
     file_obj.seek(0)
 
+    # Image preview
     if file.s3_key.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
         return send_file(file_obj, mimetype='image/jpeg')
+
+    # PDF preview
     elif file.s3_key.lower().endswith('.pdf'):
         return send_file(file_obj, mimetype='application/pdf')
-    else:
-        content = file_obj.read().decode('utf-8')
-        return f"<pre>{content}</pre>"
 
+    # DOCX preview
+    elif file.s3_key.lower().endswith('.docx'):
+        try:
+            file_obj.seek(0)
+            doc = Document(file_obj)
+            text = "\n".join([p.text for p in doc.paragraphs])
+            download_url = url_for('download_file', file_id=file.id)
+            return f"""
+                <pre style="white-space: pre-wrap;">{text}</pre>
+                <a href="{download_url}" download>Download File</a>
+            """
+        except Exception as e:
+            return f"Error reading DOCX file: {e}", 500
+
+    # Default fallback: allow download
+    download_url = url_for('download_file', file_id=file.id)
+    return f"<a href='{download_url}'>Download {file.filename}</a>"
+
+# Download file route
+@app.route('/download_file/<int:file_id>')
+def download_file(file_id):
+    file = ArticleFile.query.get(file_id)
+    if not file:
+        return "File not found", 404
+
+    file_obj = BytesIO()
+    s3_client.download_fileobj(BUCKET_NAME, file.s3_key, file_obj)
+    file_obj.seek(0)
+
+    return send_file(file_obj, download_name=file.filename, as_attachment=True)
 
 # Delete file route
 @app.route('/delete_file/<int:file_id>', methods=['POST'])

@@ -66,7 +66,7 @@
     <h3>Files</h3>
 
     <ul id="fileList" class="file-list"></ul>
-
+    <div id="filePreview" class="file-preview" style="margin-top:15px;"></div>
     <div class="upload-section">
       <form id="uploadForm" enctype="multipart/form-data">
         <input type="file" name="file" id="fileInput" required />
@@ -182,14 +182,31 @@ function loadFiles(articleId) {
                 const li = document.createElement('li');
                 li.id = `file-${f.id}`;
                 li.innerHTML = `
-                    <a href="${f.preview_url}" target="_blank" rel="noopener">${f.filename}</a>
+                    <span>${f.filename}</span>
+                    <button onclick="previewFile(${f.id})">Preview</button>
                     <button onclick="deleteFile(${f.id})" style="color:red;">Delete</button>
                 `;
+
                 ul.appendChild(li);
             });
         })
         .catch(err => console.error('loadFiles error:', err));
 }
+
+function previewFile(fileId) {
+    const previewDiv = document.getElementById('filePreview');
+    previewDiv.innerHTML = 'Loading...';
+
+    fetch(`/preview_file/${fileId}`)
+        .then(res => res.text())
+        .then(html => {
+            previewDiv.innerHTML = html;
+        })
+        .catch(err => {
+            previewDiv.innerHTML = `<span style="color:red;">Error loading preview: ${err}</span>`;
+        });
+}
+
 
 document.getElementById('uploadForm').addEventListener('submit', e => {
     e.preventDefault();
