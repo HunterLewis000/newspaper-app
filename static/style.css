@@ -130,3 +130,26 @@ td.title, td.author {
   text-overflow: clip; /* Show "..." at the end */
 }
 
+.file-modal {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.file-modal-content {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  max-width: 400px;
+  width: 90%;
+}
+.close-btn {
+  cursor: pointer;
+  float: right;
+  font-size: 1.2em;
+}
+

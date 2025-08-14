@@ -45,14 +45,11 @@
     <button onclick="deleteArticle({{ article.id }})" style="color:red;">Delete</button>
   </td>
   <td>
-    <ul id="file-list-{{ article.id }}">
-    {% for f in article.files %}
-        <li id="file-{{ f.id }}">
-            <a href="{{ url_for('preview_file', file_id=f.id) }}" target="_blank">{{ f.filename }}</a>
-            <button onclick="deleteFile({{ f.id }})" style="color:red;">X</button>
-        </li>
-    {% endfor %}
-</ul>
+<td>
+  <button class="file-icon-btn" onclick="openFileManager({{ article.id }})">
+    Files
+  </button>
+</td>
 <form id="upload-form-{{ article.id }}" class="upload-form" enctype="multipart/form-data" onsubmit="uploadFile(event, {{ article.id }})">
     <input type="file" name="file" required>
     <button type="submit">Upload</button>
@@ -63,6 +60,18 @@
 {% endfor %}
 </tbody>
 </table>
+
+<div id="file-modal" class="file-modal" style="display:none;">
+  <div class="file-modal-content">
+    <span class="close-btn" onclick="closeFileManager()">&times;</span>
+    <h3>Files for Article</h3>
+    <ul id="file-modal-list"></ul>
+    <form id="file-modal-upload-form" enctype="multipart/form-data" onsubmit="uploadFileModal(event)">
+      <input type="file" name="file" required>
+      <button type="submit">Upload</button>
+    </form>
+  </div>
+</div>
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js" integrity="sha384-A9xjF58i..." crossorigin="anonymous"></script>
 <script>
@@ -259,7 +268,57 @@ socket.on('file_deleted', data => {
 });
 
 </script>
+<script>
+let currentArticleId = null;
 
+function openFileManager(articleId) {
+    currentArticleId = articleId;
+    const ul = document.getElementById("file-modal-list");
+    ul.innerHTML = ""; // clear previous
+    const files = document.querySelectorAll(`#row-${articleId} ul li`);
+    files.forEach(f => ul.appendChild(f.cloneNode(true))); // clone nodes into modal
+
+    document.getElementById("file-modal-upload-form").onsubmit = uploadFileModal;
+    document.getElementById("file-modal").style.display = "flex";
+}
+
+function closeFileManager() {
+    document.getElementById("file-modal").style.display = "none";
+}
+
+// handle upload inside modal
+function uploadFileModal(event) {
+    event.preventDefault();
+    if (!currentArticleId) return;
+
+    const form = document.getElementById("file-modal-upload-form");
+    const formData = new FormData(form);
+
+    fetch(`/upload/${currentArticleId}`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            alert('File uploaded!');
+            const ul = document.getElementById("file-modal-list");
+            const li = document.createElement('li');
+            li.id = `file-${data.file_id}`;
+            li.innerHTML = `<a href="${data.file_url}" target="_blank">${data.filename}</a>
+                            <button onclick="deleteFile(${data.file_id})" style="color:red;">X</button>`;
+            ul.appendChild(li);
+
+            // update main table file list too (optional)
+            const mainUl = document.getElementById(`file-list-${currentArticleId}`);
+            mainUl.appendChild(li.cloneNode(true));
+        } else {
+            alert('Upload failed: ' + (data.message || 'Unknown error'));
+        }
+    });
+}
+
+</script>
 
 </body>
 </html>
