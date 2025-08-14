@@ -47,10 +47,9 @@
   <td>
     <ul id="file-list-{{ article.id }}">
         {% if article.file_key %}
-            <li id="file-{{ article.id }}">
-                <a href="{{ url_for('preview_file', article_id=article.id) }}" target="_blank">{{ article.file_key.split('/')[-1] }}</a>
-                <button onclick="deleteFile({{ article.id }})" style="color:red;">X</button>
-            </li>
+             <a href="{{ url_for('preview_file', article_id=article.id) }}" class="preview-link" target="_blank">
+             {{ article.file_key.split('/')[-1] }}
+             </a>
         {% endif %}
     </ul>
     <form id="upload-form-{{ article.id }}" class="upload-form" enctype="multipart/form-data" onsubmit="uploadFile(event, {{ article.id }})">
@@ -177,8 +176,7 @@
   }
 
 
-  function uploadFile(event, articleId) {
-    event.preventDefault();
+  function uploadFile(articleId) {
     const form = document.getElementById(`upload-form-${articleId}`);
     const formData = new FormData(form);
 
@@ -189,22 +187,26 @@
     .then(res => res.json())
     .then(data => {
         if (data.success) {
-            // Append file to list dynamically
-            const ul = document.getElementById(`file-list-${articleId}`);
-            const li = document.createElement('li');
-            li.id = `file-${data.file_id || articleId}`;
-            li.innerHTML = `<a href="${data.file_url || '#'}" target="_blank">${data.filename}</a>
-                            <button onclick="deleteFile(${data.file_id || articleId})" style="color:red;">X</button>`;
-            ul.appendChild(li);
-            form.reset();
+            alert('File uploaded!');
+            
+            // Remove existing preview link if present
+            const existingLink = form.querySelector('.preview-link');
+            if (existingLink) existingLink.remove();
 
-            // Notify other clients
-            socket.emit('file_uploaded', { articleId, file_id: data.file_id || articleId, filename: data.filename, file_url: data.file_url });
+            // Add new preview link
+            const link = document.createElement('a');
+            link.href = data.file_url;
+            link.textContent = data.filename;
+            link.target = "_blank";
+            link.className = 'preview-link';
+            form.appendChild(link);
+
         } else {
             alert('Upload failed: ' + (data.message || 'Unknown error'));
         }
     });
 }
+
 
 function deleteFile(fileId) {
     if (!confirm("Delete this file?")) return;
