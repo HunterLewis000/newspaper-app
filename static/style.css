@@ -208,3 +208,8 @@ td.title, td.author {
     white-space: nowrap;    /* Prevent text from wrapping */
     display: inline-block;  /* Keep inline but respect padding/margins */
 }
+.file-actions {
+    display: flex;
+    gap: 5px;          /* space between buttons */
+    align-items: center; /* vertically align */
+}
