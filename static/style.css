@@ -196,23 +196,8 @@ td.title, td.author {
   max-width: 100%;
 }
 
-.file-preview {
-    border: 1px solid #ccc;
-    padding: 10px;
-    max-height: 400px;
-    overflow-y: auto;
-    background-color: #f9f9f9;
-}
-.file-preview pre {
-    white-space: pre-wrap;
-    word-wrap: break-word;
-}
-.file-preview a {
-    display: inline-block;
-    margin-top: 10px;
-    padding: 5px 10px;
-    background: #007bff;
-    color: #fff;
-    text-decoration: none;
-    border-radius: 4px;
+.file-list button {
+    margin-left: 5px;
+    padding: 2px 6px;
+    cursor: pointer;
 }
