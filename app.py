@@ -136,8 +136,22 @@ def download_file(file_id):
     s3_client.download_fileobj(BUCKET_NAME, file.s3_key, file_obj)
     file_obj.seek(0)
 
-    return send_file(file_obj, download_name=file.filename, as_attachment=True)
+    # Determine MIME type based on extension
+    if file.s3_key.lower().endswith('.docx'):
+        mimetype = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    elif file.s3_key.lower().endswith('.pdf'):
+        mimetype = 'application/pdf'
+    elif file.s3_key.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
+        mimetype = 'image/jpeg'
+    else:
+        mimetype = 'application/octet-stream'  # generic binary
 
+    return send_file(
+        file_obj,
+        mimetype=mimetype,
+        as_attachment=True,
+        download_name=file.filename  # ensures browser saves correct name & extension
+    )
 # Delete file route
 @app.route('/delete_file/<int:file_id>', methods=['POST'])
 def delete_file(file_id):
