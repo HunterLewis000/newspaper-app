@@ -136,20 +136,14 @@
     .then(data => {
         if (data.success) {
             alert('File uploaded!');
-
-            // Add preview link to file list
-            const ul = document.getElementById(`file-list-${articleId}`);
-            const li = document.createElement('li');
-            li.id = `file-${data.file_id}`;
-            li.innerHTML = `<a href="${data.file_url}" target="_blank">${data.filename}</a>
-                            <button onclick="deleteFile(${data.file_id})" style="color:red;">X</button>`;
-            ul.appendChild(li);
-
+            // remove the manual append; Socket.IO will update the list
         } else {
             alert('Upload failed: ' + (data.message || 'Unknown error'));
         }
-    });
+    })
+    .catch(err => alert('Network error: ' + err));
 }
+
 
   // Update status
   function updateStatus(articleId, newStatus) {
