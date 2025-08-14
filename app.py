@@ -75,6 +75,18 @@ def upload_file(article_id):
     return jsonify(success=True, file_id=new_file.id, filename=new_file.filename, file_url=file_url)
 
 
+@app.route('/files/<int:article_id>')
+def list_files(article_id):
+    article = Article.query.get_or_404(article_id)
+    files = []
+    for f in article.files:
+        files.append({
+            "id": f.id,
+            "filename": f.filename,
+            "preview_url": url_for('preview_file', file_id=f.id)
+        })
+    return jsonify(files=files)
+
 # Preview file route
 @app.route('/preview_file/<int:file_id>')
 def preview_file(file_id):

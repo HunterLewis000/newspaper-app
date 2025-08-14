@@ -130,59 +130,68 @@ td.title, td.author {
   text-overflow: clip; /* Show "..." at the end */
 }
 
+/* Modal overlay */
 .modal {
-  display: none; /* Hidden by default */
-  position: fixed;
+  display: none;            /* start hidden */
+  position: fixed !important;
+  inset: 0;                 /* top/right/bottom/left: 0 */
   z-index: 1000;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  overflow: auto; /* Enable scrolling if content is too tall */
-  background-color: rgba(0, 0, 0, 0.4);
+  background: rgba(0,0,0,0.45);
 }
 
+/* Modal panel */
 .modal-content {
-  background-color: white;
-  margin: 5% auto;
-  padding: 20px;
-  border-radius: 8px;
-  width: 500px;
-  max-width: 90%;
+  background: #fff;
+  width: 520px;
+  max-width: 90vw;
+  margin: 6vh auto;
+  padding: 18px;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
   box-sizing: border-box;
 }
 
-.file-manager-body {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.upload-section {
-  border-top: 1px solid #ddd;
-  padding-top: 10px;
-}
-
-.upload-section form {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.upload-section input[type="file"] {
-  max-width: 100%;
-}
-
-.upload-section button {
-  background-color: #007bff;
-  color: white;
+/* Close button */
+.modal-content .close {
+  float: right;
   border: none;
-  padding: 8px 12px;
-  border-radius: 4px;
+  background: transparent;
+  font-size: 1.5rem;
   cursor: pointer;
 }
 
-.upload-section button:hover {
-  background-color: #0056b3;
+/* File list inside modal */
+.file-list {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0 0;
+}
+.file-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+}
+.file-list a {
+  text-decoration: none;
+  word-break: break-word;
+}
+
+/* Upload section stays contained */
+.upload-section {
+  border-top: 1px solid #eee;
+  margin-top: 14px;
+  padding-top: 12px;
+}
+.upload-section form {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.upload-section input[type="file"] {
+  max-width: 100%;
 }
 
