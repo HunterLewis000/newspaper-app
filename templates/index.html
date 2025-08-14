@@ -52,7 +52,98 @@
 <script>
   const socket = io();
 
-  // Listen for new articles
+  // Toggle edit mode for a row
+  function toggleEdit(articleId) {
+    const row = document.getElementById(`row-${articleId}`);
+    const editBtn = document.getElementById(`edit-btn-${articleId}`);
+
+    if (editBtn.textContent === "Edit") {
+      // Switch to edit mode
+      const title = row.querySelector('.title').textContent;
+      const author = row.querySelector('.author').textContent;
+      const deadline = row.querySelector('.deadline').textContent;
+
+      row.querySelector('.title').innerHTML = `<input type="text" value="${title}" id="title-input-${articleId}">`;
+      row.querySelector('.author').innerHTML = `<input type="text" value="${author}" id="author-input-${articleId}">`;
+      row.querySelector('.deadline').innerHTML = `<input type="date" value="${deadline}" id="deadline-input-${articleId}">`;
+
+      editBtn.textContent = "Done";
+
+    } else {
+      // Save edits
+      const newTitle = document.getElementById(`title-input-${articleId}`).value.trim();
+      const newAuthor = document.getElementById(`author-input-${articleId}`).value.trim();
+      const newDeadline = document.getElementById(`deadline-input-${articleId}`).value;
+
+      fetch(`/update/${articleId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: newTitle,
+          author: newAuthor,
+          deadline: newDeadline
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          row.querySelector('.title').textContent = newTitle;
+          row.querySelector('.author').textContent = newAuthor;
+          row.querySelector('.deadline').textContent = newDeadline;
+          editBtn.textContent = "Edit";
+
+          // Emit update to other clients
+          socket.emit('article_updated', {
+            id: articleId,
+            title: newTitle,
+            author: newAuthor,
+            deadline: newDeadline
+          });
+        } else {
+          alert("Failed to save changes.");
+        }
+      });
+    }
+  }
+
+  // Update status
+  function updateStatus(articleId, newStatus) {
+    fetch(`/update_status/${articleId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: newStatus })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        socket.emit('status_updated', { id: articleId, status: newStatus });
+      } else {
+        alert('Error updating status!');
+      }
+    });
+  }
+
+  // Delete article
+  function deleteArticle(articleId) {
+    if (confirm("Are you sure you want to delete this article?")) {
+      fetch(`/delete/${articleId}`, { method: 'POST' })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          const row = document.getElementById(`row-${articleId}`);
+          if (row) row.remove();
+
+          // Emit deletion to other clients
+          socket.emit('article_deleted', { id: articleId });
+        } else {
+          alert('Error deleting article!');
+        }
+      })
+      .catch(err => alert('Network error deleting article: ' + err));
+    }
+  }
+
+  // Socket.IO listeners for live updates
   socket.on('article_added', data => {
     const tbody = document.querySelector('table tbody');
     const row = document.createElement('tr');
@@ -77,27 +168,26 @@
     tbody.appendChild(row);
   });
 
-  // Listen for article updates
   socket.on('article_updated', data => {
     const row = document.getElementById(`row-${data.id}`);
-    row.querySelector('.title').textContent = data.title;
-    row.querySelector('.author').textContent = data.author;
-    row.querySelector('.deadline').textContent = data.deadline;
+    if (row) {
+      row.querySelector('.title').textContent = data.title;
+      row.querySelector('.author').textContent = data.author;
+      row.querySelector('.deadline').textContent = data.deadline;
+    }
   });
 
-  // Listen for status updates
   socket.on('status_updated', data => {
     const row = document.getElementById(`row-${data.id}`);
-    const select = row.querySelector('select');
-    select.value = data.status;
+    if (row) row.querySelector('select').value = data.status;
   });
 
-  // Listen for deletions
   socket.on('article_deleted', data => {
     const row = document.getElementById(`row-${data.id}`);
     if (row) row.remove();
   });
 </script>
+
 
 </body>
 </html>
