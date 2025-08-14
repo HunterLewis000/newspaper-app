@@ -23,6 +23,7 @@
       <th>Author</th>
       <th>Status</th>
       <th>Deadline</th>
+      <th>Files</th>
       <th>Actions</th>
     </tr>
   </thead>
@@ -40,38 +41,48 @@
     </select>
   </td>
   <td class="deadline" data-deadline="{{ article.deadline }}">{{ article.deadline }}</td>
+
+  <!-- Files column -->
+  <td>
+    <button class="file-icon-btn" onclick="openFileManager({{ article.id }})">
+      Files
+    </button>
+    <form id="upload-form-{{ article.id }}" class="upload-form" enctype="multipart/form-data" onsubmit="uploadFile(event, {{ article.id }})">
+      <input type="file" name="file" required>
+      <button type="submit">Upload</button>
+    </form>
+  </td>
+
+  <!-- Actions column -->
   <td>
     <button onclick="toggleEdit({{ article.id }})" id="edit-btn-{{ article.id }}">Edit</button>
     <button onclick="deleteArticle({{ article.id }})" style="color:red;">Delete</button>
   </td>
-  <td>
-<td>
-  <button class="file-icon-btn" onclick="openFileManager({{ article.id }})">
-    Files
-  </button>
-</td>
-<form id="upload-form-{{ article.id }}" class="upload-form" enctype="multipart/form-data" onsubmit="uploadFile(event, {{ article.id }})">
-    <input type="file" name="file" required>
-    <button type="submit">Upload</button>
-</form>
-
-</td>
 </tr>
 {% endfor %}
 </tbody>
 </table>
 
-<div id="file-modal" class="file-modal" style="display:none;">
-  <div class="file-modal-content">
-    <span class="close-btn" onclick="closeFileManager()">&times;</span>
-    <h3>Files for Article</h3>
-    <ul id="file-modal-list"></ul>
-    <form id="file-modal-upload-form" enctype="multipart/form-data" onsubmit="uploadFileModal(event)">
-      <input type="file" name="file" required>
-      <button type="submit">Upload</button>
-    </form>
+
+<div id="fileManagerModal" class="modal">
+  <div class="modal-content">
+    <span class="close">&times;</span>
+
+    <h3>File Manager</h3>
+
+    <div class="file-manager-body">
+      <ul id="fileList"></ul>
+
+      <div class="upload-section">
+        <form id="uploadForm" enctype="multipart/form-data">
+          <input type="file" name="file" id="fileInput" />
+          <button type="submit">Upload</button>
+        </form>
+      </div>
+    </div>
   </div>
 </div>
+
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js" integrity="sha384-A9xjF58i..." crossorigin="anonymous"></script>
 <script>
