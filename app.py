@@ -4,6 +4,9 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_socketio import SocketIO
 import os
 from io import BytesIO
+from flask_migrate import Migrate
+
+
 
 
 app = Flask(__name__)
@@ -139,6 +142,8 @@ def update_status(article_id):
         socketio.emit('status_updated', {'id': article_id, 'status': new_status})
         return jsonify(success=True)
     return jsonify(success=False), 404
+
+migrate = Migrate(app, db)
 
 if __name__ == '__main__':
     if not os.path.exists('newspaper.db'):
