@@ -45,14 +45,19 @@
     <button onclick="deleteArticle({{ article.id }})" style="color:red;">Delete</button>
   </td>
   <td>
-    <form id="upload-form-{{ article.id }}" class="upload-form" enctype="multipart/form-data">
-      <input type="file" name="file">
-      <button type="button" onclick="uploadFile({{ article.id }})">Upload</button>
-      {% if article.file_key %}
-        <a href="{{ url_for('preview_file', article_id=article.id) }}" class="preview-link" target="_blank">Preview</a>
-      {% endif %}
+    <ul id="file-list-{{ article.id }}">
+        {% if article.file_key %}
+            <li id="file-{{ article.id }}">
+                <a href="{{ url_for('preview_file', article_id=article.id) }}" target="_blank">{{ article.file_key.split('/')[-1] }}</a>
+                <button onclick="deleteFile({{ article.id }})" style="color:red;">X</button>
+            </li>
+        {% endif %}
+    </ul>
+    <form id="upload-form-{{ article.id }}" class="upload-form" enctype="multipart/form-data" onsubmit="uploadFile(event, {{ article.id }})">
+        <input type="file" name="file" required>
+        <button type="submit">Upload</button>
     </form>
-  </td>
+</td>
 </tr>
 {% endfor %}
 </tbody>
@@ -171,6 +176,51 @@
     }
   }
 
+
+  function uploadFile(event, articleId) {
+    event.preventDefault();
+    const form = document.getElementById(`upload-form-${articleId}`);
+    const formData = new FormData(form);
+
+    fetch(`/upload/${articleId}`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            // Append file to list dynamically
+            const ul = document.getElementById(`file-list-${articleId}`);
+            const li = document.createElement('li');
+            li.id = `file-${data.file_id || articleId}`;
+            li.innerHTML = `<a href="${data.file_url || '#'}" target="_blank">${data.filename}</a>
+                            <button onclick="deleteFile(${data.file_id || articleId})" style="color:red;">X</button>`;
+            ul.appendChild(li);
+            form.reset();
+
+            // Notify other clients
+            socket.emit('file_uploaded', { articleId, file_id: data.file_id || articleId, filename: data.filename, file_url: data.file_url });
+        } else {
+            alert('Upload failed: ' + (data.message || 'Unknown error'));
+        }
+    });
+}
+
+function deleteFile(fileId) {
+    if (!confirm("Delete this file?")) return;
+    fetch(`/delete_file/${fileId}`, { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                const li = document.getElementById(`file-${fileId}`);
+                if (li) li.remove();
+                socket.emit('file_deleted', { fileId });
+            } else {
+                alert('Error deleting file!');
+            }
+        });
+}
+
   // Socket.IO listeners for live updates
   socket.on('article_added', data => {
     const tbody = document.querySelector('table tbody');
@@ -214,6 +264,21 @@
     const row = document.getElementById(`row-${data.id}`);
     if (row) row.remove();
   });
+  socket.on('file_uploaded', data => {
+    const ul = document.getElementById(`file-list-${data.articleId}`);
+    if (!ul) return;
+    const li = document.createElement('li');
+    li.id = `file-${data.file_id}`;
+    li.innerHTML = `<a href="${data.file_url}" target="_blank">${data.filename}</a>
+                    <button onclick="deleteFile(${data.file_id})" style="color:red;">X</button>`;
+    ul.appendChild(li);
+});
+
+socket.on('file_deleted', data => {
+    const li = document.getElementById(`file-${data.fileId}`);
+    if (li) li.remove();
+});
+
 </script>
 
 

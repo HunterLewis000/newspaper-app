@@ -6,9 +6,6 @@ import os
 from io import BytesIO
 from flask_migrate import Migrate
 
-
-
-
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://newspaper_db_47wk_user:2WQbescUw19AeDpYVPPGZzFeVnyePdiV@dpg-d2e1sv3e5dus73feem00-a.ohio-postgres.render.com/newspaper_db_47wk'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -24,15 +21,22 @@ s3_client = boto3.client(
 )
 BUCKET_NAME = os.environ['S3_BUCKET_NAME']
 
-
+# Models
 class Article(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
     author = db.Column(db.String(100), nullable=False)
     status = db.Column(db.String(50), nullable=False, default="Not Started")
     deadline = db.Column(db.String(20))
-    file_key = db.Column(db.String(200))  # S3 object key
+    files = db.relationship('ArticleFile', backref='article', lazy=True, cascade="all, delete-orphan")
 
+class ArticleFile(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    article_id = db.Column(db.Integer, db.ForeignKey('article.id'), nullable=False)
+    filename = db.Column(db.String(200), nullable=False)
+    s3_key = db.Column(db.String(200), nullable=False)
+
+# Routes
 @app.route('/')
 def index():
     articles = Article.query.all()
@@ -54,33 +58,51 @@ def upload_file(article_id):
 
     s3_key = f"articles/{article_id}/{file.filename}"
     s3_client.upload_fileobj(file, BUCKET_NAME, s3_key)
-    article.file_key = s3_key
+
+    new_file = ArticleFile(article_id=article_id, filename=file.filename, s3_key=s3_key)
+    db.session.add(new_file)
     db.session.commit()
 
-    # Emit to clients if needed
-    socketio.emit('file_uploaded', {'id': article_id, 'file_key': s3_key, 'filename': file.filename})
-    return jsonify(success=True, file_key=s3_key, filename=file.filename)
+    socketio.emit('file_uploaded', {
+        'article_id': article_id,
+        'file_id': new_file.id,
+        'filename': file.filename
+    })
+
+    return jsonify(success=True, file_id=new_file.id, filename=file.filename)
 
 # Preview file route
-@app.route('/preview/<int:article_id>')
-def preview_file(article_id):
-    article = Article.query.get(article_id)
-    if not article or not article.file_key:
+@app.route('/preview_file/<int:file_id>')
+def preview_file(file_id):
+    file = ArticleFile.query.get(file_id)
+    if not file:
         return "File not found", 404
 
     file_obj = BytesIO()
-    s3_client.download_fileobj(BUCKET_NAME, article.file_key, file_obj)
+    s3_client.download_fileobj(BUCKET_NAME, file.s3_key, file_obj)
     file_obj.seek(0)
 
-    # Simple preview for images / PDFs
-    if article.file_key.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
+    if file.s3_key.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
         return send_file(file_obj, mimetype='image/jpeg')
-    elif article.file_key.lower().endswith('.pdf'):
+    elif file.s3_key.lower().endswith('.pdf'):
         return send_file(file_obj, mimetype='application/pdf')
     else:
-        # For text files
         content = file_obj.read().decode('utf-8')
         return f"<pre>{content}</pre>"
+
+# Delete file route
+@app.route('/delete_file/<int:file_id>', methods=['POST'])
+def delete_file(file_id):
+    file = ArticleFile.query.get(file_id)
+    if not file:
+        return jsonify(success=False), 404
+
+    s3_client.delete_object(Bucket=BUCKET_NAME, Key=file.s3_key)
+    db.session.delete(file)
+    db.session.commit()
+
+    socketio.emit('file_deleted', {'file_id': file.id, 'article_id': file.article_id})
+    return jsonify(success=True)
 
 # Add Article
 @app.route('/add', methods=['POST'])
@@ -91,7 +113,7 @@ def add_article():
     new_article = Article(title=title, author=author, deadline=deadline)
     db.session.add(new_article)
     db.session.commit()
-    # Emit the new article to all connected clients
+
     socketio.emit('article_added', {
         'id': new_article.id,
         'title': title,
@@ -122,6 +144,7 @@ def update_article(article_id):
         article.author = data.get('author', article.author)
         article.deadline = data.get('deadline', article.deadline)
         db.session.commit()
+
         socketio.emit('article_updated', {
             'id': article.id,
             'title': article.title,
@@ -143,10 +166,10 @@ def update_status(article_id):
         return jsonify(success=True)
     return jsonify(success=False), 404
 
+# Initialize migrations
 migrate = Migrate(app, db)
 
 if __name__ == '__main__':
-    if not os.path.exists('newspaper.db'):
-        with app.app_context():
-            db.create_all()
+    with app.app_context():
+        db.create_all()
     socketio.run(app, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=True)
