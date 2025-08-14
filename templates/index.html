@@ -1,6 +1,103 @@
 <!DOCTYPE html>
 <html>
-  <body>
-    <h1>Hello World!</h1>
-  </body>
+<head>
+    <meta charset="UTF-8">
+    <title>C&W Story Tracker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>Cardinal and White Story Tracker</h1>
+
+    <form method="POST" action="/add">
+        <input type="text" name="title" placeholder="Article Title" required>
+        <input type="text" name="author" placeholder="Author Name" required>
+        <input type="date" name="deadline">
+        <button type="submit">Add Article</button>
+    </form>
+
+<table>
+  <thead>
+    <tr>
+      <th>Title</th>
+      <th>Author</th>
+      <th>Status</th>
+      <th>Deadline</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for article in articles %}
+    <tr id="row-{{ article.id }}">
+      <td class="title">{{ article.title }}</td>
+      <td class="author">{{ article.author }}</td>
+      <td class="status">
+        <select onchange="updateStatus({{ article.id }}, this.value)">
+          <option value="Not Started" {% if article.status == 'Not Started' %}selected{% endif %}>Not Started</option>
+          <option value="Done" {% if article.status == 'Done' %}selected{% endif %}>Done</option>
+          <option value="Edited" {% if article.status == 'Edited' %}selected{% endif %}>Edited</option>
+          <option value="Published" {% if article.status == 'Published' %}selected{% endif %}>Published</option>
+        </select>
+      </td>
+      <td class="deadline" data-deadline="{{ article.deadline }}">{{ article.deadline }}</td>
+      <td>
+        <button onclick="toggleEdit({{ article.id }})" id="edit-btn-{{ article.id }}">Edit</button>
+        <button onclick="deleteArticle({{ article.id }})" style="color:red;">Delete</button>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js" integrity="sha384-A9xjF58i..." crossorigin="anonymous"></script>
+<script>
+  const socket = io();
+
+  // Listen for new articles
+  socket.on('article_added', data => {
+    const tbody = document.querySelector('table tbody');
+    const row = document.createElement('tr');
+    row.id = `row-${data.id}`;
+    row.innerHTML = `
+      <td class="title">${data.title}</td>
+      <td class="author">${data.author}</td>
+      <td class="status">
+        <select onchange="updateStatus(${data.id}, this.value)">
+          <option value="Not Started" ${data.status === 'Not Started' ? 'selected' : ''}>Not Started</option>
+          <option value="Done" ${data.status === 'Done' ? 'selected' : ''}>Done</option>
+          <option value="Edited" ${data.status === 'Edited' ? 'selected' : ''}>Edited</option>
+          <option value="Published" ${data.status === 'Published' ? 'selected' : ''}>Published</option>
+        </select>
+      </td>
+      <td class="deadline">${data.deadline}</td>
+      <td>
+        <button onclick="toggleEdit(${data.id})" id="edit-btn-${data.id}">Edit</button>
+        <button onclick="deleteArticle(${data.id})" style="color:red;">Delete</button>
+      </td>
+    `;
+    tbody.appendChild(row);
+  });
+
+  // Listen for article updates
+  socket.on('article_updated', data => {
+    const row = document.getElementById(`row-${data.id}`);
+    row.querySelector('.title').textContent = data.title;
+    row.querySelector('.author').textContent = data.author;
+    row.querySelector('.deadline').textContent = data.deadline;
+  });
+
+  // Listen for status updates
+  socket.on('status_updated', data => {
+    const row = document.getElementById(`row-${data.id}`);
+    const select = row.querySelector('select');
+    select.value = data.status;
+  });
+
+  // Listen for deletions
+  socket.on('article_deleted', data => {
+    const row = document.getElementById(`row-${data.id}`);
+    if (row) row.remove();
+  });
+</script>
+
+</body>
 </html>
