@@ -1,5 +1,7 @@
 bidict==0.23.1
 blinker==1.9.0
+boto3==1.40.9
+botocore==1.40.9
 click==8.2.1
 colorama==0.4.6
 dnspython==2.7.0
@@ -11,12 +13,17 @@ greenlet==3.2.4
 h11==0.16.0
 itsdangerous==2.2.0
 Jinja2==3.1.6
+jmespath==1.0.1
 MarkupSafe==3.0.2
 psycopg2-binary==2.9.10
+python-dateutil==2.9.0.post0
 python-engineio==4.12.2
 python-socketio==5.13.0
+s3transfer==0.13.1
 simple-websocket==1.1.0
+six==1.17.0
 SQLAlchemy==2.0.43
 typing_extensions==4.14.1
+urllib3==2.5.0
 Werkzeug==3.1.3
 wsproto==1.2.0
