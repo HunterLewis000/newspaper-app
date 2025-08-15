@@ -306,9 +306,6 @@ function loadFiles(articleId) {
                     </div>
                 `;
 
-
-
-
                 ul.appendChild(li);
             });
         })
@@ -395,6 +392,7 @@ function addOrUpdateRow(data) {
         const tbody = document.querySelector('table tbody');
         row = document.createElement('tr');
         row.id = `row-${data.id}`;
+        row.dataset.id = data.id; // important for sorting
         tbody.appendChild(row);
     }
     row.innerHTML = `
@@ -424,13 +422,11 @@ function addOrUpdateRow(data) {
             <button onclick="deleteArticle(${data.id})" style="color:red;">Delete</button>
         </td>
     `;
+
+    // re-init sortable so handle works again
     initSortable();
 }
 
-
-document.addEventListener('DOMContentLoaded', () => {
-  initSortable();
-});
 </script>
 </body>
 </html>
