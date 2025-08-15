@@ -75,7 +75,7 @@
 
 <table>
   <thead>
-    <tr>
+    <tr class="{{ 'published' if article.status == 'Published' else '' }}">
       <th>Title</th>
       <th>Author</th>
       <th>Status</th>

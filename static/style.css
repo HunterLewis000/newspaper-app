@@ -213,3 +213,8 @@ td.title, td.author {
 .download-btn:hover {
     background-color: transparent;
 }
+.published {
+    background-color: #f0f0f0; /* light gray background */
+    color: #888888;           /* gray text */
+    opacity: 0.6;             /* slightly faded */
+}
