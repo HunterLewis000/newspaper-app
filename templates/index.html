@@ -38,7 +38,8 @@
       <td class="status">
         <select onchange="updateStatus({{ article.id }}, this.value)">
           <option value="Not Started" {% if article.status == 'Not Started' %}selected{% endif %}>Not Started</option>
-          <option value="Done" {% if article.status == 'Done' %}selected{% endif %}>Done</option>
+          <option value="In Progress" {% if article.status == 'In Progress' %}selected{% endif %}>In Progress</option>
+          <option value="Needs Edit" {% if article.status == 'Needs Edit' %}selected{% endif %}>Needs Edit</option>
           <option value="Edited" {% if article.status == 'Edited' %}selected{% endif %}>Edited</option>
           <option value="Published" {% if article.status == 'Published' %}selected{% endif %}>Published</option>
         </select>
@@ -294,7 +295,8 @@ function addOrUpdateRow(data) {
         <td class="status">
             <select onchange="updateStatus(${data.id}, this.value)">
                 <option value="Not Started" ${data.status === 'Not Started' ? 'selected' : ''}>Not Started</option>
-                <option value="Done" ${data.status === 'Done' ? 'selected' : ''}>Done</option>
+                <option value="In Progress" ${data.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
+                <option value="Needs Edit" ${data.status === 'Needs Edit' ? 'selected' : ''}>Needs Edit</option>
                 <option value="Edited" ${data.status === 'Edited' ? 'selected' : ''}>Edited</option>
                 <option value="Published" ${data.status === 'Published' ? 'selected' : ''}>Published</option>
             </select>
