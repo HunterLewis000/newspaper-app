@@ -65,7 +65,8 @@ def upload_file(article_id):
     db.session.add(new_file)
     db.session.commit()
 
-    file_url = url_for('preview_file', file_id=new_file.id)
+    file_url = url_for('download_file', file_id=new_file.id)
+
 
     socketio.emit('file_uploaded', {
         'articleId': article.id,
@@ -84,9 +85,10 @@ def list_files(article_id):
         files.append({
             "id": f.id,
             "filename": f.filename,
-            "preview_url": url_for('preview_file', file_id=f.id)
+            "file_url": url_for('download_file', file_id=f.id)  # download link
         })
     return jsonify(files=files)
+
 
 # Download file route
 @app.route('/download_file/<int:file_id>')
