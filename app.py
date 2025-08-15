@@ -11,18 +11,9 @@ from tempfile import NamedTemporaryFile
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://newspaper_db_47wk_user:2WQbescUw19AeDpYVPPGZzFeVnyePdiV@dpg-d2e1sv3e5dus73feem00-a.ohio-postgres.render.com/newspaper_db_47wk'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.secret_key = "login"
 db = SQLAlchemy(app)
 socketio = SocketIO(app, cors_allowed_origins="*")  # Enable cross-origin for Render
 
-ALLOWED_USERS = ["ccp", "CCP"]
-
-def login_required(f):
-    def wrapper(*args, **kwargs):
-        if "username" not in session:
-            return redirect(url_for("login"))
-        return f(*args, **kwargs)
-    return wrapper
 
 
 # S3 setup
@@ -51,40 +42,12 @@ class ArticleFile(db.Model):
     s3_key = db.Column(db.String(200), nullable=False)
 
 # Routes
-
 @app.route('/')
-@login_required
 def index():
     articles = Article.query.all()
-    return render_template('index.html', articles=articles, username=session["username"])
-
-@app.route("/login", methods=["GET", "POST"])
-def login():
-    if request.method == "POST":
-        username = request.form.get("username")
-        if username in ALLOWED_USERS:
-            session["username"] = username
-            return redirect(url_for("index"))
-        else:
-            return "Invalid username", 403
-    return '''
-        <form method="POST">
-            <input type="text" name="username" placeholder="Enter username" required>
-            <button type="submit">Login</button>
-        </form>
-    '''
-
-@app.route("/logout")
-def logout():
-    session.clear()
-    return redirect(url_for("login"))
-
-
-
-
+    return render_template('index.html', articles=articles)
 
 # Upload file route
-@login_required
 @app.route('/upload/<int:article_id>', methods=['POST'])
 def upload_file(article_id):
     article = Article.query.get(article_id)
@@ -117,7 +80,6 @@ def upload_file(article_id):
 
     return jsonify(success=True, file_id=new_file.id, filename=new_file.filename, file_url=file_url)
 
-@login_required
 @app.route('/files/<int:article_id>')
 def list_files(article_id):
     article = Article.query.get_or_404(article_id)
@@ -132,7 +94,6 @@ def list_files(article_id):
 
 
 # Download file route
-@login_required
 @app.route('/download_file/<int:file_id>')
 def download_file(file_id):
     file = ArticleFile.query.get(file_id)
@@ -160,7 +121,6 @@ def download_file(file_id):
         download_name=file.filename  # ensures browser saves correct name & extension
     )
 # Delete file route
-@login_required
 @app.route('/delete_file/<int:file_id>', methods=['POST'])
 def delete_file(file_id):
     file = ArticleFile.query.get(file_id)
@@ -175,7 +135,6 @@ def delete_file(file_id):
     return jsonify(success=True)
 
 # Add Article
-@login_required
 @app.route('/add', methods=['POST'])
 def add_article():
     title = request.form['title']
@@ -196,7 +155,6 @@ def add_article():
     return redirect('/')
 
 # Delete Article
-@login_required
 @app.route('/delete/<int:article_id>', methods=['POST'])
 def delete_article(article_id):
     article = Article.query.get(article_id)
@@ -208,7 +166,6 @@ def delete_article(article_id):
     return jsonify(success=False), 404
 
 # Update Article
-@login_required
 @app.route('/update/<int:article_id>', methods=['POST'])
 def update_article(article_id):
     article = Article.query.get(article_id)
@@ -229,7 +186,6 @@ def update_article(article_id):
     return jsonify(success=False), 404
 
 # Update Status
-@login_required
 @app.route('/update_status/<int:article_id>', methods=['POST'])
 def update_status(article_id):
     article = Article.query.get(article_id)
