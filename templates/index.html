@@ -45,7 +45,7 @@
   loginBtn.addEventListener('click', () => {
       const password = document.getElementById('loginPassword').value;
       // Replace 'hunterpass' with your desired password
-      if(password === 'CCP')||(password === 'ccp') {
+      if(password === 'CCP') {
           sessionStorage.setItem('loggedIn', 'true');
           modal.style.display = 'none';
       } else {
