@@ -51,6 +51,13 @@ class ArticleFile(db.Model):
     s3_key = db.Column(db.String(200), nullable=False)
 
 # Routes
+
+@app.route('/')
+@login_required
+def index():
+    articles = Article.query.all()
+    return render_template('index.html', articles=articles, username=session["username"])
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -73,11 +80,7 @@ def logout():
     return redirect(url_for("login"))
 
 
-@app.route('/')
-@login_required
-def index():
-    articles = Article.query.all()
-    return render_template('index.html', articles=articles, username=session["username"])
+
 
 
 # Upload file route
