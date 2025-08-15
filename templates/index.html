@@ -335,22 +335,22 @@ socket.on('editor_updated', data => {
         if (select) select.value = data.editor;
     }
 });
-  // Listen for status updates from the server
-  socket.on('status_updated', data => {
-    const row = document.getElementById(`article-${data.id}`);
+socket.on('status_updated', data => {
+    const row = document.getElementById(`row-${data.id}`);
     if (!row) return;
 
-    // Update the status text
-    const statusCell = row.querySelector('.status');
-    statusCell.textContent = data.status;
+    // Update the status select value
+    const statusSelect = row.querySelector('select');
+    if (statusSelect) statusSelect.value = data.status;
 
-    // Add/remove the 'published' class dynamically
-    if (data.status.toLowerCase() === 'published') {
-      row.classList.add('published');
+    // Add/remove 'published' class dynamically
+    if (data.status === 'Published') {
+        row.classList.add('published');
     } else {
-      row.classList.remove('published');
+        row.classList.remove('published');
     }
-  });
+});
+
 
 
 // ------------------- Helper -------------------
