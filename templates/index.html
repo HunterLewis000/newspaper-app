@@ -24,6 +24,7 @@
       <th>Title</th>
       <th>Author</th>
       <th>Status</th>
+      <th>Editor</th>
       <th>Deadline</th>
       <th>Files</th>
       <th>Actions</th>
@@ -42,6 +43,14 @@
           <option value="Published" {% if article.status == 'Published' %}selected{% endif %}>Published</option>
         </select>
       </td>
+      <td class="editor">
+  <select onchange="updateEditor({{ article.id }}, this.value)">
+    <option value="">-- Select --</option>
+    <option value="Copley" {% if article.editor == 'Copley' %}selected{% endif %}>Copley</option>
+    <option value="Lewis" {% if article.editor == 'Lewis' %}selected{% endif %}>Lewis</option>
+  </select>
+</td>
+
       <td class="deadline" data-deadline="{{ article.deadline }}">{{ article.deadline }}</td>
 
       <!-- Files column -->
@@ -121,6 +130,19 @@ function toggleEdit(articleId) {
         });
     }
 }
+function updateEditor(articleId, editor) {
+    fetch(`/update_editor/${articleId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ editor: editor })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (!data.success) alert('Error updating editor!');
+        else socket.emit('editor_updated', { id: articleId, editor: editor });
+    });
+}
+
 
 function updateStatus(articleId, newStatus) {
     fetch(`/update_status/${articleId}`, {
@@ -248,6 +270,14 @@ socket.on('file_deleted', data => {
     const li = document.getElementById(`file-${data.file_id}`);
     if (li) li.remove();
 });
+socket.on('editor_updated', data => {
+    const row = document.getElementById(`row-${data.id}`);
+    if (row) {
+        const select = row.querySelector('.editor select');
+        if (select) select.value = data.editor;
+    }
+});
+
 
 // ------------------- Helper -------------------
 function addOrUpdateRow(data) {
@@ -269,6 +299,13 @@ function addOrUpdateRow(data) {
                 <option value="Published" ${data.status === 'Published' ? 'selected' : ''}>Published</option>
             </select>
         </td>
+        <td class="editor">
+            <select onchange="updateEditor(${data.id}, this.value)">
+                <option value="">-- Select --</option>
+                <option value="Copley" ${data.editor === 'Copley' ? 'selected' : ''}>Copley</option>
+                <option value="Lewis" ${data.editor === 'Lewis' ? 'selected' : ''}>Lewis</option>
+            </select>
+        </td>
         <td class="deadline">${data.deadline || ''}</td>
         <td><button class="file-icon-btn" onclick="openFileManager(${data.id})">Files</button></td>
         <td>
@@ -277,6 +314,7 @@ function addOrUpdateRow(data) {
         </td>
     `;
 }
+
 </script>
 
 </body>

@@ -29,6 +29,7 @@ class Article(db.Model):
     title = db.Column(db.String(200), nullable=False)
     author = db.Column(db.String(100), nullable=False)
     status = db.Column(db.String(50), nullable=False, default="Not Started")
+    editor = db.Column(db.String(50), nullable=True)
     deadline = db.Column(db.String(20))
     files = db.relationship('ArticleFile', backref='article', lazy=True, cascade="all, delete-orphan")
 
@@ -147,6 +148,7 @@ def add_article():
         'author': author,
         'status': new_article.status,
         'deadline': deadline
+        'editor': new_article.editor
     })
     return redirect('/')
 
@@ -190,6 +192,17 @@ def update_status(article_id):
         article.status = new_status
         db.session.commit()
         socketio.emit('status_updated', {'id': article_id, 'status': new_status})
+        return jsonify(success=True)
+    return jsonify(success=False), 404
+
+@app.route('/update_editor/<int:article_id>', methods=['POST'])
+def update_editor(article_id):
+    article = Article.query.get(article_id)
+    if article:
+        data = request.json
+        article.editor = data.get('editor', None)
+        db.session.commit()
+        socketio.emit('editor_updated', {'id': article.id, 'editor': article.editor})
         return jsonify(success=True)
     return jsonify(success=False), 404
 
