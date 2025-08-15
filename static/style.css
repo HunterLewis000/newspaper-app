@@ -218,3 +218,14 @@ tr.published {
   background-color: #f0f0f0; /* light gray background */
   color: #888888;           /* gray text */
 }
+.drag-handle {
+  cursor: grab;
+  font-size: 1.2em;
+  user-select: none;
+  text-align: center;
+  width: 30px;
+}
+.drag-handle:active {
+  cursor: grabbing;
+}
+

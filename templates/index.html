@@ -88,6 +88,7 @@
   <tbody>
   {% for article in articles %}
     <tr id="row-{{ article.id }}" class="{% if article.status == 'Published' %}published{% endif %}">
+      <td class="drag-handle">⋮⋮</td>
       <td class="title">{{ article.title }}</td>
       <td class="author">{{ article.author }}</td>
       <td class="status">
@@ -124,6 +125,7 @@
   </tbody>
 </table>
 
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 
 
 <div id="fileManagerModal" class="modal" aria-hidden="true">
@@ -149,6 +151,22 @@
 <script>
 const socket = io();
 let currentArticleId = null;
+
+const tableBody = document.querySelector('tbody');
+
+Sortable.create(tableBody, {
+  handle: '.drag-handle', // Only drag from the dots
+  animation: 150,         // Smooth motion
+  onEnd: function(evt) {
+    // Gather new order
+    const order = Array.from(tableBody.querySelectorAll('tr')).map(row => row.id.replace('row-', ''));
+    console.log('New order:', order);
+
+    // Optionally send new order to server
+    socket.emit('articles_reordered', { order });
+  }
+});
+
 
 // ------------------- Article Functions -------------------
 function toggleEdit(articleId) {
