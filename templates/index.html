@@ -76,6 +76,7 @@
 <table>
   <thead>
     <tr>
+      <th></th>
       <th>Title</th>
       <th>Author</th>
       <th>Status</th>
@@ -152,20 +153,36 @@
 const socket = io();
 let currentArticleId = null;
 
-const tableBody = document.querySelector('tbody');
+function initSortable() {
+    const tableBody = document.querySelector('#articles-table tbody');
+    if (!tableBody) return;
 
-Sortable.create(tableBody, {
-  handle: '.drag-handle', // Only drag from the dots
-  animation: 150,         // Smooth motion
-  onEnd: function(evt) {
-    // Gather new order
-    const order = Array.from(tableBody.querySelectorAll('tr')).map(row => row.id.replace('row-', ''));
-    console.log('New order:', order);
+    // Destroy existing Sortable instance if it exists
+    if (tableBody._sortable) {
+        tableBody._sortable.destroy();
+    }
 
-    // Optionally send new order to server
-    socket.emit('articles_reordered', { order });
-  }
-});
+    tableBody._sortable = Sortable.create(tableBody, {
+        handle: '.drag-handle',
+        animation: 150,
+        onEnd: function (evt) {
+            // Get new order of IDs
+            const orderedIds = Array.from(tableBody.querySelectorAll('tr'))
+                .map(row => row.dataset.id);
+
+            // Send to server over socket
+            socket.emit('reorder_articles', { order: orderedIds });
+        }
+    });
+}
+
+fetch('/articles')
+  .then(res => res.json())
+  .then(data => {
+      renderArticles(data);
+      initSortable();
+  });
+
 
 
 // ------------------- Article Functions -------------------
@@ -381,6 +398,7 @@ function addOrUpdateRow(data) {
         tbody.appendChild(row);
     }
     row.innerHTML = `
+        <td class="drag-handle">⋮⋮</td>
         <td class="title">${data.title}</td>
         <td class="author">${data.author}</td>
         <td class="status">
@@ -406,8 +424,13 @@ function addOrUpdateRow(data) {
             <button onclick="deleteArticle(${data.id})" style="color:red;">Delete</button>
         </td>
     `;
+    initSortable();
 }
 
+
+document.addEventListener('DOMContentLoaded', () => {
+  initSortable();
+});
 </script>
 </body>
 </html>
