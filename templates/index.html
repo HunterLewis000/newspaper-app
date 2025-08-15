@@ -76,7 +76,6 @@
 <table>
   <thead>
     <tr>
-      <th></th>
       <th>Title</th>
       <th>Author</th>
       <th>Status</th>
@@ -126,7 +125,6 @@
   </tbody>
 </table>
 
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 
 
 <div id="fileManagerModal" class="modal" aria-hidden="true">
@@ -152,38 +150,6 @@
 <script>
 const socket = io();
 let currentArticleId = null;
-
-function initSortable() {
-    const tableBody = document.querySelector('#articles-table tbody');
-    if (!tableBody) return;
-
-    // Destroy existing Sortable instance if it exists
-    if (tableBody._sortable) {
-        tableBody._sortable.destroy();
-    }
-
-    tableBody._sortable = Sortable.create(tableBody, {
-        handle: '.drag-handle',
-        animation: 150,
-        onEnd: function (evt) {
-            // Get new order of IDs
-            const orderedIds = Array.from(tableBody.querySelectorAll('tr'))
-                .map(row => row.dataset.id);
-
-            // Send to server over socket
-            socket.emit('reorder_articles', { order: orderedIds });
-        }
-    });
-}
-
-fetch('/articles')
-  .then(res => res.json())
-  .then(data => {
-      renderArticles(data);
-      initSortable();
-  });
-
-
 
 // ------------------- Article Functions -------------------
 function toggleEdit(articleId) {
@@ -306,6 +272,9 @@ function loadFiles(articleId) {
                     </div>
                 `;
 
+
+
+
                 ul.appendChild(li);
             });
         })
@@ -392,11 +361,9 @@ function addOrUpdateRow(data) {
         const tbody = document.querySelector('table tbody');
         row = document.createElement('tr');
         row.id = `row-${data.id}`;
-        row.dataset.id = data.id; // important for sorting
         tbody.appendChild(row);
     }
     row.innerHTML = `
-        <td class="drag-handle">⋮⋮</td>
         <td class="title">${data.title}</td>
         <td class="author">${data.author}</td>
         <td class="status">
@@ -422,9 +389,6 @@ function addOrUpdateRow(data) {
             <button onclick="deleteArticle(${data.id})" style="color:red;">Delete</button>
         </td>
     `;
-
-    // re-init sortable so handle works again
-    initSortable();
 }
 
 </script>
