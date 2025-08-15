@@ -183,7 +183,7 @@ td.title, td.author {
 /* Upload section stays contained */
 .upload-section {
   border-top: 1px solid #eee;
-  margin-top: 14px;
+  margin-top: 5px;
   padding-top: 12px;
 }
 .upload-section form {
@@ -209,4 +209,7 @@ td.title, td.author {
     border: none;
     padding: 0;
     font: inherit;
+}
+.download-btn:hover {
+    background-color: transparent;
 }
