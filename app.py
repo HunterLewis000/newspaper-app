@@ -147,7 +147,7 @@ def add_article():
         'title': title,
         'author': author,
         'status': new_article.status,
-        'deadline': deadline
+        'deadline': deadline,
         'editor': new_article.editor
     })
     return redirect('/')
