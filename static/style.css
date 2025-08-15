@@ -201,15 +201,3 @@ td.title, td.author {
     padding: 2px 6px;
     cursor: pointer;
 }
-/* Keep buttons on a single line */
-.file-list button,
-.file-icon-btn,
-.upload-section button {
-    white-space: nowrap;    /* Prevent text from wrapping */
-    display: inline-block;  /* Keep inline but respect padding/margins */
-}
-.file-actions {
-    display: flex;
-    gap: 5px;          /* space between buttons */
-    align-items: center; /* vertically align */
-}
