@@ -75,7 +75,7 @@
 
 <table>
   <thead>
-    <tr class="{{ 'published' if article.status == 'Published' else '' }}">
+    <tr>
       <th>Title</th>
       <th>Author</th>
       <th>Status</th>
@@ -87,7 +87,7 @@
   </thead>
   <tbody>
   {% for article in articles %}
-    <tr id="row-{{ article.id }}">
+    <tr id="row-{{ article.id }}" class="{% if article.status == 'Published' %}published{% endif %}">
       <td class="title">{{ article.title }}</td>
       <td class="author">{{ article.author }}</td>
       <td class="status">
@@ -144,6 +144,27 @@
 
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js" integrity="sha384-A9xjF58i..." crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.1/socket.io.min.js"></script>
+<script>
+  const socket = io();
+
+  // Listen for status updates from the server
+  socket.on('status_updated', data => {
+    const row = document.getElementById(`article-${data.id}`);
+    if (!row) return;
+
+    // Update the status text
+    const statusCell = row.querySelector('.status');
+    statusCell.textContent = data.status;
+
+    // Add/remove the 'published' class dynamically
+    if (data.status.toLowerCase() === 'published') {
+      row.classList.add('published');
+    } else {
+      row.classList.remove('published');
+    }
+  });
+</script>
 <script>
 const socket = io();
 let currentArticleId = null;
