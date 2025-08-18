@@ -170,10 +170,20 @@ function toggleEdit(articleId) {
         const newAuthor = document.getElementById(`author-input-${articleId}`).value.trim();
         const newDeadline = document.getElementById(`deadline-input-${articleId}`).value;
 
+        // Get current status & editor so they don’t reset
+        const newStatus = row.querySelector('.status select').value;
+        const newEditor = row.querySelector('.editor select').value;
+
         fetch(`/update/${articleId}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ title: newTitle, author: newAuthor, deadline: newDeadline })
+            body: JSON.stringify({ 
+                title: newTitle, 
+                author: newAuthor, 
+                deadline: newDeadline,
+                status: newStatus,   // keep status
+                editor: newEditor    // keep editor
+            })
         })
         .then(res => res.json())
         .then(data => {
@@ -183,11 +193,19 @@ function toggleEdit(articleId) {
                 row.querySelector('.deadline').textContent = newDeadline;
                 editBtn.textContent = "Edit";
 
-                socket.emit('article_updated', { id: articleId, title: newTitle, author: newAuthor, deadline: newDeadline });
+                socket.emit('article_updated', { 
+                    id: articleId, 
+                    title: newTitle, 
+                    author: newAuthor, 
+                    deadline: newDeadline,
+                    status: newStatus,
+                    editor: newEditor
+                });
             } else alert("Failed to save changes.");
         });
     }
 }
+
 function updateEditor(articleId, editor) {
     fetch(`/update_editor/${articleId}`, {
         method: 'POST',
