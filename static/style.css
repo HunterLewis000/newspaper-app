@@ -54,11 +54,16 @@
     margin-top: 30px;
     border-collapse: separate;
     border-spacing: 0 12px;
+    table-layout: fixed;
   }
   th, td {
     text-align: left;
     padding: 14px 20px;
   }
+  td.actions {
+  width: 1%;       /* Keeps them only as wide as needed */
+  white-space: nowrap;
+}
   thead th {
     color: #555;
     font-weight: 600;

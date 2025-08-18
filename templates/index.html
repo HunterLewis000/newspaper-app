@@ -115,7 +115,7 @@
       </td>
 
       <!-- Actions column -->
-      <td>
+      <td class="actions">
         <button onclick="toggleEdit({{ article.id }})" id="edit-btn-{{ article.id }}">Edit</button>
         <button onclick="deleteArticle({{ article.id }})" style="color:red;">Delete</button>
       </td>
@@ -383,7 +383,7 @@ function addOrUpdateRow(data) {
         </td>
         <td class="deadline">${data.deadline || ''}</td>
         <td><button class="file-icon-btn" onclick="openFileManager(${data.id})">Files</button></td>
-        <td>
+        <td class="actions">
             <button onclick="toggleEdit(${data.id})" id="edit-btn-${data.id}">Edit</button>
             <button onclick="deleteArticle(${data.id})" style="color:red;">Delete</button>
         </td>
