@@ -106,26 +106,19 @@
     background: #b91c1c;
   }
 
+/* Editable inputs inside table cells */
 td input[type="text"],
-td input[type="date"] {
-  width: auto;           /* Let input size to content */
-  max-width: 150px;      /* Prevent it from getting too wide */
-  box-sizing: border-box;
-  padding: 4px 8px;
-  font-size: 1rem;
-  font-family: inherit;
-  border: 1.5px solid #ccc;
-  border-radius: 6px;
-}
-
-/* Keep select widths consistent */
+td input[type="date"],
 td select {
-  width: auto;
-  max-width: 150px;
-  padding: 6px 10px;
+  width: 100%;            /* Fill the cell but no bigger */
+  max-width: 100%;        /* Don’t spill out of cell */
+  box-sizing: border-box; /* Include padding + border in the width */
+  padding: 4px 6px;       /* Small padding, matches cell text */
   font-size: 1rem;
   font-family: inherit;
+  border: 1px solid #ccc;
   border-radius: 6px;
+  background: #fff;
 }
 /* Set fixed max widths and truncate overflow with ellipsis */
 td.title, td.author {
