@@ -58,7 +58,7 @@
   }
   th, td {
     text-align: left;
-    padding: 14px 20px;
+    padding: 14px 15px;
   }
   td.actions {
   width: 1%;       /* Keeps them only as wide as needed */
@@ -222,10 +222,15 @@ th, td {
 
 /* Column widths */
 td.title, th.title {
-  width: 30%;   /* Title takes more space */
+  width: 26%;   /* Title takes more space */
+}
+/* Column widths */
+td.status, th.status {
+  width: 15%;   /* Title takes more space */
 }
 
 td.filescol, th.filescol {
   width: 8%;
+  padding: 14px 6px;
 }
 
