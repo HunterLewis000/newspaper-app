@@ -216,3 +216,33 @@ tr.published {
   background-color: #f0f0f0; /* light gray background */
   color: #888888;           /* gray text */
 }
+/* Column widths */
+td.title, th.title {
+  width: 33%;   /* Title takes more space */
+}
+
+td.author, th.author {
+  width: 15%;
+}
+
+td.status, th.status {
+  width: 13%;
+}
+
+td.editor, th.editor {
+  width: 13%;
+}
+
+td.deadline, th.deadline {
+  width: 16%;
+}
+
+td.filescol, th.filescol {
+  width: 5%;
+}
+
+td.actions, th.actions {
+  width: 5%;
+  white-space: nowrap; /* Prevent buttons from stacking */
+}
+
