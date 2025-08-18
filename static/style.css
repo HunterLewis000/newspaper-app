@@ -63,6 +63,7 @@
   td.actions {
   width: 1%;       /* Keeps them only as wide as needed */
   white-space: nowrap;
+  padding: 14px 4px;
 }
   thead th {
     color: #555;
