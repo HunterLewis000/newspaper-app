@@ -218,31 +218,38 @@ tr.published {
 }
 /* Column widths */
 td.title, th.title {
+  box-sizing: border-box;
   width: 33%;   /* Title takes more space */
 }
 
 td.author, th.author {
+  box-sizing: border-box;
   width: 15%;
 }
 
 td.status, th.status {
+    box-sizing: border-box;
   width: 13%;
 }
 
 td.editor, th.editor {
+    box-sizing: border-box;
   width: 13%;
 }
 
 td.deadline, th.deadline {
+    box-sizing: border-box;
   width: 16%;
 }
 
 td.filescol, th.filescol {
+    box-sizing: border-box;
   width: 5%;
 }
 
 td.actions, th.actions {
   width: 5%;
+  box-sizing: border-box;
   white-space: nowrap; /* Prevent buttons from stacking */
 }
 
