@@ -1,22 +1,54 @@
 import boto3
-from flask import Flask, render_template, request, redirect, jsonify, send_file, url_for, session
+from flask import Flask, render_template, request, redirect, jsonify, send_file, url_for
 from flask_sqlalchemy import SQLAlchemy
 from flask_socketio import SocketIO
-import os
-from io import BytesIO
 from flask_migrate import Migrate
-from docx import Document  # For .docx preview
-from tempfile import NamedTemporaryFile
+from flask_login import (
+    LoginManager, UserMixin, login_user, logout_user,
+    login_required, current_user
+)
+from flask_dance.contrib.google import make_google_blueprint, google
+from io import BytesIO
+import os
 
+# -----------------------------------------------------------------------------
+# App + DB setup
+# -----------------------------------------------------------------------------
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://newspaper_db_47wk_user:2WQbescUw19AeDpYVPPGZzFeVnyePdiV@dpg-d2e1sv3e5dus73feem00-a.ohio-postgres.render.com/newspaper_db_47wk'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", "supersecretkey")
+
 db = SQLAlchemy(app)
-socketio = SocketIO(app, cors_allowed_origins="*")  # Enable cross-origin for Render
+migrate = Migrate(app, db)
+socketio = SocketIO(app, cors_allowed_origins="*")
 
+# -----------------------------------------------------------------------------
+# Auth setup (LoginManager + Google OAuth)
+# -----------------------------------------------------------------------------
+login_manager = LoginManager()
+login_manager.login_view = "google.login"
+login_manager.init_app(app)
 
+class User(UserMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(200), unique=True, nullable=False)
 
-# S3 setup
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+google_bp = make_google_blueprint(
+    client_id=os.environ["GOOGLE_CLIENT_ID"],
+    client_secret=os.environ["GOOGLE_CLIENT_SECRET"],
+    scope=["profile", "email"],
+    redirect_url="/login/google/authorized"
+)
+app.register_blueprint(google_bp, url_prefix="/login")
+
+# -----------------------------------------------------------------------------
+# AWS S3 setup
+# -----------------------------------------------------------------------------
 s3_client = boto3.client(
     's3',
     aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'],
@@ -25,7 +57,9 @@ s3_client = boto3.client(
 )
 BUCKET_NAME = os.environ['S3_BUCKET_NAME']
 
+# -----------------------------------------------------------------------------
 # Models
+# -----------------------------------------------------------------------------
 class Article(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
@@ -41,14 +75,48 @@ class ArticleFile(db.Model):
     filename = db.Column(db.String(200), nullable=False)
     s3_key = db.Column(db.String(200), nullable=False)
 
-# Routes
+# -----------------------------------------------------------------------------
+# Login + Logout
+# -----------------------------------------------------------------------------
+@app.route("/login")
+def login():
+    if not google.authorized:
+        return redirect(url_for("google.login"))
+
+    resp = google.get("/oauth2/v2/userinfo")
+    if not resp.ok:
+        return "Failed to fetch user info", 400
+
+    email = resp.json()["email"]
+
+    if not email.endswith("@ccp-stl.org"):
+        return "Unauthorized: must use @ccp-stl.org email", 403
+
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        user = User(email=email)
+        db.session.add(user)
+        db.session.commit()
+
+    login_user(user)
+    return redirect(url_for("index"))
+
+@app.route("/logout")
+def logout():
+    logout_user()
+    return redirect(url_for("index"))
+
+# -----------------------------------------------------------------------------
+# Routes (all protected with @login_required)
+# -----------------------------------------------------------------------------
 @app.route('/')
+@login_required
 def index():
     articles = Article.query.all()
     return render_template('index.html', articles=articles)
 
-# Upload file route
 @app.route('/upload/<int:article_id>', methods=['POST'])
+@login_required
 def upload_file(article_id):
     article = Article.query.get(article_id)
     if not article:
@@ -70,7 +138,6 @@ def upload_file(article_id):
 
     file_url = url_for('download_file', file_id=new_file.id)
 
-
     socketio.emit('file_uploaded', {
         'articleId': article.id,
         'file_id': new_file.id,
@@ -81,6 +148,7 @@ def upload_file(article_id):
     return jsonify(success=True, file_id=new_file.id, filename=new_file.filename, file_url=file_url)
 
 @app.route('/files/<int:article_id>')
+@login_required
 def list_files(article_id):
     article = Article.query.get_or_404(article_id)
     files = []
@@ -88,13 +156,12 @@ def list_files(article_id):
         files.append({
             "id": f.id,
             "filename": f.filename,
-            "file_url": url_for('download_file', file_id=f.id)  # download link
+            "file_url": url_for('download_file', file_id=f.id)
         })
     return jsonify(files=files)
 
-
-# Download file route
 @app.route('/download_file/<int:file_id>')
+@login_required
 def download_file(file_id):
     file = ArticleFile.query.get(file_id)
     if not file:
@@ -104,7 +171,6 @@ def download_file(file_id):
     s3_client.download_fileobj(BUCKET_NAME, file.s3_key, file_obj)
     file_obj.seek(0)
 
-    # Determine MIME type based on extension
     if file.s3_key.lower().endswith('.docx'):
         mimetype = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
     elif file.s3_key.lower().endswith('.pdf'):
@@ -112,16 +178,12 @@ def download_file(file_id):
     elif file.s3_key.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
         mimetype = 'image/jpeg'
     else:
-        mimetype = 'application/octet-stream'  # generic binary
+        mimetype = 'application/octet-stream'
 
-    return send_file(
-        file_obj,
-        mimetype=mimetype,
-        as_attachment=True,
-        download_name=file.filename  # ensures browser saves correct name & extension
-    )
-# Delete file route
+    return send_file(file_obj, mimetype=mimetype, as_attachment=True, download_name=file.filename)
+
 @app.route('/delete_file/<int:file_id>', methods=['POST'])
+@login_required
 def delete_file(file_id):
     file = ArticleFile.query.get(file_id)
     if not file:
@@ -134,8 +196,8 @@ def delete_file(file_id):
     socketio.emit('file_deleted', {'file_id': file.id, 'article_id': file.article_id})
     return jsonify(success=True)
 
-# Add Article
 @app.route('/add', methods=['POST'])
+@login_required
 def add_article():
     title = request.form['title']
     author = request.form['author']
@@ -154,8 +216,8 @@ def add_article():
     })
     return redirect('/')
 
-# Delete Article
 @app.route('/delete/<int:article_id>', methods=['POST'])
+@login_required
 def delete_article(article_id):
     article = Article.query.get(article_id)
     if article:
@@ -165,8 +227,8 @@ def delete_article(article_id):
         return jsonify(success=True)
     return jsonify(success=False), 404
 
-# Update Article
 @app.route('/update/<int:article_id>', methods=['POST'])
+@login_required
 def update_article(article_id):
     article = Article.query.get(article_id)
     if article:
@@ -185,8 +247,8 @@ def update_article(article_id):
         return jsonify(success=True)
     return jsonify(success=False), 404
 
-# Update Status
 @app.route('/update_status/<int:article_id>', methods=['POST'])
+@login_required
 def update_status(article_id):
     article = Article.query.get(article_id)
     if article:
@@ -198,6 +260,7 @@ def update_status(article_id):
     return jsonify(success=False), 404
 
 @app.route('/update_editor/<int:article_id>', methods=['POST'])
+@login_required
 def update_editor(article_id):
     article = Article.query.get(article_id)
     if article:
@@ -208,9 +271,9 @@ def update_editor(article_id):
         return jsonify(success=True)
     return jsonify(success=False), 404
 
-# Initialize migrations
-migrate = Migrate(app, db)
-
+# -----------------------------------------------------------------------------
+# Main
+# -----------------------------------------------------------------------------
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
