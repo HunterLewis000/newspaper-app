@@ -26,14 +26,6 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 # -----------------------------------------------------------------------------
 # Auth setup (LoginManager + Google OAuth)
 # -----------------------------------------------------------------------------
-@app.before_request
-def enforce_https():
-    # Detect HTTPS correctly behind a proxy
-    if request.headers.get("X-Forwarded-Proto", "http") != "https":
-        url = request.url.replace("http://", "https://", 1)
-        # Optionally strip www
-        url = url.replace("://www.", "://", 1)
-        return redirect(url, code=301)
 
 login_manager = LoginManager()
 login_manager.login_view = "google.login"
@@ -51,7 +43,7 @@ google_bp = make_google_blueprint(
     client_id=os.environ["GOOGLE_CLIENT_ID"],
     client_secret=os.environ["GOOGLE_CLIENT_SECRET"],
     scope=["profile", "email"],
-    redirect_to="login"   # send user to your /login route
+    redirect_url="https://storytrack.org/login/google/authorized"
 )
 app.register_blueprint(google_bp, url_prefix="/login")
 
