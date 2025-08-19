@@ -42,7 +42,7 @@ google_bp = make_google_blueprint(
     client_id=os.environ["GOOGLE_CLIENT_ID"],
     client_secret=os.environ["GOOGLE_CLIENT_SECRET"],
     scope=["profile", "email"],
-    redirect_url="/login/google/authorized"
+    redirect_to="login"   # send user to your /login route
 )
 app.register_blueprint(google_bp, url_prefix="/login")
 
