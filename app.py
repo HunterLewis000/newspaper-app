@@ -28,8 +28,11 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 # -----------------------------------------------------------------------------
 @app.before_request
 def enforce_https():
-    if not request.is_secure:
+    # Detect HTTPS correctly behind a proxy
+    if request.headers.get("X-Forwarded-Proto", "http") != "https":
         url = request.url.replace("http://", "https://", 1)
+        # Optionally strip www
+        url = url.replace("://www.", "://", 1)
         return redirect(url, code=301)
 
 login_manager = LoginManager()
