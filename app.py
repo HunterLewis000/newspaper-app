@@ -26,6 +26,12 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 # -----------------------------------------------------------------------------
 # Auth setup (LoginManager + Google OAuth)
 # -----------------------------------------------------------------------------
+@app.before_request
+def enforce_https():
+    if not request.is_secure:
+        url = request.url.replace("http://", "https://", 1)
+        return redirect(url, code=301)
+
 login_manager = LoginManager()
 login_manager.login_view = "google.login"
 login_manager.init_app(app)
