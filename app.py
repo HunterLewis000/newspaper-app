@@ -46,8 +46,10 @@ login_manager.init_app(app)
 
 # Simple user model
 class User(UserMixin):
-    def __init__(self, id):
+    def __init__(self, id, email=None):
         self.id = id
+        self.email = email
+
 
 users = {}  # In-memory store for demo
 
