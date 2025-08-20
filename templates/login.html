@@ -24,11 +24,12 @@
     <!-- Login Section -->
     <div style="display: flex; justify-content: center; margin-top: 50px;">
         <!-- Google Sign-In Button -->
-        <div id="g_id_onload"
-             data-client_id="{{ os.environ.get('GOOGLE_CLIENT_ID') }}"
-             data-login_uri="{{ url_for('google_login', _external=True) }}"
-             data-auto_prompt="false">
-        </div>
+<div id="g_id_onload"
+     data-client_id="{{ google_client_id }}"
+     data-login_uri="{{ url_for('google_login', _external=True) }}"
+     data-auto_prompt="false">
+</div>
+
 
         <div class="g_id_signin"
              data-type="standard"

@@ -112,7 +112,7 @@ def logout():
 def home():
     if current_user.is_authenticated:
         return redirect(url_for("index"))
-    return render_template("login.html")
+    return render_template("login.html", google_client_id=os.environ.get("GOOGLE_CLIENT_ID"))
 
 @app.route('/dashboard')
 @login_required
