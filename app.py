@@ -97,6 +97,7 @@ def google_login():
     user_info = resp.json()
     user_id = user_info["id"]
     email = user_info.get("email", "")
+    print("DEBUG: logged in email =", email)  # <-- Add this
 
     # <-- NEW: restrict to @ccp-stl.org emails -->
     if not email.endswith("@ccp-stl.org"):
