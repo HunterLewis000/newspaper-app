@@ -88,13 +88,24 @@ class ArticleFile(db.Model):
 def google_login():
     if not google.authorized:
         return redirect(url_for("google.login"))
+
     resp = google.get("/oauth2/v2/userinfo")
+    if not resp.ok:
+        flash("Failed to fetch user info from Google.", "error")
+        return redirect(url_for("home"))
+
     user_info = resp.json()
     user_id = user_info["id"]
+    email = user_info.get("email", "")
 
-    # Store user in session
+    # <-- NEW: restrict to @ccp-stl.org emails -->
+    if not email.endswith("@ccp-stl.org"):
+        flash("Access denied: only @ccp-stl.org accounts allowed.", "error")
+        return redirect(url_for("home"))
+
+    # Store allowed user in session
     if user_id not in users:
-        users[user_id] = User(user_id)
+        users[user_id] = User(user_id, email=email)  # optionally store email
     login_user(users[user_id])
 
     return redirect(url_for("index"))
