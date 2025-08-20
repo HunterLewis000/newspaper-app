@@ -7,59 +7,6 @@
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='ccp.ico') }}">
 </head>
 <body>
-<!-- Login Modal -->
-<div id="loginModal" style="
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.6);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 9999;
-">
-  <div style="
-      background: white;
-      padding: 30px;
-      border-radius: 10px;
-      text-align: center;
-      min-width: 300px;
-  ">
-    <h2>Enter User ID</h2>
-    <input type="password" id="loginPassword" placeholder="Password" style="width: 80%; padding: 8px;">
-    <br><br>
-    <button id="loginBtn" style="padding: 8px 16px;">Login</button>
-    <p id="loginError" style="color:red; display:none;">Incorrect password</p>
-  </div>
-</div>
-
-<script>
-  const modal = document.getElementById('loginModal');
-  const loginBtn = document.getElementById('loginBtn');
-  const loginError = document.getElementById('loginError');
-
-  // Check sessionStorage on page load
-  if(sessionStorage.getItem('loggedIn') === 'true') {
-      modal.style.display = 'none';
-  }
-
-  loginBtn.addEventListener('click', () => {
-      const password = document.getElementById('loginPassword').value;
-      // Replace 'hunterpass' with your desired password
-      if(password === 'CCP') {
-          sessionStorage.setItem('loggedIn', 'true');
-          modal.style.display = 'none';
-      } else {
-          loginError.style.display = 'block';
-      }
-  });
-
-  // Optional: Press Enter to submit
-  document.getElementById('loginPassword').addEventListener('keyup', (e) => {
-      if(e.key === 'Enter') loginBtn.click();
-  });
-</script>
-
-
 
 
     <div style="display: flex; justify-content: center; align-items: center;">
