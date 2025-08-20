@@ -9,7 +9,6 @@ from flask_login import (
 )
 from flask_dance.contrib.google import make_google_blueprint, google
 from io import BytesIO
-from flask_talisman import Talisman
 import os
 
 # -----------------------------------------------------------------------------
@@ -19,7 +18,6 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://newspaper_db_47wk_user:2WQbescUw19AeDpYVPPGZzFeVnyePdiV@dpg-d2e1sv3e5dus73feem00-a.ohio-postgres.render.com/newspaper_db_47wk'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "supersecretkey")
-Talisman(app, force_https=True)
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
@@ -29,25 +27,28 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 # Auth setup (LoginManager + Google OAuth)
 # -----------------------------------------------------------------------------
 
+google_bp = make_google_blueprint(
+    client_id="258406550282-f0qqhrosgldgfp0qd9u1nnb30v7jn7a9.apps.googleusercontent.com",
+    client_secret="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",
+    redirect_to="google_login"
+)
+app.register_blueprint(google_bp, url_prefix="/login")
+
+# Flask-Login Config
 login_manager = LoginManager()
-login_manager.login_view = "google.login"
+login_manager.login_view = "google.login"  # Redirect if not logged in
 login_manager.init_app(app)
 
-class User(UserMixin, db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(200), unique=True, nullable=False)
+# Simple user model
+class User(UserMixin):
+    def __init__(self, id):
+        self.id = id
+
+users = {}  # In-memory store for demo
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
-
-google_bp = make_google_blueprint(
-    client_id=os.environ["GOOGLE_CLIENT_ID"],
-    client_secret=os.environ["GOOGLE_CLIENT_SECRET"],
-    scope=["profile", "email"],
-    redirect_url="https://storytrack.org/login/google/authorized"
-)
-app.register_blueprint(google_bp, url_prefix="/login")
+    return users.get(user_id)
 
 # -----------------------------------------------------------------------------
 # AWS S3 setup
@@ -81,33 +82,26 @@ class ArticleFile(db.Model):
 # -----------------------------------------------------------------------------
 # Login + Logout
 # -----------------------------------------------------------------------------
-@app.route("/login")
-def login():
+@app.route("/google_login")
+def google_login():
     if not google.authorized:
         return redirect(url_for("google.login"))
-
     resp = google.get("/oauth2/v2/userinfo")
-    if not resp.ok:
-        return "Failed to fetch user info", 400
+    user_info = resp.json()
+    user_id = user_info["id"]
 
-    email = resp.json()["email"]
+    # Store user in session
+    if user_id not in users:
+        users[user_id] = User(user_id)
+    login_user(users[user_id])
 
-    if not email.endswith("@ccp-stl.org"):
-        return "Unauthorized: must use @ccp-stl.org email", 403
-
-    user = User.query.filter_by(email=email).first()
-    if not user:
-        user = User(email=email)
-        db.session.add(user)
-        db.session.commit()
-
-    login_user(user)
     return redirect(url_for("index"))
 
 @app.route("/logout")
 def logout():
     logout_user()
     return redirect(url_for("index"))
+
 
 # -----------------------------------------------------------------------------
 # Routes (all protected with @login_required)
