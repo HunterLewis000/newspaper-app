@@ -10,6 +10,13 @@
 </head>
 <body>
 
+<script>
+function handleCredentialResponse(response) {
+    // Redirect to your Flask login route with a GET parameter
+    window.location.href = "{{ url_for('google_login', _external=True) }}?credential=" + response.credential;
+}
+</script>
+
     <!-- Page Header -->
     <div style="display: flex; justify-content: center; align-items: center; margin-top: 40px;">
         <h1 style="display: inline;">
@@ -27,7 +34,8 @@
 <div id="g_id_onload"
      data-client_id="{{ google_client_id }}"
      data-login_uri="{{ url_for('google_login', _external=True) }}"
-     data-auto_prompt="false">
+     data-auto_prompt="false"
+     data-callback="handleCredentialResponse">
 </div>
 
 
