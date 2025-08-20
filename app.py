@@ -30,8 +30,8 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 # -----------------------------------------------------------------------------
 
 google_bp = make_google_blueprint(
-    client_id="258406550282-f0qqhrosgldgfp0qd9u1nnb30v7jn7a9.apps.googleusercontent.com",
-    client_secret="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",
+    client_id=os.environ.get("GOOGLE_CLIENT_ID"),
+    client_secret=os.environ.get("GOOGLE_CLIENT_SECRET"),
     redirect_to="google_login"
 )
 app.register_blueprint(google_bp, url_prefix="/login")
@@ -108,7 +108,13 @@ def logout():
 # -----------------------------------------------------------------------------
 # Routes (all protected with @login_required)
 # -----------------------------------------------------------------------------
-@app.route('/')
+@app.route("/")
+def home():
+    if current_user.is_authenticated:
+        return redirect(url_for("index"))
+    return render_template("login.html")
+
+@app.route('/dashboard')
 @login_required
 def index():
     articles = Article.query.all()
