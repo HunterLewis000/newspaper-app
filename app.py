@@ -11,6 +11,9 @@ from flask_dance.contrib.google import make_google_blueprint, google
 from werkzeug.middleware.proxy_fix import ProxyFix
 from io import BytesIO
 import os
+import google.oauth2.id_token
+import google.auth.transport.requests
+
 
 # -----------------------------------------------------------------------------
 # App + DB setup
@@ -86,27 +89,35 @@ class ArticleFile(db.Model):
 # -----------------------------------------------------------------------------
 @app.route("/google_login")
 def google_login():
-    if not google.authorized:
-        return redirect(url_for("google.login"))
-
-    resp = google.get("/oauth2/v2/userinfo")
-    if not resp.ok:
-        flash("Failed to fetch user info from Google.", "error")
+    # Get the credential token sent by the JS button
+    token = request.args.get("credential")
+    if not token:
+        flash("No credential received.", "error")
         return redirect(url_for("home"))
 
-    user_info = resp.json()
-    user_id = user_info["id"]
-    email = user_info.get("email", "")
-    print("DEBUG: logged in email =", email)  # <-- Add this
+    # Verify the token
+    request_adapter = google.auth.transport.requests.Request()
+    try:
+        id_info = google.oauth2.id_token.verify_oauth2_token(
+            token,
+            request_adapter,
+            os.environ.get("GOOGLE_CLIENT_ID")
+        )
+    except ValueError:
+        flash("Invalid Google token.", "error")
+        return redirect(url_for("home"))
 
-    # <-- NEW: restrict to @ccp-stl.org emails -->
-    if not email.endswith("@ccp-stl.org"):
+    # Extract email
+    email = id_info.get("email", "")
+    if not email.lower().endswith("@ccp-stl.org"):
         flash("Access denied: only @ccp-stl.org accounts allowed.", "error")
         return redirect(url_for("home"))
 
+    user_id = id_info["sub"]
+
     # Store allowed user in session
     if user_id not in users:
-        users[user_id] = User(user_id, email=email)  # optionally store email
+        users[user_id] = User(user_id, email=email)
     login_user(users[user_id])
 
     return redirect(url_for("index"))
