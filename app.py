@@ -9,6 +9,8 @@ from flask_login import (
 )
 from flask_dance.contrib.google import make_google_blueprint, google
 from io import BytesIO
+from flask_talisman import Talisman
+Talisman(app, force_https=True)
 import os
 
 # -----------------------------------------------------------------------------

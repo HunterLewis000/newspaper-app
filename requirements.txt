@@ -15,6 +15,7 @@ Flask-Login==0.6.3
 Flask-Migrate==4.1.0
 Flask-SocketIO==5.5.1
 Flask-SQLAlchemy==3.1.1
+flask-talisman==1.1.0
 greenlet==3.2.4
 h11==0.16.0
 idna==3.10
