@@ -10,7 +10,6 @@ from flask_login import (
 from flask_dance.contrib.google import make_google_blueprint, google
 from io import BytesIO
 from flask_talisman import Talisman
-Talisman(app, force_https=True)
 import os
 
 # -----------------------------------------------------------------------------
@@ -20,6 +19,7 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://newspaper_db_47wk_user:2WQbescUw19AeDpYVPPGZzFeVnyePdiV@dpg-d2e1sv3e5dus73feem00-a.ohio-postgres.render.com/newspaper_db_47wk'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "supersecretkey")
+Talisman(app, force_https=True)
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
