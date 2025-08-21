@@ -260,7 +260,7 @@ td.filescol, th.filescol {
     padding: 2px 6px;          /* minimal button padding */
     border-radius: 6px;
     border: none;
-    background: #ef4444;       /* red logout button */
+    background: black;       /* red logout button */
     color: white;
     font-weight: 500;
     font-size: 0.85rem;
@@ -272,10 +272,3 @@ td.filescol, th.filescol {
 .user-box button:hover {
     background: #b91c1c;
 }
-
-.logout-form {
-    margin: 0;
-    height: 22px;
-    width: 70px;
-}
-
