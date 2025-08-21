@@ -234,4 +234,42 @@ td.filescol, th.filescol {
   width: 8%;
   padding: 14px 6px;
 }
+.user-box {
+    position: fixed;       /* sticks to top-right of viewport */
+    top: 20px;
+    right: 20px;
+    background: #3b82f6;   /* blue background */
+    color: white;
+    padding: 10px 18px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 1000;         /* stays above other content */
+}
+
+.user-box .greeting {
+    margin: 0;
+}
+
+.user-box button {
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: none;
+    background: #ef4444;   /* red button */
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.user-box button:hover {
+    background: #b91c1c;
+}
+
+.logout-form {
+    margin: 0;
+}
 
