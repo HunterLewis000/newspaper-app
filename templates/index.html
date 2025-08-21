@@ -20,7 +20,7 @@
     </div>
    
 
-    <form method="POST" action="/add">
+    <form method="POST" class="typ" action="/add">
         <input type="text" name="title" placeholder="Article Title" required>
         <input type="text" name="author" placeholder="Author Name" required>
         <input type="date" name="deadline">
@@ -89,7 +89,7 @@
 
     <ul id="fileList" class="file-list"></ul>
     <div class="upload-section">
-      <form id="uploadForm" enctype="multipart/form-data">
+      <form id="uploadForm" class="typ" enctype="multipart/form-data">
         <input type="file" name="file" id="fileInput" required />
         <button type="submit">Upload</button>
       </form>
