@@ -276,5 +276,6 @@ td.filescol, th.filescol {
 .logout-form {
     margin: 0;
     height: 22px;
+    width: 70px;
 }
 
