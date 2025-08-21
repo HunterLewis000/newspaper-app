@@ -235,34 +235,34 @@ td.filescol, th.filescol {
   padding: 14px 6px;
 }
 .user-box {
-    position: fixed;
+    position: fixed;           /* stays top-right */
     top: 10px;
     right: 10px;
-    background: #3b82f6;      /* subtle blue */
+    background: #3b82f6;       /* blue box */
     color: white;
-    padding: 6px 10px;        /* smaller padding */
-    border-radius: 8px;
-    display: flex;
+    display: inline-flex;      /* shrink-wrap content */
     align-items: center;
-    gap: 6px;                 /* smaller gap */
-    font-size: 0.9rem;        /* slightly smaller text */
+    gap: 6px;
+    padding: 4px 8px;          /* minimal padding */
+    border-radius: 8px;
+    font-size: 0.85rem;
     font-weight: 500;
     box-shadow: 0 2px 6px rgba(0,0,0,0.15);
     z-index: 1000;
 }
 
 .user-box .greeting {
-    white-space: nowrap;      /* prevent wrapping */
+    white-space: nowrap;       /* prevents wrapping */
 }
 
 .user-box button {
-    padding: 3px 8px;         /* smaller button */
+    padding: 2px 6px;          /* minimal button padding */
     border-radius: 6px;
     border: none;
-    background: #ef4444;      /* red logout button */
+    background: #ef4444;       /* red logout button */
     color: white;
     font-weight: 500;
-    font-size: 0.85rem;       /* smaller text */
+    font-size: 0.85rem;
     cursor: pointer;
     transition: background-color 0.2s ease;
 }
