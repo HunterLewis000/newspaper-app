@@ -46,9 +46,10 @@ login_manager.init_app(app)
 
 # Simple user model
 class User(UserMixin):
-    def __init__(self, id, email=None):
+    def __init__(self, id, email=None, name=None):
         self.id = id
         self.email = email
+        self.name = name
 
 
 users = {}  # In-memory store for demo
@@ -116,10 +117,11 @@ def google_login():
         return redirect(url_for("home"))
 
     user_id = id_info["sub"]
+    full_name = id_info.get("name", "")
 
     # Store allowed user in session
     if user_id not in users:
-        users[user_id] = User(user_id, email=email)
+        users[user_id] = User(user_id, email=email, name=full_name)
     login_user(users[user_id])
 
     return redirect(url_for("index"))

@@ -12,6 +12,19 @@
     <div style="display: flex; justify-content: center; align-items: center;">
     <h1 style="display: inline;"><a href="https://www.ccpstudentnews.org" style="font-family: 'Brush Script MT'; text-decoration: none; color: #222; font-size: 45px;">Cardinal and White&nbsp; </a></h1><h1 style="display: inline;">Story Tracker</h1>
     </div>
+    <div style="display: flex; justify-content: flex-end; align-items: center; padding: 10px;">
+  {% if current_user.is_authenticated %}
+    <span style="margin-right: 10px;">Hello, {{ current_user.name }}!</span>
+    <form action="{{ url_for('logout') }}" method="get" style="display: inline;">
+      <button type="submit" style="padding: 6px 12px; border-radius: 6px; background: #b91c1c; color: white; border: none; cursor: pointer;">
+        Logout
+      </button>
+    </form>
+  {% else %}
+    <a href="{{ url_for('home') }}">Login</a>
+  {% endif %}
+</div>
+
     <form method="POST" action="/add">
         <input type="text" name="title" placeholder="Article Title" required>
         <input type="text" name="author" placeholder="Author Name" required>
