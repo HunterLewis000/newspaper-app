@@ -266,6 +266,7 @@ td.filescol, th.filescol {
     font-size: 0.85rem;
     cursor: pointer;
     transition: background-color 0.2s ease;
+    height: 18px;
 }
 
 .user-box button:hover {
@@ -274,5 +275,6 @@ td.filescol, th.filescol {
 
 .logout-form {
     margin: 0;
+    height: 22px;
 }
 
