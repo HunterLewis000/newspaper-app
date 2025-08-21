@@ -112,8 +112,11 @@ def google_login():
 
     # Extract email
     email = id_info.get("email", "")
-    if not email.lower().endswith("@ccp-stl.org"):
-        flash("Access denied: only @ccp-stl.org accounts allowed.", "error")
+
+    allowed_domains = ["@ccp-stl.org", "@chaminade-stl.org"]
+
+    if not any(email.lower().endswith(domain) for domain in allowed_domains):
+        flash("Access denied: only @ccp-stl.org or @chaminade-stl.org accounts allowed.", "error")
         return redirect(url_for("home"))
 
     user_id = id_info["sub"]
