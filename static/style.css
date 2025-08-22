@@ -213,9 +213,13 @@ td.title, td.author {
     background-color: transparent;
 }
 tr.published {
- /* opacity: 0.5;         /* makes row look grayed out *
+  opacity: 0.5;         /* makes row look grayed out *
   background-color: #f0f0f0; /* light gray background */
   color: #888888;           /* gray text */
+}
+tr.published button {
+    opacity: 1 !important;
+    color: green !important;
 }
 th, td {
   box-sizing: border-box;
