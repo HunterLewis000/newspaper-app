@@ -338,7 +338,7 @@ socket.on('status_updated', data => {
                 <button onclick="toggleEdit(${data.id})" id="edit-btn-${data.id}">Edit</button>
                 <button onclick="deleteArticle(${data.id})" style="color:red;">Delete</button>
             `;
-        }
+        } 
     }
 });
 socket.on('editor_updated', data => {
