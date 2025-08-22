@@ -1,3 +1,6 @@
+import eventlet
+eventlet.monkey_patch()
+
 import boto3
 from flask import Flask, render_template, request, redirect, jsonify, send_file, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
