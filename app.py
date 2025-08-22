@@ -83,6 +83,7 @@ class Article(db.Model):
     editor = db.Column(db.String(50), nullable=True)
     deadline = db.Column(db.String(20))
     files = db.relationship('ArticleFile', backref='article', lazy=True, cascade="all, delete-orphan")
+    archived = db.Column(db.Boolean, default=False)
 
 class ArticleFile(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -308,6 +309,24 @@ def update_editor(article_id):
         socketio.emit('editor_updated', {'id': article.id, 'editor': article.editor})
         return jsonify(success=True)
     return jsonify(success=False), 404
+
+@app.route('/archive/<int:article_id>', methods=['POST'])
+@login_required
+def archive_article(article_id):
+    article = Article.query.get(article_id)
+    if article:
+        article.archived = True
+        db.session.commit()
+        socketio.emit('article_archived', {'id': article.id})
+        return jsonify(success=True)
+    return jsonify(success=False), 404
+
+@app.route('/archived')
+@login_required
+def archived():
+    articles = Article.query.filter_by(archived=True).all()
+    return render_template('archived.html', articles=articles)
+
 
 # -----------------------------------------------------------------------------
 # Main
