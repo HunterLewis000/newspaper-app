@@ -151,7 +151,7 @@ def home():
 @app.route('/dashboard')
 @login_required
 def index():
-    articles = Article.query.all()
+    articles = Article.query.filter_by(archived=False).all()
     return render_template('index.html', articles=articles)
 
 @app.route('/upload/<int:article_id>', methods=['POST'])
