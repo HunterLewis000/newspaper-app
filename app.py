@@ -80,7 +80,6 @@ class Article(db.Model):
     editor = db.Column(db.String(50), nullable=True)
     deadline = db.Column(db.String(20))
     files = db.relationship('ArticleFile', backref='article', lazy=True, cascade="all, delete-orphan")
-    archived = db.Column(db.Boolean, default=False)
 
 class ArticleFile(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -217,32 +216,6 @@ def download_file(file_id):
         mimetype = 'application/octet-stream'
 
     return send_file(file_obj, mimetype=mimetype, as_attachment=True, download_name=file.filename)
-
-@app.route('/archived')
-@login_required
-def archived_articles():
-    articles = Article.query.filter_by(archived=True).all()
-    return render_template('archived.html', articles=articles)
-
-@app.route('/archive/<int:article_id>', methods=['POST'])
-@login_required
-def archive_article(article_id):
-    article = Article.query.get_or_404(article_id)
-    article.status = 'Published'  # mark as archived/published
-    db.session.commit()
-
-    # Emit live update
-    socketio.emit('article_archived', {
-        'id': article.id,
-        'title': article.title,
-        'author': article.author,
-        'status': article.status,
-        'editor': article.editor,
-        'deadline': article.deadline
-    })
-
-    return jsonify(success=True)
-
 
 @app.route('/delete_file/<int:file_id>', methods=['POST'])
 @login_required
