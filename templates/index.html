@@ -326,7 +326,19 @@ socket.on('status_updated', data => {
     if (row) {
         const statusSelect = row.querySelector('.status select');
         if (statusSelect) statusSelect.value = data.status;
+
         row.classList.toggle('published', data.status === 'Published');
+
+        // Update actions cell dynamically
+        const actionsCell = row.querySelector('.actions');
+        if (data.status === 'Published') {
+            actionsCell.innerHTML = `<button onclick="markComplete(${data.id})" style="color:green;">Mark Complete</button>`;
+        } else {
+            actionsCell.innerHTML = `
+                <button onclick="toggleEdit(${data.id})" id="edit-btn-${data.id}">Edit</button>
+                <button onclick="deleteArticle(${data.id})" style="color:red;">Delete</button>
+            `;
+        }
     }
 });
 socket.on('editor_updated', data => {
