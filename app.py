@@ -327,6 +327,18 @@ def archived():
     articles = Article.query.filter_by(archived=True).all()
     return render_template('archived.html', articles=articles)
 
+@app.route('/activate/<int:article_id>', methods=['POST'])
+@login_required
+def activate_article(article_id):
+    article = Article.query.get(article_id)
+    if article:
+        article.archived = False
+        db.session.commit()
+        socketio.emit('article_activated', {'id': article.id})
+        return redirect(url_for('archived'))
+    return jsonify(success=False), 404
+
+
 
 # -----------------------------------------------------------------------------
 # Main
