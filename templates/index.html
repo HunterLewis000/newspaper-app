@@ -311,6 +311,22 @@ function deleteFile(fileId) {
         .then(data => { if (data.success) document.getElementById(`file-${fileId}`).remove(); });
 }
 
+function markComplete(articleId) {
+    if (!confirm("Mark this article as complete and move to archived?")) return;
+
+    fetch(`/archive/${articleId}`, { method: 'POST' })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                // Remove the article row from current table
+                const row = document.getElementById(`row-${articleId}`);
+                if (row) row.remove();
+                socket.emit('article_archived', { id: articleId });
+            } else alert("Failed to archive article!");
+        });
+}
+
+
 // ------------------- Socket Listeners -------------------
 socket.on('article_added', addOrUpdateRow);
 socket.on('article_updated', data => {
