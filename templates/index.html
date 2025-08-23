@@ -376,9 +376,10 @@ socket.on('update_article_order', (data) => {
     const tbody = document.querySelector('#articles-tbody');
     data.order.forEach(id => {
         const row = tbody.querySelector(`tr[data-id="${id}"]`);
-        tbody.appendChild(row); // moves row to new position
+        tbody.appendChild(row);
     });
 });
+
 
 
 </script>
@@ -397,5 +398,34 @@ function markComplete(articleId) {
         });
 }
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const tbody = document.getElementById("articles-tbody");
+
+    // Initialize SortableJS
+    new Sortable(tbody, {
+        handle: ".drag-handle",  // only drag by handle
+        animation: 150,
+        onEnd: () => {
+            const order = [...tbody.querySelectorAll("tr")].map(row => row.dataset.id);
+            
+            // Send to backend
+            fetch("/update_order", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ order })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    socket.emit("update_article_order", { order });
+                }
+            });
+        }
+    });
+});
+</script>
+
 </body>
 </html>

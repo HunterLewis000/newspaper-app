@@ -369,6 +369,22 @@ def activate_article(article_id):
         return jsonify(success=True)  # instead of redirect
     return jsonify(success=False), 404
 
+@app.route('/update_order', methods=['POST'])
+@login_required
+def update_order():
+    data = request.json
+    order = data.get("order", [])
+    try:
+        for idx, article_id in enumerate(order):
+            article = Article.query.get(int(article_id))
+            if article:
+                article.position = idx
+        db.session.commit()
+
+        socketio.emit("update_article_order", {"order": order})
+        return jsonify(success=True)
+    except Exception as e:
+        return jsonify(success=False, error=str(e)), 500
 
 
 # -----------------------------------------------------------------------------
