@@ -16,6 +16,8 @@ from io import BytesIO
 import os
 import google.oauth2.id_token
 import google.auth.transport.requests
+from sqlalchemy import desc
+from datetime import datetime
 
 
 # -----------------------------------------------------------------------------
@@ -339,8 +341,18 @@ def archive_article(article_id):
 @app.route('/archived')
 @login_required
 def archived():
+
     articles = Article.query.filter_by(archived=True).all()
-    return render_template('archived.html', articles=articles)
+    
+    def parse_deadline(article):
+        try:
+            return datetime.strptime(article.deadline, "%Y-%m-%d")
+        except (TypeError, ValueError):
+            return datetime.min  
+
+    articles_sorted = sorted(articles, key=parse_deadline, reverse=True)
+
+    return render_template('archived.html', articles=articles_sorted)
 
 @app.route('/activate/<int:article_id>', methods=['POST'])
 @login_required
