@@ -4,7 +4,7 @@ eventlet.monkey_patch()
 import boto3
 from flask import Flask, render_template, request, redirect, jsonify, send_file, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
-from flask_socketio import SocketIO
+from flask_socketio import SocketIO, emit
 from flask_migrate import Migrate
 from flask_login import (
     LoginManager, UserMixin, login_user, logout_user,
@@ -338,6 +338,19 @@ def activate_article(article_id):
         return redirect(url_for('archived'))
     return jsonify(success=False), 404
 
+socketio = SocketIO(app, cors_allowed_origins="*")  # allow multiple origins
+
+# -----------------------------------------------------------------------------
+# Broadcast Socket.io
+# -----------------------------------------------------------------------------
+@socketio.on('article_archived')
+def handle_article_archived(data):
+    # Broadcast to all connected clients **except the one who sent it**
+    emit('article_archived', data, broadcast=True)
+
+@socketio.on('article_activated')
+def handle_article_activated(data):
+    emit('article_activated', data, broadcast=True)
 
 
 # -----------------------------------------------------------------------------
