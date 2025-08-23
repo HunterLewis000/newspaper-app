@@ -361,11 +361,6 @@ socket.on('article_archived', data => {
     const row = document.getElementById(`row-${data.id}`);
     if (row) row.remove(); // Remove from main table if archived elsewhere
 });
-socket.on('article_activated', data => {
-    fetch(`/article/${data.id}`)
-      .then(res => res.json())
-      .then(article => addOrUpdateRow(article));
-});
 
 </script>
 <script>

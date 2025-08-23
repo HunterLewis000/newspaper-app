@@ -33,7 +33,7 @@
             <th>Actions</th>
         </tr>
     </thead>
-    <tbody>
+    <tbody id="archived-tbody">
         {% for article in articles %}
         <tr id="row-{{ article.id }}">
             <td>{{ article.title }}</td>
@@ -56,9 +56,7 @@
 <div id="fileManagerModal" class="modal" aria-hidden="true">
   <div class="modal-content">
     <button type="button" class="close" aria-label="Close" onclick="closeFileManager()">×</button>
-
     <h3>Files</h3>
-
     <ul id="fileList" class="file-list"></ul>
     <div class="upload-section">
       <form id="uploadForm" class="typ" enctype="multipart/form-data">
@@ -70,103 +68,140 @@
 </div>
 
 <script>
-    const socket = io();
-    let currentArticleId = null;
+const socket = io();
+let currentArticleId = null;
 
-socket.on('article_archived', data => {
-    // Fetch the full article data from the server
-    fetch(`/article/${data.id}`)
-      .then(res => res.json())
-      .then(article => {
-          addOrUpdateRow(article);  // Use the same function you already have to add a row
-      });
+// ------------------- Add or Update Row -------------------
+function addOrUpdateRow(article) {
+    const tbody = document.getElementById('archived-tbody');
+    let row = document.getElementById(`row-${article.id}`);
+    if (!row) {
+        row = document.createElement('tr');
+        row.id = `row-${article.id}`;
+        tbody.appendChild(row);
+    }
+
+    row.innerHTML = `
+        <td>${article.title}</td>
+        <td>${article.author}</td>
+        <td>${article.editor || '—'}</td>
+        <td>${article.deadline || ''}</td>
+        <td>
+            <button class="file-icon-btn" onclick="openFileManager(${article.id})">Files</button>
+        </td>
+        <td>
+            <button onclick="activateArticle(${article.id})" class="btn-activate">Activate</button>
+            <button onclick="deleteArticle(${article.id})" class="btn-delete">Delete</button>
+        </td>
+    `;
+}
+
+// ------------------- Activate Article -------------------
+function activateArticle(articleId) {
+    fetch(`/activate/${articleId}`, { method: 'POST' })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                const row = document.getElementById(`row-${articleId}`);
+                if (row) row.remove();
+                socket.emit('article_activated', { id: articleId });
+            }
+        });
+}
+
+// ------------------- Delete Article -------------------
+function deleteArticle(articleId) {
+    if (!confirm('Are you sure you want to delete this article?')) return;
+    fetch(`/delete/${articleId}`, { method: 'POST' })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                const row = document.getElementById(`row-${articleId}`);
+                if (row) row.remove();
+                socket.emit('article_deleted', { id: articleId });
+            }
+        });
+}
+
+// ------------------- File Manager -------------------
+function openFileManager(articleId) {
+    currentArticleId = articleId;
+    const modal = document.getElementById('fileManagerModal');
+    modal.style.display = 'block';
+    modal.setAttribute('aria-hidden', 'false');
+    loadFiles(articleId);
+}
+
+function closeFileManager() {
+    const modal = document.getElementById('fileManagerModal');
+    modal.style.display = 'none';
+    modal.setAttribute('aria-hidden', 'true');
+    currentArticleId = null;
+    document.getElementById('fileList').innerHTML = '';
+    document.getElementById('uploadForm').reset();
+}
+
+function loadFiles(articleId) {
+    fetch(`/files/${articleId}`)
+        .then(res => res.json())
+        .then(data => {
+            const ul = document.getElementById('fileList');
+            ul.innerHTML = '';
+            (data.files || []).forEach(f => {
+                const li = document.createElement('li');
+                li.id = `file-${f.id}`;
+                li.innerHTML = `
+                    <div class="file-actions">
+                        <a href="/download_file/${f.id}" target="_blank">
+                            <button class="download-btn">${f.filename}</button>
+                        </a>
+                        <button onclick="deleteFile(${f.id})" class="delete-btn">Delete</button>
+                    </div>
+                `;
+                ul.appendChild(li);
+            });
+        });
+}
+
+document.getElementById('uploadForm').addEventListener('submit', e => {
+    e.preventDefault();
+    if (!currentArticleId) return;
+    const formData = new FormData(e.target);
+    fetch(`/upload/${currentArticleId}`, { method: 'POST', body: formData })
+        .then(res => res.json())
+        .then(data => { if (data.success) loadFiles(currentArticleId); });
 });
 
-    function activateArticle(articleId) {
-        fetch(`/activate/${articleId}`, { method: 'POST' })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    document.getElementById(`row-${articleId}`).remove();
-                    socket.emit('article_activated', { id: articleId });
-                }
-            });
-    }
+function deleteFile(fileId) {
+    if (!confirm('Delete this file?')) return;
+    fetch(`/delete_file/${fileId}`, { method: 'POST' })
+        .then(res => res.json())
+        .then(data => { if (data.success) document.getElementById(`file-${fileId}`).remove(); });
+}
 
-    function deleteArticle(articleId) {
-        if (!confirm('Are you sure you want to delete this article?')) return;
-        fetch(`/delete/${articleId}`, { method: 'POST' })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    document.getElementById(`row-${articleId}`).remove();
-                    socket.emit('article_deleted', { id: articleId });
-                }
-            });
-    }
+window.addEventListener('click', e => { if (e.target.id === 'fileManagerModal') closeFileManager(); });
+window.addEventListener('keydown', e => { if (e.key === 'Escape') closeFileManager(); });
 
-    // ---------------- File Manager ----------------
-    function openFileManager(articleId) {
-        currentArticleId = articleId;
-        const modal = document.getElementById('fileManagerModal');
-        modal.style.display = 'block';
-        modal.setAttribute('aria-hidden', 'false');
-        loadFiles(articleId);
-    }
+// ------------------- Socket.IO Listeners -------------------
+socket.on('article_archived', data => {
+    fetch(`/article/${data.id}`)
+        .then(res => res.json())
+        .then(article => addOrUpdateRow(article));
+});
 
-    function closeFileManager() {
-        const modal = document.getElementById('fileManagerModal');
-        modal.style.display = 'none';
-        modal.setAttribute('aria-hidden', 'true');
-        currentArticleId = null;
-        document.getElementById('fileList').innerHTML = '';
-        document.getElementById('uploadForm').reset();
-    }
+socket.on('article_activated', data => {
+    const row = document.getElementById(`row-${data.id}`);
+    if (row) row.remove();
+});
 
-    function loadFiles(articleId) {
-        fetch(`/files/${articleId}`)
-            .then(res => res.json())
-            .then(data => {
-                const ul = document.getElementById('fileList');
-                ul.innerHTML = '';
-                (data.files || []).forEach(f => {
-                    const li = document.createElement('li');
-                    li.id = `file-${f.id}`;
-                    li.innerHTML = `
-                        <div class="file-actions">
-                            <a href="/download_file/${f.id}" target="_blank">
-                                <button class="download-btn">${f.filename}</button>
-                            </a>
-                            <button onclick="deleteFile(${f.id})" class="delete-btn">Delete</button>
-                        </div>
-                    `;
-                    ul.appendChild(li);
-                });
-            });
-    }
+socket.on('article_deleted', data => {
+    const row = document.getElementById(`row-${data.id}`);
+    if (row) row.remove();
+});
 
-    document.getElementById('uploadForm').addEventListener('submit', e => {
-        e.preventDefault();
-        if (!currentArticleId) return;
-        const formData = new FormData(e.target);
+socket.on('file_uploaded', data => { if (currentArticleId === data.articleId) loadFiles(currentArticleId); });
+socket.on('file_deleted', data => { const li = document.getElementById(`file-${data.file_id}`); if (li) li.remove(); });
 
-        fetch(`/upload/${currentArticleId}`, { method: 'POST', body: formData })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) loadFiles(currentArticleId);
-            });
-    });
-
-    function deleteFile(fileId) {
-        if (!confirm('Delete this file?')) return;
-        fetch(`/delete_file/${fileId}`, { method: 'POST' })
-            .then(res => res.json())
-            .then(data => { if (data.success) document.getElementById(`file-${fileId}`).remove(); });
-    }
-
-    window.addEventListener('click', e => { if (e.target.id === 'fileManagerModal') closeFileManager(); });
-    window.addEventListener('keydown', e => { if (e.key === 'Escape') closeFileManager(); });
 </script>
-
 </body>
 </html>
