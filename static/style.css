@@ -245,6 +245,9 @@ td.title, th.title {
 td.status, th.status {
   width: 15%;   /* Title takes more space */
 }
+td.drag-handle, th.drag-handle {
+  width: 4.5%;   /* Title takes more space */
+}
 
 td.filescol, th.filescol {
   width: 8%;
