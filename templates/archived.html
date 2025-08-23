@@ -27,25 +27,25 @@
 <table id="archive-table" border="1" style="width:100%; border-collapse: collapse; margin-top: 50px;">
     <thead>
         <tr>
-            <th>Title</th>
-            <th>Author</th>
-            <th>Editor</th>
-            <th>Deadline</th>
-            <th>Files</th>
-            <th>Actions</th>
+            <th class="arcti">Title</th>
+            <th class="arcau">Author</th>
+            <th class="arced">Editor</th>
+            <th class="arcde">Deadline</th>
+            <th class="arcfi">Files</th>
+            <th class="arcac">Actions</th>
         </tr>
     </thead>
     <tbody id="archived-tbody">
         {% for article in articles %}
         <tr id="row-{{ article.id }}">
-            <td>{{ article.title }}</td>
-            <td>{{ article.author }}</td>
-            <td>{{ article.editor if article.editor else "—" }}</td>
-            <td>{{ article.deadline }}</td>
-            <td>
+            <td class="arcti">{{ article.title }}</td>
+            <td class="arcau">{{ article.author }}</td>
+            <td class="arced">{{ article.editor if article.editor else "—" }}</td>
+            <td class="arcde">{{ article.deadline }}</td>
+            <td class="arcfi">
                 <button class="file-icon-btn" onclick="openFileManager({{ article.id }})">Files</button>
             </td>
-            <td>
+            <td class="arcac">
                 <button onclick="activateArticle({{ article.id }})" class="btn-activate">Activate</button>
                 <button onclick="deleteArticle({{ article.id }})" class="btn-delete">Delete</button>
             </td>

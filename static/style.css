@@ -292,4 +292,21 @@ td.filescol, th.filescol {
 .back-button:hover {
     background-color: #0056b3;
 }
-
+td.arcti, th.arcti {
+  width: 35%;  
+}
+td.arcau, th.arcau {
+  width: 18%;  
+}
+td.arced, th.arced {
+  width: 9%;  
+}
+td.arcde, th.arcde {
+  width: 13%;  
+}
+td.arcfi, th.arcfi {
+  width: 8%;  
+}
+td.arcac, th.arcac {
+  width: 17%;  
+}
