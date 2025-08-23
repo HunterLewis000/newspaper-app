@@ -1,13 +1,8 @@
 import eventlet
 eventlet.monkey_patch()
 
-import os
-from io import BytesIO
-from datetime import datetime
 
 import boto3
-import google.oauth2.id_token
-import google.auth.transport.requests
 from flask import Flask, render_template, request, redirect, jsonify, send_file, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_socketio import SocketIO, emit
@@ -18,7 +13,15 @@ from flask_login import (
 )
 from flask_dance.contrib.google import make_google_blueprint, google
 from werkzeug.middleware.proxy_fix import ProxyFix
-from sqlalchemy import func
+from io import BytesIO
+import os
+import google.oauth2.id_token
+import google.auth.transport.requests
+from sqlalchemy import desc
+from datetime import datetime
+
+
+
 
 # -----------------------------------------------------------------------------
 # App + DB setup
@@ -36,6 +39,7 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 # -----------------------------------------------------------------------------
 # Auth setup (LoginManager + Google OAuth)
 # -----------------------------------------------------------------------------
+
 google_bp = make_google_blueprint(
     client_id=os.environ.get("GOOGLE_CLIENT_ID"),
     client_secret=os.environ.get("GOOGLE_CLIENT_SECRET"),
@@ -43,17 +47,20 @@ google_bp = make_google_blueprint(
 )
 app.register_blueprint(google_bp, url_prefix="/login")
 
+# Flask-Login Config
 login_manager = LoginManager()
-login_manager.login_view = "home"
+login_manager.login_view = "home"  # Redirect if not logged in
 login_manager.init_app(app)
 
+# Simple user model
 class User(UserMixin):
     def __init__(self, id, email=None, name=None):
         self.id = id
         self.email = email
         self.name = name
 
-users = {}  # in-memory for demo
+
+users = {}  # In-memory store for demo
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -91,49 +98,17 @@ class ArticleFile(db.Model):
     s3_key = db.Column(db.String(200), nullable=False)
 
 # -----------------------------------------------------------------------------
-# Helpers for ordering
-# -----------------------------------------------------------------------------
-def resequence_positions(include_archived=False):
-    """
-    Compress positions to 0..N-1 in the current (filtered) list to avoid gaps.
-    """
-    q = Article.query
-    if not include_archived:
-        q = q.filter_by(archived=False)
-    articles = q.order_by(Article.position.asc(), Article.id.asc()).all()
-    for idx, a in enumerate(articles):
-        a.position = idx
-        db.session.add(a)
-    db.session.commit()
-
-def ensure_positions_seeded():
-    """
-    If all (active) positions are 0 or NULL-ish, seed them by id.
-    Call on first run or after column add.
-    """
-    # Detect if there are duplicates/all zero among active items
-    active = Article.query.filter_by(archived=False).all()
-    if not active:
-        return
-    unique_positions = {a.position for a in active}
-    if len(unique_positions) == 1 and (0 in unique_positions or None in unique_positions):
-        # Seed by id order
-        by_id = sorted(active, key=lambda a: a.id)
-        for idx, a in enumerate(by_id):
-            a.position = idx
-            db.session.add(a)
-        db.session.commit()
-
-# -----------------------------------------------------------------------------
 # Login + Logout
 # -----------------------------------------------------------------------------
 @app.route("/google_login")
 def google_login():
+    # Get the credential token sent by the JS button
     token = request.args.get("credential")
     if not token:
         flash("No credential received.", "error")
         return redirect(url_for("home"))
 
+    # Verify the token
     request_adapter = google.auth.transport.requests.Request()
     try:
         id_info = google.oauth2.id_token.verify_oauth2_token(
@@ -145,14 +120,19 @@ def google_login():
         flash("Invalid Google token.", "error")
         return redirect(url_for("home"))
 
+    # Extract email
     email = id_info.get("email", "")
+
     allowed_domains = ["@ccp-stl.org", "@chaminade-stl.org"]
+
     if not any(email.lower().endswith(domain) for domain in allowed_domains):
         flash("Access denied: only @ccp-stl.org or @chaminade-stl.org accounts allowed.", "error")
         return redirect(url_for("home"))
 
     user_id = id_info["sub"]
     full_name = id_info.get("name", "")
+
+    # Store allowed user in session
     if user_id not in users:
         users[user_id] = User(user_id, email=email, name=full_name)
     login_user(users[user_id])
@@ -164,8 +144,9 @@ def logout():
     logout_user()
     return redirect(url_for("home"))
 
+
 # -----------------------------------------------------------------------------
-# Routes
+# Routes (all protected with @login_required)
 # -----------------------------------------------------------------------------
 @app.route("/")
 def home():
@@ -176,8 +157,7 @@ def home():
 @app.route('/dashboard')
 @login_required
 def index():
-    ensure_positions_seeded()
-    articles = Article.query.filter_by(archived=False).order_by(Article.position.asc(), Article.id.asc()).all()
+    articles = Article.query.filter_by(archived=False).order_by(Article.position).all()
     return render_template('index.html', articles=articles)
 
 @app.route('/upload/<int:article_id>', methods=['POST'])
@@ -202,23 +182,27 @@ def upload_file(article_id):
     db.session.commit()
 
     file_url = url_for('download_file', file_id=new_file.id)
+
     socketio.emit('file_uploaded', {
         'articleId': article.id,
         'file_id': new_file.id,
         'filename': new_file.filename,
         'file_url': file_url
     })
+
     return jsonify(success=True, file_id=new_file.id, filename=new_file.filename, file_url=file_url)
 
 @app.route('/files/<int:article_id>')
 @login_required
 def list_files(article_id):
     article = Article.query.get_or_404(article_id)
-    files = [{
-        "id": f.id,
-        "filename": f.filename,
-        "file_url": url_for('download_file', file_id=f.id)
-    } for f in article.files]
+    files = []
+    for f in article.files:
+        files.append({
+            "id": f.id,
+            "filename": f.filename,
+            "file_url": url_for('download_file', file_id=f.id)
+        })
     return jsonify(files=files)
 
 @app.route('/download_file/<int:file_id>')
@@ -263,12 +247,7 @@ def add_article():
     title = request.form['title']
     author = request.form['author']
     deadline = request.form['deadline']
-
-    # Put new article at the end of the current active list
-    max_position = db.session.query(func.max(Article.position)).filter(Article.archived == False).scalar()
-    next_pos = (max_position + 1) if max_position is not None else 0
-
-    new_article = Article(title=title, author=author, deadline=deadline, position=next_pos)
+    new_article = Article(title=title, author=author, deadline=deadline)
     db.session.add(new_article)
     db.session.commit()
 
@@ -289,7 +268,6 @@ def delete_article(article_id):
     if article:
         db.session.delete(article)
         db.session.commit()
-        resequence_positions(include_archived=False)
         socketio.emit('article_deleted', {'id': article_id})
         return jsonify(success=True)
     return jsonify(success=False), 404
@@ -352,6 +330,7 @@ def get_article(article_id):
         'archived': article.archived
     })
 
+
 @app.route('/archive/<int:article_id>', methods=['POST'])
 @login_required
 def archive_article(article_id):
@@ -359,7 +338,6 @@ def archive_article(article_id):
     if article:
         article.archived = True
         db.session.commit()
-        resequence_positions(include_archived=False)
         socketio.emit('article_archived', {'id': article.id})
         return jsonify(success=True)
     return jsonify(success=False), 404
@@ -367,15 +345,17 @@ def archive_article(article_id):
 @app.route('/archived')
 @login_required
 def archived():
-    articles = Article.query.filter_by(archived=True).all()
 
+    articles = Article.query.filter_by(archived=True).all()
+    
     def parse_deadline(article):
         try:
             return datetime.strptime(article.deadline, "%Y-%m-%d")
         except (TypeError, ValueError):
-            return datetime.min
+            return datetime.min  
 
     articles_sorted = sorted(articles, key=parse_deadline, reverse=True)
+
     return render_template('archived.html', articles=articles_sorted)
 
 @app.route('/activate/<int:article_id>', methods=['POST'])
@@ -383,71 +363,31 @@ def archived():
 def activate_article(article_id):
     article = Article.query.get(article_id)
     if article:
-        # Reactivate and place at end of active list
         article.archived = False
-        max_position = db.session.query(func.max(Article.position)).filter(Article.archived == False).scalar()
-        article.position = (max_position + 1) if max_position is not None else 0
         db.session.commit()
         socketio.emit('article_activated', {'id': article.id})
-        return jsonify(success=True)
+        return jsonify(success=True)  # instead of redirect
     return jsonify(success=False), 404
 
-# -----------------------------------------------------------------------------
-# Socket.IO events (Drag-to-reorder)
-# -----------------------------------------------------------------------------
-@socketio.on('reorder_articles')
-def handle_reorder_articles(data):
-    """
-    Receives: { order: [<article_id>, <article_id>, ...] } in the *new* order
-    Updates .position = index for active (non-archived) rows only.
-    Broadcasts the final order to all clients (including sender) for consistency.
-    """
-    order = data.get('order', [])
-    if not isinstance(order, list):
-        return
 
-    # Ensure IDs are ints and correspond to active articles
-    ids_in_order = []
-    for raw in order:
-        try:
-            ids_in_order.append(int(raw))
-        except (TypeError, ValueError):
-            continue
-
-    # Assign positions sequentially according to the order received
-    # Only update non-archived items; ignore archived if sent by mistake
-    active_ids = {a.id for a in Article.query.filter_by(archived=False).all()}
-    idx = 0
-    for article_id in ids_in_order:
-        if article_id in active_ids:
-            a = Article.query.get(article_id)
-            if a:
-                a.position = idx
-                db.session.add(a)
-                idx += 1
-    db.session.commit()
-
-    # Optional safety: resequence to compress any gaps
-    resequence_positions(include_archived=False)
-
-    # Broadcast new order to everyone (sender included) so UIs stay in sync
-    emit('update_article_order', {'order': [str(i) for i in ids_in_order]}, broadcast=True)
 
 # -----------------------------------------------------------------------------
-# Flask CLI helper to (re)seed positions on demand
+# Broadcast Socket.io
 # -----------------------------------------------------------------------------
-@app.cli.command("init-positions")
-def cli_init_positions():
-    """Seed or resequence active article positions starting at 0 by id."""
-    with app.app_context():
-        ensure_positions_seeded()
-        resequence_positions(include_archived=False)
-        print("Active article positions initialized.")
+@socketio.on('article_archived')
+def handle_article_archived(data):
+    # Broadcast to all connected clients **except the one who sent it**
+    emit('article_archived', data, broadcast=True)
+
+@socketio.on('article_activated')
+def handle_article_activated(data):
+    emit('article_activated', data, broadcast=True)
+
 
 # -----------------------------------------------------------------------------
-# Main (Render/SocketIO host)
+# Main
 # -----------------------------------------------------------------------------
 # if __name__ == '__main__':
-#     with app.app_context():
-#         db.create_all()
-#     socketio.run(app, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=True)
+#    with app.app_context():
+#        db.create_all()
+#    socketio.run(app, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=True)
