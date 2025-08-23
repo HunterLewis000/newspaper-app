@@ -216,11 +216,22 @@ tr.published {
   background-color: #f0f0f0; /* light gray background */
   color: #888888;            /* gray text */
 }
-
+tr.published select {
+    background-color: #e0e0e0;  /* light gray background */
+    color: #888888;             /* gray text */
+}
 tr.published button {
   background-color: black; 
-  color: green;
+  color: white;
   cursor: pointer;
+}
+tr.published button.mark-complete {
+    color: green !important;
+    background-color: black;         /* keep button background same as normal */
+    opacity: 1 !important;           /* ensure fully visible */
+}
+tr.published button:hover {
+    background-color: #16a34a; /* green-ish hover */
 }
 th, td {
   box-sizing: border-box;
