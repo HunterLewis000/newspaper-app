@@ -42,8 +42,8 @@
   </thead>
   <tbody id="articles-tbody">
   {% for article in articles %}
-    <tr id="row-{{ article.id }}" class="{% if article.status == 'Published' %}published{% endif %}">
-      <td class="drag-handle">☰</td>
+    <tr id="row-{{ article.id }}" data-id="{{ article.id }}" class="{% if article.status == 'Published' %}published{% endif %}">
+      <td class="drag-handle" style="cursor: grab;">☰</td>
       <td class="title">{{ article.title }}</td>
       <td class="author">{{ article.author }}</td>
       <td class="status">
@@ -133,7 +133,7 @@ function addOrUpdateRow(data) {
     row.dataset.id = data.id;
 
     row.innerHTML = `
-        <td class="drag-handle">☰</td>
+        <td class="drag-handle" style="cursor: grab;">☰</td>
         <td class="title">${data.title}</td>
         <td class="author">${data.author}</td>
         <td class="status">
