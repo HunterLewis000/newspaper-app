@@ -231,7 +231,7 @@ tr.published button.mark-complete {
     opacity: 1 !important;           /* ensure fully visible */
 }
 tr.published button:hover {
-    background-color: #16a34a; /* green-ish hover */
+    background-color: #b91c1c; /* green-ish hover */
 }
 th, td {
   box-sizing: border-box;
