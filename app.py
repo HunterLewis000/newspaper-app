@@ -310,6 +310,21 @@ def update_editor(article_id):
         return jsonify(success=True)
     return jsonify(success=False), 404
 
+@app.route('/article/<int:article_id>')
+@login_required
+def get_article(article_id):
+    article = Article.query.get_or_404(article_id)
+    return jsonify({
+        'id': article.id,
+        'title': article.title,
+        'author': article.author,
+        'status': article.status,
+        'editor': article.editor,
+        'deadline': article.deadline,
+        'archived': article.archived
+    })
+
+
 @app.route('/archive/<int:article_id>', methods=['POST'])
 @login_required
 def archive_article(article_id):
@@ -335,10 +350,10 @@ def activate_article(article_id):
         article.archived = False
         db.session.commit()
         socketio.emit('article_activated', {'id': article.id})
-        return redirect(url_for('archived'))
+        return jsonify(success=True)  # instead of redirect
     return jsonify(success=False), 404
 
-socketio = SocketIO(app, cors_allowed_origins="*")  # allow multiple origins
+
 
 # -----------------------------------------------------------------------------
 # Broadcast Socket.io

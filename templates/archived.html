@@ -104,7 +104,6 @@ function activateArticle(articleId) {
             if (data.success) {
                 const row = document.getElementById(`row-${articleId}`);
                 if (row) row.remove();
-                socket.emit('article_activated', { id: articleId });
             }
         });
 }
@@ -193,6 +192,7 @@ socket.on('article_activated', data => {
     const row = document.getElementById(`row-${data.id}`);
     if (row) row.remove();
 });
+
 
 socket.on('article_deleted', data => {
     const row = document.getElementById(`row-${data.id}`);

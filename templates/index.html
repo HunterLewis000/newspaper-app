@@ -357,17 +357,16 @@ socket.on('article_deleted', data => {
 });
 socket.on('file_uploaded', data => { if (currentArticleId === data.articleId) loadFiles(currentArticleId); });
 socket.on('file_deleted', data => { const li = document.getElementById(`file-${data.file_id}`); if (li) li.remove(); });
+
 socket.on('article_archived', data => {
     const row = document.getElementById(`row-${data.id}`);
-    if (row) row.remove(); // Remove from main table if archived elsewhere
+    if (row) row.remove();
 });
+
 socket.on('article_activated', data => {
-    // Fetch the full article data from the server
     fetch(`/article/${data.id}`)
         .then(res => res.json())
-        .then(article => {
-            addOrUpdateRow(article); // adds it back to the main table
-        });
+        .then(article => addOrUpdateRow(article));
 });
 
 </script>
@@ -380,7 +379,6 @@ function markComplete(articleId) {
                 // Remove row from main table
                 const row = document.getElementById(`row-${articleId}`);
                 if (row) row.remove();
-                socket.emit('article_archived', { id: articleId });
             } else {
                 alert("Failed to archive article.");
             }
