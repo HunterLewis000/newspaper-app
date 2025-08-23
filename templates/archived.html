@@ -73,6 +73,15 @@
     const socket = io();
     let currentArticleId = null;
 
+socket.on('article_archived', data => {
+    // Fetch the full article data from the server
+    fetch(`/article/${data.id}`)
+      .then(res => res.json())
+      .then(article => {
+          addOrUpdateRow(article);  // Use the same function you already have to add a row
+      });
+});
+
     function activateArticle(articleId) {
         fetch(`/activate/${articleId}`, { method: 'POST' })
             .then(response => response.json())
