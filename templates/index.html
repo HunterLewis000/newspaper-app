@@ -40,9 +40,10 @@
       <th class="actions">Actions</th>
     </tr>
   </thead>
-  <tbody>
+  <tbody id="articles-tbody">
   {% for article in articles %}
     <tr id="row-{{ article.id }}" class="{% if article.status == 'Published' %}published{% endif %}">
+      <td class="drag-handle">☰</td>
       <td class="title">{{ article.title }}</td>
       <td class="author">{{ article.author }}</td>
       <td class="status">
@@ -132,6 +133,7 @@ function addOrUpdateRow(data) {
     row.dataset.id = data.id;
 
     row.innerHTML = `
+        <td class="drag-handle">☰</td>
         <td class="title">${data.title}</td>
         <td class="author">${data.author}</td>
         <td class="status">
@@ -369,6 +371,15 @@ socket.on('article_activated', data => {
         .then(article => addOrUpdateRow(article));
 });
 
+socket.on('update_article_order', (data) => {
+    const tbody = document.querySelector('#articles-tbody');
+    data.order.forEach(id => {
+        const row = tbody.querySelector(`tr[data-id="${id}"]`);
+        tbody.appendChild(row); // moves row to new position
+    });
+});
+
+
 </script>
 <script>
 function markComplete(articleId) {
@@ -385,6 +396,23 @@ function markComplete(articleId) {
         });
 }
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.16.0/Sortable.min.js"></script>
+<script>
+  const tbody = document.querySelector('#articles-tbody'); 
+
+  const sortable = new Sortable(tbody, {
+    animation: 150,
+    handle: '.drag-handle',  // add a small handle inside your row if you want
+    onEnd: function (evt) {
+        // Get new order of IDs
+        const ids = Array.from(tbody.querySelectorAll('tr')).map(tr => tr.dataset.id);
+
+        // Send to backend via Socket.IO
+        socket.emit('reorder_articles', { order: ids });
+    }
+  });
+</script>
+
 
 </body>
 </html>

@@ -1,6 +1,7 @@
 import eventlet
 eventlet.monkey_patch()
 
+
 import boto3
 from flask import Flask, render_template, request, redirect, jsonify, send_file, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
@@ -18,6 +19,8 @@ import google.oauth2.id_token
 import google.auth.transport.requests
 from sqlalchemy import desc
 from datetime import datetime
+
+
 
 
 # -----------------------------------------------------------------------------
@@ -86,6 +89,7 @@ class Article(db.Model):
     deadline = db.Column(db.String(20))
     files = db.relationship('ArticleFile', backref='article', lazy=True, cascade="all, delete-orphan")
     archived = db.Column(db.Boolean, default=False)
+    position = db.Column(db.Integer, nullable=False, default=0)
 
 class ArticleFile(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -153,7 +157,7 @@ def home():
 @app.route('/dashboard')
 @login_required
 def index():
-    articles = Article.query.filter_by(archived=False).all()
+    articles = Article.query.filter_by(archived=False).order_by(Article.position).all()
     return render_template('index.html', articles=articles)
 
 @app.route('/upload/<int:article_id>', methods=['POST'])
@@ -379,6 +383,19 @@ def handle_article_archived(data):
 def handle_article_activated(data):
     emit('article_activated', data, broadcast=True)
 
+
+@socketio.on('reorder_articles')
+def handle_reorder_articles(data):
+    order = data['order']  # list of article IDs in new order
+    for idx, article_id in enumerate(order):
+        article = Article.query.get(article_id)
+        if article:
+            article.position = idx
+            db.session.add(article)
+    db.session.commit()
+
+    # Broadcast the new order to everyone else
+    emit('update_article_order', {'order': order}, broadcast=True, include_self=False)
 
 # -----------------------------------------------------------------------------
 # Main
