@@ -239,7 +239,7 @@ th, td {
 
 /* Column widths */
 td.title, th.title {
-  width: 24%;   /* Title takes more space */
+  width: 23%;   /* Title takes more space */
 }
 /* Column widths */
 td.status, th.status {
