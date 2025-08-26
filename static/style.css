@@ -325,6 +325,9 @@ td.arcfi, th.arcfi {
 td.arcac, th.arcac {
   width: 17%;  
 }
-.footerbut {
+.footerbut a:hover {
+    background-color: #0056b3;
+}
+.footerbut button:hover {
     background-color: #0056b3;
 }
