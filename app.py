@@ -49,10 +49,9 @@ app.register_blueprint(google_bp, url_prefix="/login")
 
 # Flask-Login Config
 login_manager = LoginManager()
-login_manager.login_view = "home"  # Redirect if not logged in
+login_manager.login_view = "home"  
 login_manager.init_app(app)
 
-# Simple user model
 class User(UserMixin):
     def __init__(self, id, email=None, name=None):
         self.id = id
@@ -60,7 +59,7 @@ class User(UserMixin):
         self.name = name
 
 
-users = {}  # In-memory store for demo
+users = {} 
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -146,7 +145,7 @@ def logout():
 
 
 # -----------------------------------------------------------------------------
-# Routes (all protected with @login_required)
+# Routes (protected)
 # -----------------------------------------------------------------------------
 @app.route("/")
 def home():
@@ -392,7 +391,7 @@ def update_order():
 # -----------------------------------------------------------------------------
 @socketio.on('article_archived')
 def handle_article_archived(data):
-    # Broadcast to all connected clients **except the one who sent it**
+    # Broadcast to connected clients
     emit('article_archived', data, broadcast=True)
 
 @socketio.on('article_activated')
