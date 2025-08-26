@@ -104,13 +104,11 @@
   </div>
 </div>
 
-<div class="footerbut" style="display: flex; text-align: center; margin: 20px; gap: 15px;">
-    <a href="{{ url_for('archived') }}">
-        <button style="padding: 8px 16px; font-size: 14px; background-color: #3b82f6;">View Archived Articles</button>
-    </a>
-    <a href="{{ url_for('calendar') }}" 
-       style="display: inline-block; padding: 8px; background-color: #3b82f6; border-radius: 6px; width: 32px; height: 32px;">
-        <img src="{{ url_for('static', filename='calendar.png') }}" alt="Calendar" style="width: 20px; height: 20px;">
+<div class="footerbut" style="display: flex; justify-content: center; align-items: center; margin: 20px; gap: 15px;">
+    <a href="{{ url_for('archived') }}">View Archived Articles</a>
+
+    <a href="{{ url_for('calendar') }}">
+        <img src="{{ url_for('static', filename='calendar.png') }}" alt="Calendar" style="width: 18px; height: 18px;">
     </a>
 </div>
 
