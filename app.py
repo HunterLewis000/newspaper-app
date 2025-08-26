@@ -21,8 +21,6 @@ from sqlalchemy import desc
 from datetime import datetime
 
 
-
-
 # -----------------------------------------------------------------------------
 # App + DB setup
 # -----------------------------------------------------------------------------
@@ -101,13 +99,13 @@ class ArticleFile(db.Model):
 # -----------------------------------------------------------------------------
 @app.route("/google_login")
 def google_login():
-    # Get the credential token sent by the JS button
+    # Get the credential token sent by the button
     token = request.args.get("credential")
     if not token:
         flash("No credential received.", "error")
         return redirect(url_for("home"))
 
-    # Verify the token
+    # Verify
     request_adapter = google.auth.transport.requests.Request()
     try:
         id_info = google.oauth2.id_token.verify_oauth2_token(
@@ -119,7 +117,7 @@ def google_login():
         flash("Invalid Google token.", "error")
         return redirect(url_for("home"))
 
-    # Extract email
+    # Extract
     email = id_info.get("email", "")
 
     allowed_domains = ["@ccp-stl.org", "@chaminade-stl.org"]
@@ -131,7 +129,7 @@ def google_login():
     user_id = id_info["sub"]
     full_name = id_info.get("name", "")
 
-    # Store allowed user in session
+    # Store
     if user_id not in users:
         users[user_id] = User(user_id, email=email, name=full_name)
     login_user(users[user_id])
@@ -371,7 +369,7 @@ def activate_article(article_id):
         article.archived = False
         db.session.commit()
         socketio.emit('article_activated', {'id': article.id})
-        return jsonify(success=True)  # instead of redirect
+        return jsonify(success=True) 
     return jsonify(success=False), 404
 
 @app.route('/update_order', methods=['POST'])
@@ -397,7 +395,6 @@ def update_order():
 # -----------------------------------------------------------------------------
 @socketio.on('article_archived')
 def handle_article_archived(data):
-    # Broadcast to connected clients
     emit('article_archived', data, broadcast=True)
 
 @socketio.on('article_activated')
