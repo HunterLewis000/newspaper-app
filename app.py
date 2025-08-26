@@ -357,6 +357,12 @@ def archived():
 
     return render_template('archived.html', articles=articles_sorted)
 
+@app.route('/calendar')
+@login_required
+def archived():
+
+    return render_template('calendar.html')
+
 @app.route('/activate/<int:article_id>', methods=['POST'])
 @login_required
 def activate_article(article_id):
