@@ -359,7 +359,7 @@ def archived():
 
 @app.route('/calendar')
 @login_required
-def archived():
+def calendar():
 
     return render_template('calendar.html')
 
