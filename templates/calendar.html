@@ -42,6 +42,11 @@ document.addEventListener('DOMContentLoaded', function() {
         dayMaxEvents: true,
         timeZone: 'local',
 
+        
+        eventDidMount: function(info) {
+            info.el.style.cursor = 'pointer';
+        },
+
         eventClick: function(info) {
             info.jsEvent.preventDefault();
 
@@ -87,7 +92,7 @@ document.addEventListener('DOMContentLoaded', function() {
             closeBtn.style.border = "none";
             closeBtn.style.borderRadius = "5px";
             closeBtn.style.background = "#d9534f";
-            closeBtn.style.color = "#fff";
+            closeBtn.style.color = "#007bff";
             closeBtn.style.cursor = "pointer";
             closeBtn.onclick = function() {
                 popup.remove();
@@ -112,6 +117,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.body.appendChild(overlay);
             document.body.appendChild(popup);
         }
+
     });
 
     calendar.render();
