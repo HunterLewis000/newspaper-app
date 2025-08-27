@@ -343,9 +343,9 @@ td.arcac, th.arcac {
     background-color: #0056b3;
 }
 #calendar {
-        max-width: 1100px;
+        max-width: 1000px;
         margin: 0 auto;
-        height: 500px;  
+        height: 500px; 
     }
 .fc-header-toolbar, 
 .fc-toolbar-chunk {
