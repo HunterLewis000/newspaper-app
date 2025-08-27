@@ -20,6 +20,8 @@ import google.oauth2.id_token
 import google.auth.transport.requests
 from sqlalchemy import desc
 from datetime import datetime
+from google.oauth2.credentials import Credentials
+from googleapiclient.discovery import build
 
 
 # -----------------------------------------------------------------------------
@@ -42,6 +44,7 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 google_bp = make_google_blueprint(
     client_id=os.environ.get("GOOGLE_CLIENT_ID"),
     client_secret=os.environ.get("GOOGLE_CLIENT_SECRET"),
+    scope=["https://www.googleapis.com/auth/calendar"],
     redirect_to="google_login"
 )
 app.register_blueprint(google_bp, url_prefix="/login")
@@ -52,10 +55,11 @@ login_manager.login_view = "home"
 login_manager.init_app(app)
 
 class User(UserMixin):
-    def __init__(self, id, email=None, name=None):
+    def __init__(self, id, email=None, name=None, token=None):
         self.id = id
         self.email = email
         self.name = name
+        self.token = token
 
 
 users = {} 
@@ -63,6 +67,12 @@ users = {}
 @login_manager.user_loader
 def load_user(user_id):
     return users.get(user_id)
+
+if not users.get(user_id):
+    users[user_id] = User(user_id, email=email, name=full_name, token=google.token)
+else:
+    users[user_id].token = google.token
+
 
 # -----------------------------------------------------------------------------
 # AWS S3 setup
@@ -411,12 +421,47 @@ def calendar_events():
         'start': e.get('start', {}).get('dateTime') or e.get('start', {}).get('date'),
         'end': e.get('end', {}).get('dateTime') or e.get('end', {}).get('date'),
         'description': e.get('description', ''),
-        'location': e.get('location', ''),
-        'creator': e.get('creator', {}).get('displayName', '')
+        'location': e.get('location', '')
     } for e in data.get('items', [])]
 
     return jsonify(events)
 
+@app.route('/api/update_calendar_event/<event_id>', methods=['POST'])
+@login_required
+def update_calendar_event(event_id):
+    data = request.json
+    if not data:
+        return jsonify(success=False, message="No data provided"), 400
+
+    creds = Credentials(
+        token=current_user.token['access_token'],
+        refresh_token=current_user.token.get('refresh_token'),
+        token_uri='https://oauth2.googleapis.com/token',
+        client_id=os.environ['GOOGLE_CLIENT_ID'],
+        client_secret=os.environ['GOOGLE_CLIENT_SECRET']
+    )
+
+    try:
+        service = build('calendar', 'v3', credentials=creds)
+
+        event_body = {
+            'summary': data.get('title'),
+            'description': data.get('description'),
+            'location': data.get('location'),
+            'start': {'dateTime': data.get('start'), 'timeZone': 'America/Chicago'},
+            'end': {'dateTime': data.get('end'), 'timeZone': 'America/Chicago'}
+        }
+
+        updated_event = service.events().update(
+            calendarId=GOOGLE_CALENDAR_ID,
+            eventId=event_id,
+            body=event_body
+        ).execute()
+
+        return jsonify(success=True, event=updated_event)
+    except Exception as e:
+        print("Error updating event:", e)
+        return jsonify(success=False, message=str(e)), 500
 
 # -----------------------------------------------------------------------------
 # Broadcast Socket.io
