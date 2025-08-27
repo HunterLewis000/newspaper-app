@@ -389,6 +389,27 @@ def update_order():
     except Exception as e:
         return jsonify(success=False, error=str(e)), 500
 
+# -----------------------------------------------------------------------------
+# Calendar Routes
+# -----------------------------------------------------------------------------
+GOOGLE_CALENDAR_ID = 'td39s8p5rkto3065kedbqdnb3gfcj0ds@import.calendar.google.com'
+
+@app.route('/api/calendar_events')
+@login_required
+def calendar_events():
+    api_key = os.environ.get('GOOGLE_CALENDAR_API_KEY')
+    url = f'https://www.googleapis.com/calendar/v3/calendars/{GOOGLE_CALENDAR_ID}/events?key={api_key}'
+    resp = requests.get(url)
+    if resp.status_code != 200:
+        return jsonify([]), 500
+    data = resp.json()
+    events = [{
+        'id': e['id'],
+        'title': e.get('summary', 'No Title'),
+        'start': e.get('start', {}).get('dateTime') or e.get('start', {}).get('date'),
+        'end': e.get('end', {}).get('dateTime') or e.get('end', {}).get('date')
+    } for e in data.get('items', [])]
+    return jsonify(events)
 
 # -----------------------------------------------------------------------------
 # Broadcast Socket.io

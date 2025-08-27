@@ -5,14 +5,14 @@
     <title>C&W Story Tracker</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='ccp.ico') }}">
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.7/index.global.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.7/index.global.min.js"></script>
     <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
 </head>
 <body>
 
-<!-- Back button -->
 <a href="{{ url_for('index') }}" class="back-button">← Back to Dashboard</a>
 
-<!-- User Info -->
 <div class="user-box">
     <span class="greeting">Hello, {{ current_user.name }}!</span>
     <form action="{{ url_for('logout') }}" method="get">
@@ -23,6 +23,34 @@
  <div style="display: flex; justify-content: center; align-items: center;">
     <h1 style="display: inline;"><a href="https://www.ccpstudentnews.org" style="font-family: 'Brush Script MT'; text-decoration: none; color: #222; font-size: 45px;">Cardinal and White&nbsp; </a></h1><h1 style="display: inline;">Calendar</h1>
     </div>
+
+
+<div id="calendar"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var calendarEl = document.getElementById('calendar');
+
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                events: '/api/calendar_events',  
+                editable: false,              
+                selectable: false
+            });
+
+            calendar.render();
+
+           
+            var socket = io();
+            socket.on('calendar_event_added', function(data) {
+                calendar.addEvent(data);
+            });
+            socket.on('calendar_event_deleted', function(data) {
+                let event = calendar.getEventById(data.id);
+                if(event) event.remove();
+            });
+        });
+    </script>
 
 
 </body>
