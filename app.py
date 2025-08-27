@@ -403,6 +403,7 @@ def calendar_events():
     resp = requests.get(url)
     if resp.status_code != 200:
         return jsonify([]), 500
+
     data = resp.json()
     events = [{
         'id': e['id'],
@@ -411,9 +412,11 @@ def calendar_events():
         'end': e.get('end', {}).get('dateTime') or e.get('end', {}).get('date'),
         'description': e.get('description', ''),
         'location': e.get('location', ''),
-        'creator': creator.get('displayName', '')
+        'creator': e.get('creator', {}).get('displayName', '')
     } for e in data.get('items', [])]
+
     return jsonify(events)
+
 
 # -----------------------------------------------------------------------------
 # Broadcast Socket.io
