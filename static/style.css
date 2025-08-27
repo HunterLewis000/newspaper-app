@@ -345,7 +345,7 @@ td.arcac, th.arcac {
 #calendar {
         max-width: 1000px;
         margin: 0 auto;
-        height: 500px; 
+        max-height: 500px; 
     }
 .fc-header-toolbar, 
 .fc-toolbar-chunk {
