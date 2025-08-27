@@ -20,8 +20,6 @@ import google.oauth2.id_token
 import google.auth.transport.requests
 from sqlalchemy import desc
 from datetime import datetime
-from google.oauth2.credentials import Credentials
-from googleapiclient.discovery import build
 
 
 # -----------------------------------------------------------------------------
@@ -44,7 +42,6 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 google_bp = make_google_blueprint(
     client_id=os.environ.get("GOOGLE_CLIENT_ID"),
     client_secret=os.environ.get("GOOGLE_CLIENT_SECRET"),
-    scope=["https://www.googleapis.com/auth/calendar"],
     redirect_to="google_login"
 )
 app.register_blueprint(google_bp, url_prefix="/login")
@@ -139,12 +136,6 @@ def google_login():
     if user_id not in users:
         users[user_id] = User(user_id, email=email, name=full_name)
     login_user(users[user_id])
-
-    if not users.get(user_id):
-        users[user_id] = User(user_id, email=email, name=full_name, token=google.token)
-    else:
-        users[user_id].token = google.token
-
 
     return redirect(url_for("index"))
 
@@ -427,53 +418,6 @@ def calendar_events():
     } for e in data.get('items', [])]
 
     return jsonify(events)
-
-@app.route('/api/update_calendar_event/<event_id>', methods=['POST'])
-@login_required
-def update_calendar_event(event_id):
-    data = request.json
-    if not data:
-        return jsonify(success=False, message="No data provided"), 400
-
-    if not getattr(current_user, 'token', None):
-        return jsonify(success=False, message="No Google token found"), 401
-
-    try:
-        creds = Credentials(
-            token=current_user.token['access_token'],
-            refresh_token=current_user.token.get('refresh_token'),
-            token_uri='https://oauth2.googleapis.com/token',
-            client_id=os.environ['GOOGLE_CLIENT_ID'],
-            client_secret=os.environ['GOOGLE_CLIENT_SECRET']
-        )
-
-        service = build('calendar', 'v3', credentials=creds)
-
-        start_dt = data.get('start')
-        end_dt = data.get('end')
-
-        if not start_dt or not end_dt:
-            return jsonify(success=False, message="Start and end datetime required"), 400
-
-        event_body = {
-            'summary': data.get('title'),
-            'description': data.get('description', ''),
-            'location': data.get('location', ''),
-            'start': {'dateTime': start_dt, 'timeZone': 'America/Chicago'},
-            'end': {'dateTime': end_dt, 'timeZone': 'America/Chicago'}
-        }
-
-        updated_event = service.events().update(
-            calendarId=GOOGLE_CALENDAR_ID,
-            eventId=event_id,
-            body=event_body
-        ).execute()
-
-        return jsonify(success=True, event=updated_event)
-
-    except Exception as e:
-        print("Error updating event:", e)
-        return jsonify(success=False, message=str(e)), 500
 
 # -----------------------------------------------------------------------------
 # Broadcast Socket.io

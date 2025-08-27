@@ -49,18 +49,27 @@ document.addEventListener('DOMContentLoaded', function() {
 
         eventClick: function(info) {
             info.jsEvent.preventDefault();
+
             let event = info.event;
 
-     
-            function formatLocalDateTime(date) {
-                if (!date) return '';
-                const offset = date.getTimezoneOffset();
-                const localDate = new Date(date.getTime() - offset * 60000);
-                return localDate.toISOString().slice(0,16);
-            }
+            let details = `
+                <h2 style="margin-top:0;">${event.title}</h2>
+                <p><strong>Start:</strong> ${event.start}</p>
+                ${event.end ? `<p><strong>End:</strong> ${event.end}</p>` : ""}
+                ${event.extendedProps.description ? `<p><strong>Description:</strong> ${event.extendedProps.description}</p>` : ""}
+                ${event.extendedProps.location ? `<p><strong>Location:</strong> ${event.extendedProps.location}</p>` : ""}
+            `;
 
+            
+            let oldPopup = document.getElementById("event-popup");
+            if (oldPopup) oldPopup.remove();
+
+          
             let popup = document.createElement("div");
             popup.id = "event-popup";
+            popup.innerHTML = details;
+
+            // Styles
             popup.style.position = "fixed";
             popup.style.top = "50%";
             popup.style.left = "50%";
@@ -74,56 +83,22 @@ document.addEventListener('DOMContentLoaded', function() {
             popup.style.maxWidth = "400px";
             popup.style.width = "90%";
 
-            popup.innerHTML = `
-                <h2>Edit Event</h2>
-                <label>Title: <input type="text" id="edit-title" value="${event.title}"></label><br>
-                <label>Description: <textarea id="edit-description">${event.extendedProps.description || ''}</textarea></label><br>
-                <label>Location: <input type="text" id="edit-location" value="${event.extendedProps.location || ''}"></label><br>
-                <label>Start: <input type="datetime-local" id="edit-start" value="${formatLocalDateTime(event.start)}"></label><br>
-                <label>End: <input type="datetime-local" id="edit-end" value="${formatLocalDateTime(event.end)}"></label><br><br>
-            `;
-
-            let saveBtn = document.createElement("button");
-            saveBtn.innerText = "Save";
-            saveBtn.style.marginRight = "10px";
-            saveBtn.onclick = async function() {
-                let payload = {
-                    title: document.getElementById("edit-title").value,
-                    description: document.getElementById("edit-description").value,
-                    location: document.getElementById("edit-location").value,
-                    start: document.getElementById("edit-start").value + ":00", // ensure seconds
-                    end: document.getElementById("edit-end").value + ":00"
-                };
-
-                try {
-                    let res = await fetch(`/api/update_calendar_event/${event.id}`, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify(payload)
-                    });
-
-                    let json = await res.json();
-                    if(json.success){
-                        alert("Event updated!");
-                        calendar.refetchEvents();
-                        popup.remove();
-                        overlay.remove();
-                    } else {
-                        alert("Error: " + json.message);
-                    }
-                } catch(err){
-                    console.error(err);
-                    alert("Network error.");
-                }
-            };
-
+           
             let closeBtn = document.createElement("button");
             closeBtn.innerText = "Close";
+            closeBtn.style.marginTop = "10px";
+            closeBtn.style.padding = "8px 12px";
+            closeBtn.style.border = "none";
+            closeBtn.style.borderRadius = "5px";
+            closeBtn.style.background = "#007bff";
+            closeBtn.style.color = "#fff";
+            closeBtn.style.cursor = "pointer";
             closeBtn.onclick = function() {
                 popup.remove();
                 overlay.remove();
             };
 
+          
             let overlay = document.createElement("div");
             overlay.style.position = "fixed";
             overlay.style.top = 0;
@@ -137,12 +112,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 overlay.remove();
             };
 
-            popup.appendChild(saveBtn);
             popup.appendChild(closeBtn);
             document.body.appendChild(overlay);
             document.body.appendChild(popup);
         }
-
 
     });
 
