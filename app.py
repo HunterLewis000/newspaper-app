@@ -393,7 +393,7 @@ def update_order():
 # -----------------------------------------------------------------------------
 # Calendar Routes
 # -----------------------------------------------------------------------------
-GOOGLE_CALENDAR_ID = 'td39s8p5rkto3065kedbqdnb3gfcj0ds@import.calendar.google.com'
+GOOGLE_CALENDAR_ID = '887571597d40c57fb2ca6c658ae6063475908c62860c563ad6aba974e1d90d7f@group.calendar.google.com'
 
 @app.route('/api/calendar_events')
 @login_required
