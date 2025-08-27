@@ -35,7 +35,10 @@
                 initialView: 'dayGridMonth',
                 events: '/api/calendar_events',  
                 editable: false,              
-                selectable: false
+                selectable: false,
+                height: '100%',       
+                contentHeight: 'auto',  
+                dayMaxEvents: true     
             });
 
             calendar.render();
