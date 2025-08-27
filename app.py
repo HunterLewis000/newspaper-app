@@ -408,7 +408,7 @@ def calendar_events():
         'id': e['id'],
         'title': e.get('summary', 'No Title'),
         'start': e.get('start', {}).get('dateTime') or e.get('start', {}).get('date'),
-        'end': e.get('end', {}).get('dateTime') or e.get('end', {}).get('date')
+        'end': e.get('end', {}).get('dateTime') or e.get('end', {}).get('date'),
         'description': e.get('description', ''),
         'location': e.get('location', ''),
         'creator': creator.get('displayName', '')
