@@ -48,142 +48,100 @@ document.addEventListener('DOMContentLoaded', function() {
         },
 
         eventClick: function(info) {
-    info.jsEvent.preventDefault();
-    let event = info.event;
+            info.jsEvent.preventDefault();
+            let event = info.event;
 
-    const createPopupContent = (editable=false) => {
-        if (editable) {
-            return `
-                <label>Title: <input type="text" id="edit-title" value="${event.title}"></label><br><br>
-                <label>Start: <input type="datetime-local" id="edit-start" value="${event.startStr}"></label><br><br>
-                <label>End: <input type="datetime-local" id="edit-end" value="${event.endStr || ''}"></label><br><br>
-                <label>Description: <textarea id="edit-description">${event.extendedProps.description || ''}</textarea></label><br><br>
-                <label>Location: <input type="text" id="edit-location" value="${event.extendedProps.location || ''}"></label>
+     
+            function formatLocalDateTime(date) {
+                if (!date) return '';
+                const offset = date.getTimezoneOffset();
+                const localDate = new Date(date.getTime() - offset * 60000);
+                return localDate.toISOString().slice(0,16);
+            }
+
+            let popup = document.createElement("div");
+            popup.id = "event-popup";
+            popup.style.position = "fixed";
+            popup.style.top = "50%";
+            popup.style.left = "50%";
+            popup.style.transform = "translate(-50%, -50%)";
+            popup.style.background = "#fff";
+            popup.style.border = "1px solid #ccc";
+            popup.style.padding = "20px";
+            popup.style.zIndex = 1000;
+            popup.style.borderRadius = "10px";
+            popup.style.boxShadow = "0 4px 15px rgba(0,0,0,0.3)";
+            popup.style.maxWidth = "400px";
+            popup.style.width = "90%";
+
+            popup.innerHTML = `
+                <h2>Edit Event</h2>
+                <label>Title: <input type="text" id="edit-title" value="${event.title}"></label><br>
+                <label>Description: <textarea id="edit-description">${event.extendedProps.description || ''}</textarea></label><br>
+                <label>Location: <input type="text" id="edit-location" value="${event.extendedProps.location || ''}"></label><br>
+                <label>Start: <input type="datetime-local" id="edit-start" value="${formatLocalDateTime(event.start)}"></label><br>
+                <label>End: <input type="datetime-local" id="edit-end" value="${formatLocalDateTime(event.end)}"></label><br><br>
             `;
-        } else {
-            return `
-                <h2 style="margin-top:0;">${event.title}</h2>
-                <p><strong>Start:</strong> ${event.start}</p>
-                ${event.end ? `<p><strong>End:</strong> ${event.end}</p>` : ""}
-                ${event.extendedProps.description ? `<p><strong>Description:</strong> ${event.extendedProps.description}</p>` : ""}
-                ${event.extendedProps.location ? `<p><strong>Location:</strong> ${event.extendedProps.location}</p>` : ""}
-            `;
-        }
-    };
 
-  
-    let oldPopup = document.getElementById("event-popup");
-    if (oldPopup) oldPopup.remove();
+            let saveBtn = document.createElement("button");
+            saveBtn.innerText = "Save";
+            saveBtn.style.marginRight = "10px";
+            saveBtn.onclick = async function() {
+                let payload = {
+                    title: document.getElementById("edit-title").value,
+                    description: document.getElementById("edit-description").value,
+                    location: document.getElementById("edit-location").value,
+                    start: document.getElementById("edit-start").value + ":00", // ensure seconds
+                    end: document.getElementById("edit-end").value + ":00"
+                };
 
-    
-    let popup = document.createElement("div");
-    popup.id = "event-popup";
-    popup.innerHTML = createPopupContent();
+                try {
+                    let res = await fetch(`/api/update_calendar_event/${event.id}`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(payload)
+                    });
 
-    popup.style.position = "fixed";
-    popup.style.top = "50%";
-    popup.style.left = "50%";
-    popup.style.transform = "translate(-50%, -50%)";
-    popup.style.background = "#fff";
-    popup.style.border = "1px solid #ccc";
-    popup.style.padding = "20px";
-    popup.style.zIndex = 1000;
-    popup.style.borderRadius = "10px";
-    popup.style.boxShadow = "0 4px 15px rgba(0,0,0,0.3)";
-    popup.style.maxWidth = "500px";
-    popup.style.width = "90%";
-
-    let overlay = document.createElement("div");
-    overlay.style.position = "fixed";
-    overlay.style.top = 0;
-    overlay.style.left = 0;
-    overlay.style.width = "100%";
-    overlay.style.height = "100%";
-    overlay.style.background = "rgba(0,0,0,0.5)";
-    overlay.style.zIndex = 999;
-    overlay.onclick = function() {
-        popup.remove();
-        overlay.remove();
-    };
-
-    // Close
-    let closeBtn = document.createElement("button");
-    closeBtn.innerText = "Close";
-    closeBtn.style.marginRight = "10px";
-    closeBtn.style.background = "#007bff";
-    closeBtn.style.color = "#fff";
-    closeBtn.style.border = "none";
-    closeBtn.style.padding = "8px 12px";
-    closeBtn.style.borderRadius = "5px";
-    closeBtn.style.cursor = "pointer";
-    closeBtn.onclick = function() {
-        popup.remove();
-        overlay.remove();
-    };
-
-    // Edit 
-    let editBtn = document.createElement("button");
-    editBtn.innerText = "Edit";
-    editBtn.style.background = "#28a745";
-    editBtn.style.color = "#fff";
-    editBtn.style.border = "none";
-    editBtn.style.padding = "8px 12px";
-    editBtn.style.borderRadius = "5px";
-    editBtn.style.cursor = "pointer";
-    editBtn.onclick = function() {
-        popup.innerHTML = createPopupContent(true);
-
-        // Save 
-        let saveBtn = document.createElement("button");
-        saveBtn.innerText = "Save";
-        saveBtn.style.background = "#007bff";
-        saveBtn.style.color = "#fff";
-        saveBtn.style.border = "none";
-        saveBtn.style.padding = "8px 12px";
-        saveBtn.style.borderRadius = "5px";
-        saveBtn.style.marginTop = "10px";
-        saveBtn.style.cursor = "pointer";
-
-        saveBtn.onclick = function() {
-            const updatedData = {
-                title: document.getElementById("edit-title").value,
-                start: document.getElementById("edit-start").value,
-                end: document.getElementById("edit-end").value,
-                description: document.getElementById("edit-description").value,
-                location: document.getElementById("edit-location").value
+                    let json = await res.json();
+                    if(json.success){
+                        alert("Event updated!");
+                        calendar.refetchEvents();
+                        popup.remove();
+                        overlay.remove();
+                    } else {
+                        alert("Error: " + json.message);
+                    }
+                } catch(err){
+                    console.error(err);
+                    alert("Network error.");
+                }
             };
 
-        
-            fetch(`/api/update_calendar_event/${event.id}`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(updatedData)
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                
-                    event.setProp("title", updatedData.title);
-                    event.setStart(updatedData.start);
-                    event.setEnd(updatedData.end || null);
-                    event.setExtendedProp("description", updatedData.description);
-                    event.setExtendedProp("location", updatedData.location);
-                    popup.remove();
-                    overlay.remove();
-                } else {
-                    alert("Error updating event");
-                }
-            });
-        };
+            let closeBtn = document.createElement("button");
+            closeBtn.innerText = "Close";
+            closeBtn.onclick = function() {
+                popup.remove();
+                overlay.remove();
+            };
 
-        popup.appendChild(saveBtn);
-    };
+            let overlay = document.createElement("div");
+            overlay.style.position = "fixed";
+            overlay.style.top = 0;
+            overlay.style.left = 0;
+            overlay.style.width = "100%";
+            overlay.style.height = "100%";
+            overlay.style.background = "rgba(0,0,0,0.5)";
+            overlay.style.zIndex = 999;
+            overlay.onclick = function() {
+                popup.remove();
+                overlay.remove();
+            };
 
-    popup.appendChild(closeBtn);
-    popup.appendChild(editBtn);
-    document.body.appendChild(overlay);
-    document.body.appendChild(popup);
-}
+            popup.appendChild(saveBtn);
+            popup.appendChild(closeBtn);
+            document.body.appendChild(overlay);
+            document.body.appendChild(popup);
+        }
 
 
     });

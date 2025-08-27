@@ -434,23 +434,32 @@ def update_calendar_event(event_id):
     if not data:
         return jsonify(success=False, message="No data provided"), 400
 
-    creds = Credentials(
-        token=current_user.token['access_token'],
-        refresh_token=current_user.token.get('refresh_token'),
-        token_uri='https://oauth2.googleapis.com/token',
-        client_id=os.environ['GOOGLE_CLIENT_ID'],
-        client_secret=os.environ['GOOGLE_CLIENT_SECRET']
-    )
+    if not getattr(current_user, 'token', None):
+        return jsonify(success=False, message="No Google token found"), 401
 
     try:
+        creds = Credentials(
+            token=current_user.token['access_token'],
+            refresh_token=current_user.token.get('refresh_token'),
+            token_uri='https://oauth2.googleapis.com/token',
+            client_id=os.environ['GOOGLE_CLIENT_ID'],
+            client_secret=os.environ['GOOGLE_CLIENT_SECRET']
+        )
+
         service = build('calendar', 'v3', credentials=creds)
+
+        start_dt = data.get('start')
+        end_dt = data.get('end')
+
+        if not start_dt or not end_dt:
+            return jsonify(success=False, message="Start and end datetime required"), 400
 
         event_body = {
             'summary': data.get('title'),
-            'description': data.get('description'),
-            'location': data.get('location'),
-            'start': {'dateTime': data.get('start'), 'timeZone': 'America/Chicago'},
-            'end': {'dateTime': data.get('end'), 'timeZone': 'America/Chicago'}
+            'description': data.get('description', ''),
+            'location': data.get('location', ''),
+            'start': {'dateTime': start_dt, 'timeZone': 'America/Chicago'},
+            'end': {'dateTime': end_dt, 'timeZone': 'America/Chicago'}
         }
 
         updated_event = service.events().update(
@@ -460,6 +469,7 @@ def update_calendar_event(event_id):
         ).execute()
 
         return jsonify(success=True, event=updated_event)
+
     except Exception as e:
         print("Error updating event:", e)
         return jsonify(success=False, message=str(e)), 500
