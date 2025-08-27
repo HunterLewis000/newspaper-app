@@ -68,11 +68,6 @@ users = {}
 def load_user(user_id):
     return users.get(user_id)
 
-if not users.get(user_id):
-    users[user_id] = User(user_id, email=email, name=full_name, token=google.token)
-else:
-    users[user_id].token = google.token
-
 
 # -----------------------------------------------------------------------------
 # AWS S3 setup
@@ -146,6 +141,12 @@ def google_login():
     login_user(users[user_id])
 
     return redirect(url_for("index"))
+
+    if not users.get(user_id):
+        users[user_id] = User(user_id, email=email, name=full_name, token=google.token)
+    else:
+        users[user_id].token = google.token
+
 
 @app.route("/logout")
 def logout():
