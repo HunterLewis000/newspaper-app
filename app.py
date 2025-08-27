@@ -103,49 +103,40 @@ class ArticleFile(db.Model):
 # -----------------------------------------------------------------------------
 # Login + Logout
 # -----------------------------------------------------------------------------
+from flask_dance.contrib.google import google
+
 @app.route("/google_login")
 def google_login():
-    # Get the credential token sent by the button
-    token = request.args.get("credential")
-    if not token:
-        flash("No credential received.", "error")
+    if not google.authorized:
+       
+        return redirect(url_for("google.login"))
+
+ 
+    resp = google.get("/oauth2/v2/userinfo")
+    if not resp.ok:
+        flash("Failed to fetch user info from Google.", "error")
         return redirect(url_for("home"))
 
-    # Verify
-    request_adapter = google.auth.transport.requests.Request()
-    try:
-        id_info = google.oauth2.id_token.verify_oauth2_token(
-            token,
-            request_adapter,
-            os.environ.get("GOOGLE_CLIENT_ID")
-        )
-    except ValueError:
-        flash("Invalid Google token.", "error")
-        return redirect(url_for("home"))
-
-    # Extract
-    email = id_info.get("email", "")
+    user_info = resp.json()
+    email = user_info.get("email", "")
+    user_id = user_info.get("id")
+    full_name = user_info.get("name", "")
 
     allowed_domains = ["@ccp-stl.org", "@chaminade-stl.org"]
-
     if not any(email.lower().endswith(domain) for domain in allowed_domains):
         flash("Access denied: only @ccp-stl.org or @chaminade-stl.org accounts allowed.", "error")
         return redirect(url_for("home"))
 
-    user_id = id_info["sub"]
-    full_name = id_info.get("name", "")
+   
+    token = google.token  
 
-    # Store
     if user_id not in users:
-        users[user_id] = User(user_id, email=email, name=full_name)
-    login_user(users[user_id])
-
-    return redirect(url_for("index"))
-
-    if not users.get(user_id):
-        users[user_id] = User(user_id, email=email, name=full_name, token=google.token)
+        users[user_id] = User(user_id, email=email, name=full_name, token=token)
     else:
-        users[user_id].token = google.token
+        users[user_id].token = token
+
+    login_user(users[user_id])
+    return redirect(url_for("index"))
 
 
 @app.route("/logout")
