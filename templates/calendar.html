@@ -39,7 +39,13 @@
                 height: '100%',       
                 contentHeight: 'auto',  
                 dayMaxEvents: true,
-                timeZone: 'local'
+                timeZone: 'local',
+                footerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                },
+                headerToolbar: false
             });
 
             calendar.render();
