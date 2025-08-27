@@ -347,3 +347,13 @@ td.arcac, th.arcac {
         margin: 0 auto;
         height: 600px;  
     }
+.fc-header-toolbar, 
+.fc-toolbar-chunk {
+    margin-bottom: 0;     
+    padding-top: 4px;   
+    padding-bottom: 2px; 
+}
+
+.fc-col-header, .fc-col-header-cell {
+    padding: 2px 0;     
+}
