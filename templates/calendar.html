@@ -25,11 +25,7 @@
     </div>
 
 
-<div id="calendar" style=".fc .fc-col-header-cell {
-  padding: 2px 0;  
-  line-height: 1.2; 
-  height: 20px; 
-}"></div>
+<div id="calendar"></div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -43,12 +39,7 @@
                 height: '100%',       
                 contentHeight: 'auto',  
                 dayMaxEvents: true,
-                timeZone: 'local',
-                footerToolbar: {
-                    left: 'prev,next today',
-                    center: 'title'
-                },
-                headerToolbar: false
+                timeZone: 'local'
             });
 
             calendar.render();
