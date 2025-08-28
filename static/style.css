@@ -240,16 +240,19 @@ th, td {
 td.title, th.title {
   width: 23%; 
 }
-/* Column widths */
+
 td.status, th.status {
   width: 15%;  
 }
 td.drag-handle, th.drag-handle {
-  width: 4.5%;   
+  width: 2.5%;   
+}
+td.cat, th.cat {
+  width: 4%;
 }
 
 td.filescol, th.filescol {
-  width: 8%;
+  width: 6%;
   padding: 14px 6px;
 }
 .user-box {

@@ -23,6 +23,7 @@
     <form method="POST" class="typ" action="/add">
         <input type="text" name="title" placeholder="Article Title" required>
         <input type="text" name="author" placeholder="Author Name" required>
+        <input type="select" name="cat" placeholder="cat">
         <input type="date" name="deadline">
         <button type="submit">Add Article</button>
     </form>
@@ -32,6 +33,7 @@
   <thead>
     <tr>
       <th class="drag-handle"> </th>
+      <th class="cat"> </th>
       <th class="title">Title</th>
       <th class="author">Author</th>
       <th class="status">Status</th>
@@ -45,6 +47,13 @@
   {% for article in articles %}
     <tr id="row-{{ article.id }}" data-id="{{ article.id }}" class="{% if article.status == 'Published' %}published{% endif %}">
       <td class="drag-handle" style="cursor: grab;">☰</td>
+      <td class="cat">
+        <select onchange="updateCat({{ article.id }}, this.value)">
+          <option value="F" {% if article.status == 'F' %}selected{% endif %}>F</option>
+          <option value="N" {% if article.status == 'N' %}selected{% endif %}>N</option>
+          <option value="O" {% if article.status == 'O' %}selected{% endif %}>O</option>
+          <option value="S" {% if article.status == 'S' %}selected{% endif %}>S</option>
+      </td>
       <td class="title">{{ article.title }}</td>
       <td class="author">{{ article.author }}</td>
       <td class="status">
@@ -138,6 +147,13 @@ function addOrUpdateRow(data) {
 
     row.innerHTML = `
         <td class="drag-handle" style="cursor: grab;">☰</td>
+        <td class="cat">
+        <select onchange="updateCat(${data.id}, this.value)">
+                <option value="F" ${(currentEditor || data.editor) === 'F' ? 'selected' : ''}>F</option>
+                <option value="N" ${(currentEditor || data.editor) === 'N' ? 'selected' : ''}>N</option>
+                <option value="O" ${(currentEditor || data.editor) === 'O' ? 'selected' : ''}>O</option>
+                <option value="S" ${(currentEditor || data.editor) === 'S' ? 'selected' : ''}>S</option>
+        </td>
         <td class="title">${data.title}</td>
         <td class="author">${data.author}</td>
         <td class="status">
@@ -234,6 +250,18 @@ function updateStatus(articleId, newStatus) {
 
               socket.emit('status_updated', { id: articleId, status: newStatus });
           } else alert('Error updating status!');
+      });
+}
+
+function updateCat(articleId, cat) {
+    fetch(`/update_editor/${articleId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cat })
+    }).then(res => res.json())
+      .then(data => {
+          if (!data.success) alert('Error updating category!');
+          else socket.emit('cat_updated', { id: articleId, cat });
       });
 }
 
@@ -356,6 +384,10 @@ socket.on('status_updated', data => {
 socket.on('editor_updated', data => {
     const row = document.getElementById(`row-${data.id}`);
     if (row) row.querySelector('.editor select').value = data.editor;
+});
+socket.on('cat_updated', data => {
+    const row = document.getElementById(`row-${data.id}`);
+    if (row) row.querySelector('.cat select').value = data.cat;
 });
 socket.on('article_deleted', data => {
     const row = document.getElementById(`row-${data.id}`);

@@ -1,7 +1,6 @@
 import eventlet
 eventlet.monkey_patch()
 
-
 import boto3
 import requests
 from flask import Flask, render_template, request, redirect, jsonify, send_file, url_for, flash
@@ -90,6 +89,7 @@ class Article(db.Model):
     files = db.relationship('ArticleFile', backref='article', lazy=True, cascade="all, delete-orphan")
     archived = db.Column(db.Boolean, default=False)
     position = db.Column(db.Integer, nullable=False, default=0)
+    editor = db.Column(db.String(50), nullable=True)
 
 class ArticleFile(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -248,13 +248,15 @@ def add_article():
     title = request.form['title']
     author = request.form['author']
     deadline = request.form['deadline']
-    new_article = Article(title=title, author=author, deadline=deadline)
+    cat = request.form['cat']
+    new_article = Article(title=title, author=author, deadline=deadline, cat=cat)
     db.session.add(new_article)
     db.session.commit()
 
     socketio.emit('article_added', {
         'id': new_article.id,
         'title': title,
+        'cat': cat,
         'author': author,
         'status': new_article.status,
         'deadline': deadline,
@@ -314,6 +316,18 @@ def update_editor(article_id):
         article.editor = data.get('editor', None)
         db.session.commit()
         socketio.emit('editor_updated', {'id': article.id, 'editor': article.editor})
+        return jsonify(success=True)
+    return jsonify(success=False), 404
+
+@app.route('/update_cat/<int:article_id>', methods=['POST'])
+@login_required
+def update_cat(article_id):
+    article = Article.query.get(article_id)
+    if article:
+        data = request.json
+        article.cat = data.get('cat', None)
+        db.session.commit()
+        socketio.emit('cat_updated', {'id': article.id, 'cat': article.cat})
         return jsonify(success=True)
     return jsonify(success=False), 404
 
