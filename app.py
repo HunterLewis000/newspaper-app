@@ -405,25 +405,12 @@ def calendar():
 @login_required
 def activate_article(article_id):
     article = Article.query.get(article_id)
-    if not article:
-        return jsonify(success=False), 404
-
-    if article.archived:
-        for a in Article.query.filter_by(archived=False).all():
-            a.position += 1
-
-        article.position = 0
+    if article:
         article.archived = False
         db.session.commit()
-
-        articles = Article.query.filter_by(archived=False).order_by(Article.position).all()
-        socketio.emit(
-            'articles_updated',
-            [{'id': a.id, 'position': a.position} for a in articles]
-        )
-
-    return jsonify(success=True)
-
+        socketio.emit('article_activated', {'id': article.id})
+        return jsonify(success=True) 
+    return jsonify(success=False), 404
 
 @app.route('/update_order', methods=['POST'])
 @login_required
