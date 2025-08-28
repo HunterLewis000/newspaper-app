@@ -23,7 +23,12 @@
     <form method="POST" class="typ" action="/add">
         <input type="text" name="title" placeholder="Article Title" required>
         <input type="text" name="author" placeholder="Author Name" required>
-        <input type="select" name="cat" placeholder="cat">
+        <select id="cat" name="cat">
+          <option value="F">Features</option>
+          <option value="N">News</option>
+          <option value="O">Opinion</option>
+          <option value="S">Sports</option>
+        </select>
         <input type="date" name="deadline">
         <button type="submit">Add Article</button>
     </form>
@@ -33,7 +38,7 @@
   <thead>
     <tr>
       <th class="drag-handle"> </th>
-      <th class="cat"> </th>
+      <th class="cat">Type</th>
       <th class="title">Title</th>
       <th class="author">Author</th>
       <th class="status">Status</th>

@@ -4,7 +4,7 @@
   }
   body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    max-width: 1100px;
+    max-width: 1130px;
     margin: 40px auto;
     background: #f9fafb;
     color: #333;
@@ -248,11 +248,12 @@ td.drag-handle, th.drag-handle {
   width: 2.5%;   
 }
 td.cat, th.cat {
-  width: 4%;
+  width: 5%;
+  padding: 14px 3px;
 }
 
 td.filescol, th.filescol {
-  width: 6%;
+  width: 8%;
   padding: 14px 6px;
 }
 .user-box {
