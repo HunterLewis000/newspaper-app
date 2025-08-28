@@ -89,7 +89,7 @@ class Article(db.Model):
     files = db.relationship('ArticleFile', backref='article', lazy=True, cascade="all, delete-orphan")
     archived = db.Column(db.Boolean, default=False)
     position = db.Column(db.Integer, nullable=False, default=0)
-    editor = db.Column(db.String(50), nullable=True)
+    cat = db.Column(db.String(50), nullable=True)
 
 class ArticleFile(db.Model):
     id = db.Column(db.Integer, primary_key=True)
