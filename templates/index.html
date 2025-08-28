@@ -55,10 +55,10 @@
       <td class="drag-handle" style="cursor: grab;">☰</td>
       <td class="cat">
         <select onchange="updateCat({{ article.id }}, this.value)">
-          <option value="F" {% if article.status == 'F' %}selected{% endif %}>F</option>
-          <option value="N" {% if article.status == 'N' %}selected{% endif %}>N</option>
-          <option value="O" {% if article.status == 'O' %}selected{% endif %}>O</option>
-          <option value="S" {% if article.status == 'S' %}selected{% endif %}>S</option>
+          <option value="F" {% if article.cat == 'F' %}selected{% endif %}>F</option>
+          <option value="N" {% if article.cat == 'N' %}selected{% endif %}>N</option>
+          <option value="O" {% if article.cat == 'O' %}selected{% endif %}>O</option>
+          <option value="S" {% if article.cat == 'S' %}selected{% endif %}>S</option>
       </td>
       <td class="title">{{ article.title }}</td>
       <td class="author">{{ article.author }}</td>
@@ -141,6 +141,7 @@ function addOrUpdateRow(data) {
     let row = document.getElementById(`row-${data.id}`);
     const currentStatus = row?.querySelector('.status select')?.value;
     const currentEditor = row?.querySelector('.editor select')?.value;
+    const currentCat = row?.querySelector('.cat select')?.value;
 
     if (!row) {
         const tbody = document.querySelector('table tbody');
@@ -155,10 +156,10 @@ function addOrUpdateRow(data) {
         <td class="drag-handle" style="cursor: grab;">☰</td>
         <td class="cat">
         <select onchange="updateCat(${data.id}, this.value)">
-                <option value="F" ${(currentEditor || data.editor) === 'F' ? 'selected' : ''}>F</option>
-                <option value="N" ${(currentEditor || data.editor) === 'N' ? 'selected' : ''}>N</option>
-                <option value="O" ${(currentEditor || data.editor) === 'O' ? 'selected' : ''}>O</option>
-                <option value="S" ${(currentEditor || data.editor) === 'S' ? 'selected' : ''}>S</option>
+                <option value="F" ${(currentCat || data.cat) === 'F' ? 'selected' : ''}>F</option>
+                <option value="N" ${(currentCat || data.cat) === 'N' ? 'selected' : ''}>N</option>
+                <option value="O" ${(currentCat || data.cat) === 'O' ? 'selected' : ''}>O</option>
+                <option value="S" ${(currentCat || data.cat) === 'S' ? 'selected' : ''}>S</option>
         </td>
         <td class="title">${data.title}</td>
         <td class="author">${data.author}</td>
@@ -260,7 +261,7 @@ function updateStatus(articleId, newStatus) {
 }
 
 function updateCat(articleId, cat) {
-    fetch(`/update_editor/${articleId}`, {
+    fetch(`/update_cat/${articleId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ cat })
