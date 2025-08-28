@@ -245,11 +245,12 @@ td.status, th.status {
   width: 15%;  
 }
 td.drag-handle, th.drag-handle {
-  width: 2.5%;   
+  width: 2.5%;
+  padding: 14px 6px;
 }
 td.cat, th.cat {
-  width: 5%;
-  padding: 14px 3px;
+  width: 4%;
+  padding: 14px 6px;
 }
 
 td.filescol, th.filescol {
