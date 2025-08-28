@@ -249,7 +249,11 @@ def add_article():
     author = request.form['author']
     deadline = request.form['deadline']
     cat = request.form['cat']
-    new_article = Article(title=title, author=author, deadline=deadline, cat=cat)
+
+    for a in Article.query.all():
+        a.position += 1
+
+    new_article = Article(title=title, author=author, deadline=deadline, cat=cat, position=0)
     db.session.add(new_article)
     db.session.commit()
 
@@ -262,18 +266,36 @@ def add_article():
         'deadline': deadline,
         'editor': new_article.editor
     })
+
+    order = [a.id for a in Article.query.order_by(Article.position).all()]
+    socketio.emit('update_article_order', {'order': order})
+
     return redirect('/')
+
+
 
 @app.route('/delete/<int:article_id>', methods=['POST'])
 @login_required
 def delete_article(article_id):
     article = Article.query.get(article_id)
-    if article:
-        db.session.delete(article)
-        db.session.commit()
-        socketio.emit('article_deleted', {'id': article_id})
-        return jsonify(success=True)
-    return jsonify(success=False), 404
+    if not article:
+        return jsonify(success=False), 404
+
+    deleted_position = article.position
+    db.session.delete(article)
+    db.session.commit()
+
+    for a in Article.query.filter(Article.position > deleted_position).all():
+        a.position -= 1
+    db.session.commit()
+
+    socketio.emit('article_deleted', {'id': article_id})
+
+    order = [a.id for a in Article.query.order_by(Article.position).all()]
+    socketio.emit('update_article_order', {'order': order})
+
+    return jsonify(success=True)
+
 
 @app.route('/update/<int:article_id>', methods=['POST'])
 @login_required
