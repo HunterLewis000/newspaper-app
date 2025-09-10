@@ -365,21 +365,22 @@ td.arcac, th.arcac {
 }
 
 .user-box .settings-btn {
-    padding: 2px 6px;
+    padding: 0 6px;            
+    height: 18px;              
+    min-width: 18px;          
     border-radius: 6px;
     border: none;
-    background: black;      
+    background: black;
     color: white;
+    font-size: 0.85rem;         
     font-weight: 500;
-    font-size: 0.85rem;    
+    display: inline-flex;       
+    align-items: center;       
+    justify-content: center;    
     cursor: pointer;
     transition: background-color 0.2s ease;
-    height: 18px;         
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    vertical-align: middle;
 }
+
 
 .user-box .settings-btn:hover {
     background: #b91c1c;  
