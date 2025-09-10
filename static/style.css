@@ -370,7 +370,7 @@ td.arcac, th.arcac {
     align-items: center;          
     justify-content: center;       
     height: 26px;                   
-    padding: 2 6px;                 
+    padding: 2px 6px;                 
     font-size: 0.85rem;
     border-radius: 6px;
     border: none;
@@ -381,6 +381,8 @@ td.arcac, th.arcac {
     line-height: 1;             
 }
 
+/*
 * {
   outline: 1px solid red;
 }
+*/
