@@ -164,11 +164,12 @@ function addOrUpdateRow(data) {
     row.innerHTML = `
         <td class="drag-handle" style="cursor: grab;">☰</td>
         <td class="cat">
-        <select onchange="updateCat(${data.id}, this.value)">
+            <select onchange="updateCat(${data.id}, this.value)">
                 <option value="F" ${(currentCat || data.cat) === 'F' ? 'selected' : ''}>F</option>
                 <option value="N" ${(currentCat || data.cat) === 'N' ? 'selected' : ''}>N</option>
                 <option value="O" ${(currentCat || data.cat) === 'O' ? 'selected' : ''}>O</option>
                 <option value="S" ${(currentCat || data.cat) === 'S' ? 'selected' : ''}>S</option>
+            </select>
         </td>
         <td class="title">${data.title}</td>
         <td class="author">${data.author}</td>

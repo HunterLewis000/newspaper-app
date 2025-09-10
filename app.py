@@ -442,7 +442,7 @@ def update_order():
 
 @app.route("/manage")
 @login_required
-def secret_page():
+def manage():
     if current_user.email not in ALLOWED_EMAILS:
         return "Forbidden", 403
     return render_template("manage.html")
