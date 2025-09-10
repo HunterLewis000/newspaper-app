@@ -380,3 +380,7 @@ td.arcac, th.arcac {
     font-weight: 500;
     line-height: 1;             
 }
+
+* {
+  outline: 1px solid red;
+}
