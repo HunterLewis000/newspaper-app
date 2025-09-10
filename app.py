@@ -71,6 +71,10 @@ ALLOWED_EMAILS = {
 def load_user(user_id):
     return users.get(user_id)
 
+@app.context_processor
+def inject_allowed_emails():
+    return dict(ALLOWED_EMAILS=ALLOWED_EMAILS)
+
 
 # -----------------------------------------------------------------------------
 # AWS S3 setup
