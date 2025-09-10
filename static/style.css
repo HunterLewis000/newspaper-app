@@ -257,44 +257,7 @@ td.filescol, th.filescol {
   width: 8%;
   padding: 14px 6px;
 }
-.user-box {
-    position: fixed;      
-    top: 10px;
-    right: 10px;
-    background: #3b82f6;     
-    color: white;
-    display: inline-flex;   
-    align-items: center;
-    gap: 6px;
-    padding: 4px 8px;        
-    border-radius: 8px;
-    font-size: 0.85rem;
-    font-weight: 500;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-    z-index: 1000;
-    height: 26px;
-}
 
-.user-box .greeting {
-    white-space: nowrap;      
-}
-
-.user-box button {
-    padding: 2px 6px;     
-    border-radius: 6px;
-    border: none;
-    background: black;    
-    color: white;
-    font-weight: 500;
-    font-size: 0.85rem;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-    height: 18px;
-}
-
-.user-box button:hover {
-    background: #b91c1c;
-}
 .back-button {
     position: absolute;
     top: 15px;
@@ -364,24 +327,53 @@ td.arcac, th.arcac {
     padding: 2px 0;     
 }
 
+.user-box {
+    position: fixed;      
+    top: 10px;
+    right: 10px;
+    display: inline-flex;   
+    align-items: center;     
+    gap: 6px;
+    height: 26px;            
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    background: #3b82f6;
+    color: white;
+    z-index: 1000;
+    padding: 0;
+}
+
+.user-box .greeting {
+    padding: 0 8px;           
+    display: inline-flex;
+    align-items: center;     
+    height: 100%;          
+}
+
+.user-box button,
 .user-box .settings-btn {
-    padding: 0 6px;            
-    height: 18px;              
-    min-width: 18px;          
+    height: 100%;            
+    min-width: 26px;        
+    padding: 0 8px;           
     border-radius: 6px;
     border: none;
     background: black;
     color: white;
-    font-size: 0.85rem;         
+    font-size: 0.85rem;
     font-weight: 500;
-    display: inline-flex;       
-    align-items: center;       
+    display: inline-flex;
+    align-items: center;      
     justify-content: center;    
     cursor: pointer;
     transition: background-color 0.2s ease;
 }
 
-
+.user-box button:hover,
 .user-box .settings-btn:hover {
-    background: #b91c1c;  
+    background: #b91c1c;
+}
+
+.user-box .greeting {
+    white-space: nowrap;      
 }
