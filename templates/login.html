@@ -12,12 +12,12 @@
 
 <script>
 function handleCredentialResponse(response) {
-    // Redirect to your Flask login route with a GET parameter
+
     window.location.href = "{{ url_for('google_login', _external=True) }}?credential=" + response.credential;
 }
 </script>
 
-    <!-- Page Header -->
+   
     <div style="display: flex; justify-content: center; align-items: center; margin-top: 40px;">
         <h1 style="display: inline;">
             <a href="https://www.ccpstudentnews.org" 
@@ -28,7 +28,7 @@ function handleCredentialResponse(response) {
         <h1 style="display: inline;">Story Tracker</h1>
     </div>
 
-    <!-- Login Section -->
+   
     <div style="display: flex; justify-content: center; margin-top: 50px;">
         <!-- Google Sign-In Button -->
 <div id="g_id_onload"
@@ -49,12 +49,12 @@ function handleCredentialResponse(response) {
         </div>
     </div>
 
-    <!-- Optional Info Text -->
+ 
     <p style="text-align: center; margin-top: 20px; font-size: 1rem; color: #555;">
         Please sign in with your Chaminade Google account to access the Story Tracker.
     </p>
 
-    <!-- Flash messages -->
+
 {% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
     <div style="text-align: center; margin-top: 20px;">

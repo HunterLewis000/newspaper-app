@@ -60,6 +60,13 @@ class User(UserMixin):
 
 users = {} 
 
+ALLOWED_EMAILS = {
+    "hlewis26@ccp-stl.org",
+    "jcopley26@ccp-stl.org",
+    "tschilly@chaminade-stl.org",
+    "hbryant@chaminade-stl.org"
+}
+
 @login_manager.user_loader
 def load_user(user_id):
     return users.get(user_id)
@@ -428,6 +435,13 @@ def update_order():
         return jsonify(success=True)
     except Exception as e:
         return jsonify(success=False, error=str(e)), 500
+
+@app.route("/manage")
+@login_required
+def secret_page():
+    if current_user.email not in ALLOWED_EMAILS:
+        return "Forbidden", 403
+    return render_template("manage.html")
 
 # -----------------------------------------------------------------------------
 # Calendar Routes
