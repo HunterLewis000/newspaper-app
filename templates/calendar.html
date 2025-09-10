@@ -14,10 +14,15 @@
 <a href="{{ url_for('index') }}" class="back-button">← Back to Dashboard</a>
 
 <div class="user-box">
-    <span class="greeting">Hello, {{ current_user.name }}!</span>
-    <form action="{{ url_for('logout') }}" method="get">
-        <button type="submit" class="logout-btn">Logout</button>
+  <span class="greeting">Hello, {{ current_user.name }}!</span>
+      {% if current_user.is_authenticated and current_user.email in ALLOWED_EMAILS %}
+    <form action="{{ url_for('manage') }}" method="get" class="manage-form">
+        <button type="submit" class="settings-btn">⚙</button>
     </form>
+    {% endif %}
+  <form action="{{ url_for('logout') }}" method="get">
+    <button type="submit">Logout</button>
+  </form>
 </div>
 
  <div style="display: flex; justify-content: center; align-items: center;">

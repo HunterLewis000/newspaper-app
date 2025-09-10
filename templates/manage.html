@@ -1,11 +1,33 @@
 ﻿<!DOCTYPE html>
-
-<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<html>
 <head>
-    <meta charset="utf-8" />
-    <title>Manage</title>
+    <meta charset="UTF-8">
+    <title>C&W Story Admin</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='ccp.ico') }}">
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
 </head>
 <body>
+
+<a href="{{ url_for('index') }}" class="back-button">← Back to Dashboard</a>
+
+<div class="user-box">
+  <span class="greeting">Hello, {{ current_user.name }}!</span>
+    
+  <form action="{{ url_for('logout') }}" method="get">
+    <button type="submit">Logout</button>
+  </form>
+</div>
+
+ <div style="display: flex; justify-content: center; align-items: center;">
+    <h1 style="display: inline;"><a href="https://www.ccpstudentnews.org" style="font-family: 'Brush Script MT'; text-decoration: none; color: #222; font-size: 45px;">Cardinal and White&nbsp; </a></h1><h1 style="display: inline;">Admin Settings</h1>
+    </div>
+
+<div class="center-buttons">
+  <button>Attendance</button>
+  <button>Permissions</button>
+  <button>About</button>
+</div>
 
 </body>
 </html>
