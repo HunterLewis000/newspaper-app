@@ -378,6 +378,7 @@ td.arcac, th.arcac {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    vertical-align: middle;
 }
 
 .user-box .settings-btn:hover {
