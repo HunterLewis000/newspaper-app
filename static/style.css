@@ -363,3 +363,23 @@ td.arcac, th.arcac {
 .fc-col-header, .fc-col-header-cell {
     padding: 2px 0;     
 }
+
+.user-box .settings-btn {
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: none;
+    background: black;      
+    color: white;
+    font-weight: 500;
+    font-size: 0.85rem;    
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    height: 18px;         
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.user-box .settings-btn:hover {
+    background: #b91c1c;  
+}
