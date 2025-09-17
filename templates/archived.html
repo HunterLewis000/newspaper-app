@@ -168,14 +168,46 @@ function loadFiles(articleId) {
         });
 }
 
-document.getElementById('uploadForm').addEventListener('submit', e => {
+document.getElementById('uploadForm').addEventListener('submit', async e => {
     e.preventDefault();
     if (!currentArticleId) return;
+
+    const fileInput = document.getElementById('fileInput');
+    if (!fileInput.files.length) return;
+
     const formData = new FormData(e.target);
-    fetch(`/upload/${currentArticleId}`, { method: 'POST', body: formData })
-        .then(res => res.json())
-        .then(data => { if (data.success) loadFiles(currentArticleId); });
+
+  
+    const uploadBtn = e.target.querySelector('button[type="submit"]');
+    uploadBtn.disabled = true;
+    uploadBtn.textContent = "Uploading...";
+
+    try {
+        const res = await fetch(`/upload/${currentArticleId}`, {
+            method: 'POST',
+            body: formData
+        });
+        const data = await res.json();
+
+        if (data.success) {
+        
+            fileInput.value = "";
+
+            
+            loadFiles(currentArticleId);
+        } else {
+            alert("Upload failed: " + (data.message || "Unknown error"));
+        }
+    } catch (err) {
+        alert("Upload failed. Please try again.");
+        console.error(err);
+    } finally {
+  
+        uploadBtn.disabled = false;
+        uploadBtn.textContent = "Upload";
+    }
 });
+
 
 function deleteFile(fileId) {
     if (!confirm('Delete this file?')) return;
