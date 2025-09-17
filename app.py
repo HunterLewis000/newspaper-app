@@ -455,6 +455,28 @@ def manage():
         return "Forbidden", 403
     return render_template("manage.html")
 
+@app.route("/manage/attendance")
+@login_required
+def manage_attendance():
+    if current_user.email not in ALLOWED_EMAILS:
+        return "Forbidden", 403
+    return render_template("manage_attendance.html")
+
+@app.route("/manage/permissions")
+@login_required
+def manage_permissions():
+    if current_user.email not in ALLOWED_EMAILS:
+        return "Forbidden", 403
+    return render_template("manage_permissions.html")
+
+@app.route("/manage/about")
+@login_required
+def manage_about():
+    if current_user.email not in ALLOWED_EMAILS:
+        return "Forbidden", 403
+    return render_template("manage_about.html")
+
+
 
 # Calendar Routes
 GOOGLE_CALENDAR_ID = '887571597d40c57fb2ca6c658ae6063475908c62860c563ad6aba974e1d90d7f@group.calendar.google.com'
