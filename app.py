@@ -172,11 +172,10 @@ def upload_file(article_id):
     if not file or file.filename.strip() == '':
         return jsonify(success=False, message="Empty filename"), 400
 
-    # Sanitize + uniquify filename
+    
     filename = secure_filename(file.filename)
     s3_key = f"articles/{article_id}/{uuid.uuid4().hex}_{filename}"
 
-    # Guess mimetype (fallback to octet-stream)
     mimetype = file.mimetype or mimetypes.guess_type(filename)[0] or "application/octet-stream"
 
     try:
@@ -190,7 +189,7 @@ def upload_file(article_id):
         app.logger.error(f"S3 upload failed: {e}")
         return jsonify(success=False, message="Upload failed"), 500
 
-    # Save metadata in DB
+ 
     new_file = ArticleFile(
         article_id=article.id,
         filename=filename,
@@ -237,7 +236,7 @@ def download_file(file_id):
 
     file_obj.seek(0)
 
-    # Detect mimetype
+   
     mtype, _ = mimetypes.guess_type(file.filename)
     mimetype = mtype or "application/octet-stream"
 
