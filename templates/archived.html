@@ -180,7 +180,7 @@ document.getElementById('uploadForm').addEventListener('submit', async e => {
   
     const uploadBtn = e.target.querySelector('button[type="submit"]');
     uploadBtn.disabled = true;
-    uploadBtn.textContent = "Uploading...";
+    uploadBtn.textContent = "Wait...";
 
     try {
         const res = await fetch(`/upload/${currentArticleId}`, {
