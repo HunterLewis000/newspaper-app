@@ -11,7 +11,6 @@ from flask_login import (
     LoginManager, UserMixin, login_user, logout_user,
     login_required, current_user
 )
-from flask_dance.contrib.google import make_google_blueprint, google
 from werkzeug.middleware.proxy_fix import ProxyFix
 from io import BytesIO
 import os
@@ -20,10 +19,14 @@ import google.auth.transport.requests
 from sqlalchemy import desc
 from datetime import datetime
 
+from werkzeug.utils import secure_filename
+import uuid
+import mimetypes
+from botocore.exceptions import ClientError
 
-# -----------------------------------------------------------------------------
+
+
 # App + DB setup
-# -----------------------------------------------------------------------------
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://newspaper_db_47wk_user:2WQbescUw19AeDpYVPPGZzFeVnyePdiV@dpg-d2e1sv3e5dus73feem00-a.ohio-postgres.render.com/newspaper_db_47wk'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -34,16 +37,6 @@ db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-# -----------------------------------------------------------------------------
-# Auth setup (LoginManager + Google OAuth)
-# -----------------------------------------------------------------------------
-
-google_bp = make_google_blueprint(
-    client_id=os.environ.get("GOOGLE_CLIENT_ID"),
-    client_secret=os.environ.get("GOOGLE_CLIENT_SECRET"),
-    redirect_to="google_login"
-)
-app.register_blueprint(google_bp, url_prefix="/login")
 
 # Flask-Login Config
 login_manager = LoginManager()
@@ -76,9 +69,8 @@ def inject_allowed_emails():
     return dict(ALLOWED_EMAILS=ALLOWED_EMAILS)
 
 
-# -----------------------------------------------------------------------------
+
 # AWS S3 setup
-# -----------------------------------------------------------------------------
 s3_client = boto3.client(
     's3',
     aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'],
@@ -87,9 +79,7 @@ s3_client = boto3.client(
 )
 BUCKET_NAME = os.environ['S3_BUCKET_NAME']
 
-# -----------------------------------------------------------------------------
 # Models
-# -----------------------------------------------------------------------------
 class Article(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
@@ -108,12 +98,11 @@ class ArticleFile(db.Model):
     filename = db.Column(db.String(200), nullable=False)
     s3_key = db.Column(db.String(200), nullable=False)
 
-# -----------------------------------------------------------------------------
 # Login + Logout
-# -----------------------------------------------------------------------------
+
 @app.route("/google_login")
 def google_login():
-    # Get the credential token sent by the button
+   
     token = request.args.get("credential")
     if not token:
         flash("No credential received.", "error")
@@ -157,9 +146,8 @@ def logout():
     return redirect(url_for("home"))
 
 
-# -----------------------------------------------------------------------------
 # Routes (protected)
-# -----------------------------------------------------------------------------
+
 @app.route("/")
 def home():
     if current_user.is_authenticated:
@@ -175,21 +163,39 @@ def index():
 @app.route('/upload/<int:article_id>', methods=['POST'])
 @login_required
 def upload_file(article_id):
-    article = Article.query.get(article_id)
-    if not article:
-        return jsonify(success=False), 404
+    article = Article.query.get_or_404(article_id)
 
     if 'file' not in request.files:
         return jsonify(success=False, message="No file uploaded"), 400
 
     file = request.files['file']
-    if file.filename == '':
+    if not file or file.filename.strip() == '':
         return jsonify(success=False, message="Empty filename"), 400
 
-    s3_key = f"articles/{article_id}/{file.filename}"
-    s3_client.upload_fileobj(file, BUCKET_NAME, s3_key)
+    # Sanitize + uniquify filename
+    filename = secure_filename(file.filename)
+    s3_key = f"articles/{article_id}/{uuid.uuid4().hex}_{filename}"
 
-    new_file = ArticleFile(article_id=article.id, filename=file.filename, s3_key=s3_key)
+    # Guess mimetype (fallback to octet-stream)
+    mimetype = file.mimetype or mimetypes.guess_type(filename)[0] or "application/octet-stream"
+
+    try:
+        s3_client.upload_fileobj(
+            file,
+            BUCKET_NAME,
+            s3_key,
+            ExtraArgs={"ContentType": mimetype}
+        )
+    except ClientError as e:
+        app.logger.error(f"S3 upload failed: {e}")
+        return jsonify(success=False, message="Upload failed"), 500
+
+    # Save metadata in DB
+    new_file = ArticleFile(
+        article_id=article.id,
+        filename=filename,
+        s3_key=s3_key
+    )
     db.session.add(new_file)
     db.session.commit()
 
@@ -202,7 +208,7 @@ def upload_file(article_id):
         'file_url': file_url
     })
 
-    return jsonify(success=True, file_id=new_file.id, filename=new_file.filename, file_url=file_url)
+    return jsonify(success=True, file_id=new_file.id, filename=filename, file_url=file_url)
 
 @app.route('/files/<int:article_id>')
 @login_required
@@ -220,24 +226,27 @@ def list_files(article_id):
 @app.route('/download_file/<int:file_id>')
 @login_required
 def download_file(file_id):
-    file = ArticleFile.query.get(file_id)
-    if not file:
-        return "File not found", 404
+    file = ArticleFile.query.get_or_404(file_id)
 
     file_obj = BytesIO()
-    s3_client.download_fileobj(BUCKET_NAME, file.s3_key, file_obj)
+    try:
+        s3_client.download_fileobj(BUCKET_NAME, file.s3_key, file_obj)
+    except ClientError as e:
+        app.logger.error(f"S3 download failed: {e}")
+        return "File not found in storage", 404
+
     file_obj.seek(0)
 
-    if file.s3_key.lower().endswith('.docx'):
-        mimetype = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-    elif file.s3_key.lower().endswith('.pdf'):
-        mimetype = 'application/pdf'
-    elif file.s3_key.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
-        mimetype = 'image/jpeg'
-    else:
-        mimetype = 'application/octet-stream'
+    # Detect mimetype
+    mtype, _ = mimetypes.guess_type(file.filename)
+    mimetype = mtype or "application/octet-stream"
 
-    return send_file(file_obj, mimetype=mimetype, as_attachment=True, download_name=file.filename)
+    return send_file(
+        file_obj,
+        mimetype=mimetype,
+        as_attachment=True,
+        download_name=file.filename
+    )
 
 @app.route('/delete_file/<int:file_id>', methods=['POST'])
 @login_required
@@ -447,9 +456,8 @@ def manage():
         return "Forbidden", 403
     return render_template("manage.html")
 
-# -----------------------------------------------------------------------------
+
 # Calendar Routes
-# -----------------------------------------------------------------------------
 GOOGLE_CALENDAR_ID = '887571597d40c57fb2ca6c658ae6063475908c62860c563ad6aba974e1d90d7f@group.calendar.google.com'
 
 @app.route('/api/calendar_events')
@@ -473,9 +481,9 @@ def calendar_events():
 
     return jsonify(events)
 
-# -----------------------------------------------------------------------------
+
 # Broadcast Socket.io
-# -----------------------------------------------------------------------------
+
 @socketio.on('article_archived')
 def handle_article_archived(data):
     emit('article_archived', data, broadcast=True)
@@ -485,7 +493,6 @@ def handle_article_activated(data):
     emit('article_activated', data, broadcast=True)
 
 
-# -----------------------------------------------------------------------------
 # Main
 # -----------------------------------------------------------------------------
 # if __name__ == '__main__':
