@@ -17,6 +17,7 @@ import os
 import google.oauth2.id_token
 import google.auth.transport.requests
 from sqlalchemy import desc, and_
+from sqlalchemy.exc import IntegrityError
 from datetime import datetime
 
 from werkzeug.utils import secure_filename
