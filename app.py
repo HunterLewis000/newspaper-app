@@ -98,6 +98,24 @@ class ArticleFile(db.Model):
     filename = db.Column(db.String(200), nullable=False)
     s3_key = db.Column(db.String(200), nullable=False)
 
+class Person(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False, unique=True)
+    active = db.Column(db.Boolean, default=True)
+
+class AttendanceDate(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    date = db.Column(db.Date, nullable=False, unique=True)
+
+class Attendance(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    person_id = db.Column(db.Integer, db.ForeignKey('person.id'), nullable=False)
+    date_id = db.Column(db.Integer, db.ForeignKey('attendance_date.id'), nullable=False)
+    present = db.Column(db.Boolean, default=False)
+
+    person = db.relationship("Person")
+    date = db.relationship("AttendanceDate")
+
 # Login + Logout
 
 @app.route("/google_login")
@@ -460,7 +478,22 @@ def manage():
 def manage_attendance():
     if current_user.email not in ALLOWED_EMAILS:
         return "Forbidden", 403
-    return render_template("manage_attendance.html")
+
+    people = Person.query.filter_by(active=True).order_by(Person.name).all()
+
+    dates = AttendanceDate.query.order_by(AttendanceDate.date).all()
+   
+    attendance_records = {}
+    all_attendance = Attendance.query.all()
+    for a in all_attendance:
+        attendance_records[(a.person_id, a.date_id)] = a.present
+
+    return render_template(
+        "manage_attendance.html",
+        people=people,
+        dates=dates,
+        attendance=attendance_records
+    )
 
 @app.route("/manage/permissions")
 @login_required
@@ -512,6 +545,46 @@ def handle_article_archived(data):
 @socketio.on('article_activated')
 def handle_article_activated(data):
     emit('article_activated', data, broadcast=True)
+
+@socketio.on("update_attendance")
+def handle_update_attendance(data):
+    person_id = data["person_id"]
+    date_id = data["date_id"]
+    present = data["present"]
+
+    record = Attendance.query.filter_by(person_id=person_id, date_id=date_id).first()
+    if not record:
+        record = Attendance(person_id=person_id, date_id=date_id, present=present)
+        db.session.add(record)
+    else:
+        record.present = present
+    db.session.commit()
+
+    emit("attendance_updated", {
+        "person_id": person_id,
+        "date_id": date_id,
+        "present": present
+    }, broadcast=True)
+
+@socketio.on("toggle_person")
+def handle_toggle_person(data):
+    person = Person.query.get(data["person_id"])
+    if person:
+        person.active = data["active"]
+        db.session.commit()
+        emit("person_toggled", {"person_id": person.id, "active": person.active}, broadcast=True)
+
+@socketio.on("toggle_date")
+def handle_toggle_date(data):
+    date_obj = AttendanceDate.query.get(data["date_id"])
+    if date_obj:
+        if data.get("delete"):
+            Attendance.query.filter_by(date_id=date_obj.id).delete()
+            db.session.delete(date_obj)
+        else:
+            date_obj.date = data["new_date"]
+        db.session.commit()
+        emit("date_toggled", {"date_id": date_obj.id, "date": str(date_obj.date)}, broadcast=True)
 
 
 # Main

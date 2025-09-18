@@ -5,7 +5,13 @@
     <title>C&W Story Admin</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='ccp.ico') }}">
-    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        table { border-collapse: collapse; }
+        th, td { border: 1px solid #ccc; padding: 5px; text-align: center; }
+        th { background-color: #f0f0f0; }
+    </style>
 </head>
 <body>
 
@@ -23,5 +29,73 @@
     <h1 style="display: inline;"><a href="https://www.ccpstudentnews.org" style="font-family: 'Brush Script MT'; text-decoration: none; color: #222; font-size: 45px;">Cardinal and White&nbsp; </a></h1><h1 style="display: inline;">Attendance</h1>
     </div>
 
+<div id="people-controls">
+    <h3>People</h3>
+    {% for person in people %}
+        <label>
+            <input type="checkbox" class="toggle-person" data-person="{{ person.id }}" checked>
+            {{ person.name }}
+        </label><br>
+    {% endfor %}
+</div>
+
+<table id="attendance-table">
+    <thead>
+        <tr>
+            <th>Name</th>
+            {% for date in dates %}
+                <th>{{ date.date.strftime("%m/%d") }}</th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for person in people %}
+        <tr data-person="{{ person.id }}">
+            <td>{{ person.name }}</td>
+            {% for date in dates %}
+            <td>
+                <input type="checkbox"
+                       class="attendance-checkbox"
+                       data-person="{{ person.id }}"
+                       data-date="{{ date.id }}"
+                       {% if attendance.get((person.id, date.id)) %} checked {% endif %}>
+            </td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<script>
+const socket = io();
+
+$('.attendance-checkbox').change(function() {
+    const personId = $(this).data('person');
+    const dateId = $(this).data('date');
+    const present = $(this).is(':checked');
+    socket.emit('update_attendance', {person_id: personId, date_id: dateId, present: present});
+});
+
+
+socket.on('attendance_updated', function(data) {
+    const selector = `.attendance-checkbox[data-person='${data.person_id}'][data-date='${data.date_id}']`;
+    $(selector).prop('checked', data.present);
+});
+
+
+$('.toggle-person').change(function() {
+    const personId = $(this).data('person');
+    const active = $(this).is(':checked');
+    socket.emit('toggle_person', {person_id: personId, active: active});
+});
+
+
+socket.on('person_toggled', function(data) {
+    const row = $(`tr[data-person='${data.person_id}']`);
+    row.toggle(data.active);
+});
+</script>
+</body>
+</html>
 </body>
 </html>
