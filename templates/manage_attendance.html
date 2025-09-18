@@ -5,16 +5,20 @@
     <title>C&W Story Admin</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='ccp.ico') }}">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js" integrity="" crossorigin="anonymous"></script>
     <style>
-        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
-        th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
-        th { background-color: #f0f0f0; }
-        .modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
-        .modal-content { background: #fff; padding: 20px; border-radius: 8px; min-width: 300px; }
-        .close { float: right; cursor: pointer; font-size: 20px; }
-        button { margin: 5px; padding: 5px 10px; }
+        body{font-family:system-ui,Segoe UI,Roboto,Arial;margin:16px;}
+        table{border-collapse:collapse;width:100%;max-width:100%;}
+        th,td{border:1px solid #ddd;padding:6px 8px;text-align:center;}
+        th.date-cell{position:relative;}
+        button.small{padding:4px 8px;font-size:12px;}
+        .delete-col, .delete-row {cursor:pointer;color:#b00;border:0;background:transparent;}
+        .controls{margin-bottom:12px;display:flex;gap:8px;align-items:center;}
+        .name-cell{text-align:left;padding-left:12px;}
+        .muted{color:#666;font-size:13px}
+        .sticky-left {position:sticky;left:0;background:white;z-index:2}
+        .sticky-top {position:sticky;top:0;background:#f8f8f8;z-index:3}
+        .col-delete-btn{position:absolute;right:4px;top:4px;opacity:.9}
     </style>
 </head>
 <body>
@@ -33,177 +37,239 @@
     <h1 style="display: inline;"><a href="https://www.ccpstudentnews.org" style="font-family: 'Brush Script MT'; text-decoration: none; color: #222; font-size: 45px;">Cardinal and White&nbsp; </a></h1><h1 style="display: inline;">Attendance</h1>
     </div>
 
-    <button id="add-person-btn">Add Person</button>
-    <button id="add-date-btn">Add Date</button>
+ <div class="controls">
+    <button id="addPersonBtn" class="small">+ Add Person</button>
+    <button id="addDateBtn" class="small">+ Add Date</button>
+    <span class="muted">Tip: multiple users see changes in real time.</span>
+  </div>
 
-    <table id="attendance-table">
-        <thead>
-            <tr id="attendance-header-row">
-                <th>Person</th>
-                {% for date in dates %}
-                <th data-date-id="{{ date.id }}">
-                    {{ date.date }}
-                    <span class="delete-btn" data-date-id="{{ date.id }}">x</span>
-                </th>
-                {% endfor %}
-            </tr>
-        </thead>
-        <tbody>
-            {% for person in people %}
-            <tr class="attendance-row" data-person-id="{{ person.id }}">
-                <td>
-                    {{ person.name }}
-                    <span class="delete-btn delete-person-btn" data-person-id="{{ person.id }}">x</span>
-                </td>
-                {% for date in dates %}
-                <td>
-                    <input type="checkbox" class="attendance-checkbox"
-                           data-person-id="{{ person.id }}"
-                           data-date-id="{{ date.id }}"
-                           {% if attendance.get((person.id, date.id)) %}checked{% endif %}>
-                </td>
-                {% endfor %}
-            </tr>
-            {% endfor %}
-        </tbody>
+  <div style="overflow:auto;max-height:70vh;">
+    <table id="attendanceTable">
+      <thead>
+        <tr>
+          <th class="sticky-top sticky-left">Person</th>
+          {% for d in dates %}
+          <th class="date-cell sticky-top" data-date-id="{{ d.id }}">
+            {{ d.date.strftime("%Y-%m-%d") }}
+            <button class="col-delete-btn delete-col" data-date-id="{{ d.id }}" title="Delete date">✕</button>
+          </th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in people %}
+        <tr data-person-id="{{ p.id }}">
+          <td class="name-cell sticky-left">
+            {{ p.name }}
+            <button class="delete-row" data-person-id="{{ p.id }}" title="Delete person">✕</button>
+          </td>
+          {% for d in dates %}
+          {% set checked = attendance.get((p.id, d.id)) %}
+          <td>
+            <input type="checkbox"
+                   class="att-checkbox"
+                   data-person-id="{{ p.id }}"
+                   data-date-id="{{ d.id }}"
+                   {% if checked %}checked{% endif %}>
+          </td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
     </table>
+  </div>
 
-    <!-- Add Person Modal -->
-    <div id="person-modal" class="modal">
-        <div class="modal-content">
-            <h3>Add Person</h3>
-            <input type="text" id="new-person-name" placeholder="Person Name">
-            <button id="save-person-btn">Save</button>
-            <button id="close-person-modal">Cancel</button>
-        </div>
-    </div>
+  <script>
+    // Minimal helper functions
+    const $ = sel => document.querySelector(sel);
+    const $$ = sel => Array.from(document.querySelectorAll(sel));
 
-    <!-- Add Date Modal -->
-    <div id="date-modal" class="modal">
-        <div class="modal-content">
-            <h3>Add Date</h3>
-            <input type="date" id="new-date">
-            <button id="save-date-btn">Save</button>
-            <button id="close-date-modal">Cancel</button>
-        </div>
-    </div>
+    const socket = io();
 
-    <script>
-        const socket = io();
+    // Attach DOM handlers
+    function bindUI() {
+      $('#addPersonBtn').addEventListener('click', onAddPerson);
+      $('#addDateBtn').addEventListener('click', onAddDate);
 
-        // -------------------
-        // Add Person Modal
-        // -------------------
-        const personModal = document.getElementById("person-modal");
-        document.getElementById("add-person-btn").onclick = () => personModal.classList.add("show");
-        document.getElementById("close-person-modal").onclick = () => personModal.classList.remove("show");
-
-        document.getElementById("save-person-btn").onclick = () => {
-            const name = document.getElementById("new-person-name").value.trim();
-            if(!name) return alert("Enter a name");
-            socket.emit("add_person", { name });
-            document.getElementById("new-person-name").value = "";
-            personModal.classList.remove("show");
-        }
-
-        // -------------------
-        // Add Date Modal
-        // -------------------
-        const dateModal = document.getElementById("date-modal");
-        document.getElementById("add-date-btn").onclick = () => dateModal.classList.add("show");
-        document.getElementById("close-date-modal").onclick = () => dateModal.classList.remove("show");
-
-        document.getElementById("save-date-btn").onclick = () => {
-            const date = document.getElementById("new-date").value;
-            if(!date) return alert("Pick a date");
-            socket.emit("add_date", { date });
-            document.getElementById("new-date").value = "";
-            dateModal.classList.remove("show");
-        }
-
-        // -------------------
-        // Add / Delete Live Updates
-        // -------------------
-        socket.on("person_added", data => {
-            const tbody = document.querySelector("#attendance-table tbody");
-            const tr = document.createElement("tr");
-            tr.classList.add("attendance-row");
-            tr.dataset.personId = data.id;
-            tr.innerHTML = `<td>${data.name} <span class="delete-btn delete-person-btn" data-person-id="${data.id}">x</span></td>`;
-            
-            // Add checkbox cells for existing dates
-            document.querySelectorAll("#attendance-header-row th[data-date-id]").forEach(th => {
-                const td = document.createElement("td");
-                const checkbox = document.createElement("input");
-                checkbox.type = "checkbox";
-                checkbox.classList.add("attendance-checkbox");
-                checkbox.dataset.personId = data.id;
-                checkbox.dataset.dateId = th.dataset.dateId;
-                td.appendChild(checkbox);
-                tr.appendChild(td);
+      // row delete
+      document.addEventListener('click', e => {
+        if (e.target.matches('.delete-row')) {
+          const id = e.target.dataset.personId;
+          if (!confirm('Delete person and their attendance?')) return;
+          fetch(`/attendance/person/${id}/delete`, {method:'POST'})
+            .then(r=>r.json()).then(resp=>{
+              if (!resp.success) alert('Error deleting person: '+(resp.error||''));
+              // local remove will happen via socket event; but remove if immediate
+              // fallback: if socket missed, remove now:
+              const tr = document.querySelector(`tr[data-person-id="${id}"]`);
+              if (tr) tr.remove();
             });
-            tbody.appendChild(tr);
-        });
-
-        socket.on("date_added", data => {
-            // Add header
-            const th = document.createElement("th");
-            th.dataset.dateId = data.id;
-            th.innerHTML = `${data.date} <span class="delete-btn" data-date-id="${data.id}">x</span>`;
-            document.getElementById("attendance-header-row").appendChild(th);
-
-            // Add checkbox cell for each person row
-            document.querySelectorAll(".attendance-row").forEach(tr => {
-                const td = document.createElement("td");
-                const checkbox = document.createElement("input");
-                checkbox.type = "checkbox";
-                checkbox.classList.add("attendance-checkbox");
-                checkbox.dataset.personId = tr.dataset.personId;
-                checkbox.dataset.dateId = data.id;
-                td.appendChild(checkbox);
-                tr.appendChild(td);
+        }
+        if (e.target.matches('.delete-col')) {
+          const id = e.target.dataset.dateId;
+          if (!confirm('Delete date and all records for it?')) return;
+          fetch(`/attendance/date/${id}/delete`, {method:'POST'})
+            .then(r=>r.json()).then(resp=>{
+              if (!resp.success) alert('Error deleting date: '+(resp.error||''));
+              // optimistic removal
+              document.querySelectorAll(`th[data-date-id="${id}"], td[data-date-id="${id}"]`).forEach(n => n.remove());
+              // More robust: full rerender on socket event
             });
-        });
+        }
+      });
 
-        socket.on("person_toggled", data => {
-            if(!data.active) {
-                document.querySelector(`.attendance-row[data-person-id="${data.person_id}"]`)?.remove();
+      // checkbox toggles
+      document.addEventListener('change', e => {
+        if (e.target.matches('.att-checkbox')) {
+          const cb = e.target;
+          const person_id = cb.dataset.personId;
+          const date_id = cb.dataset.dateId;
+          const present = cb.checked;
+          cb.disabled = true;
+          fetch('/attendance/toggle', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({person_id: person_id, date_id: date_id, present: present})
+          }).then(r=>r.json()).then(resp=>{
+            if (!resp.success) {
+              alert('Error updating attendance: ' + (resp.error || ''));
+              cb.checked = !present; // revert
             }
-        });
+          }).catch(err=>{
+            console.error(err); alert('Network error'); cb.checked = !present;
+          }).finally(()=> cb.disabled = false);
+        }
+      });
+    }
 
-        socket.on("date_toggled", data => {
-            const idx = Array.from(document.querySelectorAll("#attendance-header-row th")).findIndex(th => th.dataset.dateId == data.date_id);
-            if(idx >= 0){
-                document.querySelectorAll("#attendance-table tr").forEach(tr => {
-                    tr.removeChild(tr.children[idx]);
-                });
-            }
-        });
+    // Add person/date prompts
+    function onAddPerson(){
+      const name = prompt('New person name:');
+      if (!name) return;
+      const data = new FormData();
+      data.append('name', name);
+      fetch('/attendance/person', {method:'POST', body: data})
+        .then(r=>r.json()).then(resp=>{
+          if (!resp.success) alert('Error: ' + (resp.error||''));
+          // socket will insert
+        }).catch(e=>{console.error(e); alert('Network error');});
+    }
+    function onAddDate(){
+      const date = prompt('Date (YYYY-MM-DD):');
+      if (!date) return;
+      const data = new FormData();
+      data.append('date', date);
+      fetch('/attendance/date', {method:'POST', body: data})
+        .then(r=>r.json()).then(resp=>{
+          if (!resp.success) alert('Error: ' + (resp.error||''));
+        }).catch(e=>{console.error(e); alert('Network error');});
+    }
 
-        // -------------------
-        // Checkbox change
-        // -------------------
-        document.addEventListener("change", e => {
-            if(e.target.classList.contains("attendance-checkbox")){
-                const personId = e.target.dataset.personId;
-                const dateId = e.target.dataset.dateId;
-                const present = e.target.checked;
-                socket.emit("update_attendance", { person_id: personId, date_id: dateId, present });
-            }
-        });
+    // DOM mutation helpers for socket events
+    function insertPersonRow(person) {
+      // create tr with person and checkboxes for current columns
+      const tbody = document.querySelector('#attendanceTable tbody');
+      const tr = document.createElement('tr');
+      tr.dataset.personId = person.id;
+      const nameTd = document.createElement('td');
+      nameTd.className = 'name-cell sticky-left';
+      nameTd.innerHTML = `${escapeHtml(person.name)} <button class="delete-row" data-person-id="${person.id}">✕</button>`;
+      tr.appendChild(nameTd);
 
-        // -------------------
-        // Delete buttons
-        // -------------------
-        document.addEventListener("click", e => {
-            if(e.target.classList.contains("delete-person-btn")){
-                socket.emit("toggle_person", { person_id: e.target.dataset.personId, active: false });
-            }
-            if(e.target.classList.contains("delete-btn") && e.target.dataset.dateId){
-                socket.emit("toggle_date", { date_id: e.target.dataset.dateId, delete: true });
-            }
+      // for each date header, add a cell
+      const dateThs = Array.from(document.querySelectorAll('#attendanceTable thead th.date-cell'));
+      dateThs.forEach(th=>{
+        const dateId = th.dataset.dateId;
+        const td = document.createElement('td');
+        td.innerHTML = `<input type="checkbox" class="att-checkbox" data-person-id="${person.id}" data-date-id="${dateId}">`;
+        tr.appendChild(td);
+      });
+
+      tbody.appendChild(tr);
+    }
+
+    function insertDateColumn(date) {
+      // add header
+      const theadRow = document.querySelector('#attendanceTable thead tr');
+      const th = document.createElement('th');
+      th.className = 'date-cell sticky-top';
+      th.dataset.dateId = date.id;
+      th.innerHTML = `${date.date} <button class="col-delete-btn delete-col" data-date-id="${date.id}">✕</button>`;
+      theadRow.appendChild(th);
+
+      // add a cell in each row (append)
+      const tbodyRows = Array.from(document.querySelectorAll('#attendanceTable tbody tr'));
+      tbodyRows.forEach(tr=>{
+        const td = document.createElement('td');
+        const pid = tr.dataset.personId;
+        td.innerHTML = `<input type="checkbox" class="att-checkbox" data-person-id="${pid}" data-date-id="${date.id}">`;
+        tr.appendChild(td);
+      });
+    }
+
+    function updateCheckbox(person_id, date_id, present) {
+      const selector = `.att-checkbox[data-person-id="${person_id}"][data-date-id="${date_id}"]`;
+      const cb = document.querySelector(selector);
+      if (cb) cb.checked = !!present;
+      // If checkbox doesn't exist (maybe a new date was added after this person), consider creating it.
+    }
+
+    function removePersonRow(person_id) {
+      const tr = document.querySelector(`tr[data-person-id="${person_id}"]`);
+      if (tr) tr.remove();
+    }
+
+    function removeDateColumn(date_id) {
+      // remove header
+      const th = document.querySelector(`th[data-date-id="${date_id}"]`);
+      if (th) th.remove();
+      // remove each corresponding td
+      // Each td doesn't have data-date-id; to find them easily, map header index
+      const headers = Array.from(document.querySelectorAll('#attendanceTable thead th'));
+      const index = headers.findIndex(h => h.dataset.dateId === String(date_id));
+      // If header removed already, fallback: search inputs
+      if (index > 0) {
+        // index 0 is person column; table cells align
+        document.querySelectorAll('#attendanceTable tbody tr').forEach(tr=>{
+          const tds = tr.querySelectorAll('td');
+          if (tds[index-1]) tds[index-1].remove();
         });
-    </script>
+      } else {
+        // fallback: remove checkboxes that match data-date-id
+        document.querySelectorAll(`.att-checkbox[data-date-id="${date_id}"]`).forEach(cb=>{
+          const td = cb.closest('td');
+          if (td) td.remove();
+        });
+      }
+    }
+
+    // basic HTML escaper
+    function escapeHtml(s){ return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;'); }
+
+    // Socket listeners
+    socket.on('connect', ()=> console.log('socket connected'));
+    socket.on('person_added', (person) => {
+      // avoid duplicate if person already present
+      if (document.querySelector(`tr[data-person-id="${person.id}"]`)) return;
+      insertPersonRow(person);
+    });
+    socket.on('person_deleted', ({id}) => {
+      removePersonRow(id);
+    });
+    socket.on('date_added', (date) => {
+      if (document.querySelector(`th[data-date-id="${date.id}"]`)) return;
+      insertDateColumn(date);
+    });
+    socket.on('date_deleted', ({id}) => {
+      removeDateColumn(id);
+    });
+    socket.on('attendance_toggled', (data) => {
+      updateCheckbox(data.person_id, data.date_id, data.present);
+    });
+
+    // initialize
+    bindUI();
+  </script>
 </body>
 </html>
 </body>

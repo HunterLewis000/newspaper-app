@@ -23,6 +23,7 @@ from werkzeug.utils import secure_filename
 import uuid
 import mimetypes
 from botocore.exceptions import ClientError
+from sqlalchemy.exc import IntegrityError
 
 
 
@@ -509,6 +510,126 @@ def manage_about():
         return "Forbidden", 403
     return render_template("manage_about.html")
 
+@app.route('/attendance/data')
+@login_required
+def attendance_data():
+    # Return current people, dates, attendance mapping as JSON (for client fetch if needed)
+    people = Person.query.filter_by(active=True).order_by(Person.name).all()
+    dates = AttendanceDate.query.order_by(AttendanceDate.date).all()
+    all_attendance = Attendance.query.all()
+    attendance_records = {}
+    for a in all_attendance:
+        attendance_records[f"{a.person_id}:{a.date_id}"] = a.present
+    people_json = [{"id": p.id, "name": p.name} for p in people]
+    dates_json = [{"id": d.id, "date": d.date.isoformat()} for d in dates]
+    return jsonify({"people": people_json, "dates": dates_json, "attendance": attendance_records})
+
+
+@app.route('/attendance/person', methods=['POST'])
+@login_required
+def add_person_api():
+    if current_user.email not in ALLOWED_EMAILS:
+        return jsonify(success=False, error="forbidden"), 403
+    name = request.form.get('name') or request.json.get('name')
+    if not name or not name.strip():
+        return jsonify(success=False, error="Name required"), 400
+    name = name.strip()
+    try:
+        new_person = Person(name=name, active=True)
+        db.session.add(new_person)
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        return jsonify(success=False, error="Person already exists"), 400
+    payload = {"id": new_person.id, "name": new_person.name}
+    socketio.emit('person_added', payload, broadcast=True)
+    return jsonify(success=True, person=payload)
+
+
+@app.route('/attendance/person/<int:person_id>/delete', methods=['POST'])
+@login_required
+def delete_person_api(person_id):
+    if current_user.email not in ALLOWED_EMAILS:
+        return jsonify(success=False, error="forbidden"), 403
+    person = Person.query.get(person_id)
+    if not person:
+        return jsonify(success=False, error="not_found"), 404
+    # delete attendance rows referencing this person
+    Attendance.query.filter_by(person_id=person.id).delete()
+    db.session.delete(person)
+    db.session.commit()
+    socketio.emit('person_deleted', {'id': person_id}, broadcast=True)
+    return jsonify(success=True)
+
+
+@app.route('/attendance/date', methods=['POST'])
+@login_required
+def add_date_api():
+    if current_user.email not in ALLOWED_EMAILS:
+        return jsonify(success=False, error="forbidden"), 403
+    # accept either 'date' form field or json; expect YYYY-MM-DD
+    date_str = request.form.get('date') or request.json.get('date')
+    if not date_str:
+        return jsonify(success=False, error="date required"), 400
+    try:
+        date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
+    except ValueError:
+        return jsonify(success=False, error="invalid date format, use YYYY-MM-DD"), 400
+    try:
+        new_date = AttendanceDate(date=date_obj)
+        db.session.add(new_date)
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        return jsonify(success=False, error="date exists"), 400
+    payload = {"id": new_date.id, "date": new_date.date.isoformat()}
+    socketio.emit('date_added', payload, broadcast=True)
+    return jsonify(success=True, date=payload)
+
+
+@app.route('/attendance/date/<int:date_id>/delete', methods=['POST'])
+@login_required
+def delete_date_api(date_id):
+    if current_user.email not in ALLOWED_EMAILS:
+        return jsonify(success=False, error="forbidden"), 403
+    date = AttendanceDate.query.get(date_id)
+    if not date:
+        return jsonify(success=False, error="not_found"), 404
+    Attendance.query.filter_by(date_id=date.id).delete()
+    db.session.delete(date)
+    db.session.commit()
+    socketio.emit('date_deleted', {'id': date_id}, broadcast=True)
+    return jsonify(success=True)
+
+
+@app.route('/attendance/toggle', methods=['POST'])
+@login_required
+def toggle_attendance_api():
+    if current_user.email not in ALLOWED_EMAILS:
+        return jsonify(success=False, error="forbidden"), 403
+    data = request.get_json() or request.form
+    try:
+        person_id = int(data.get('person_id'))
+        date_id = int(data.get('date_id'))
+        present = bool(data.get('present'))  # truthy value expected
+    except Exception:
+        return jsonify(success=False, error="invalid payload"), 400
+    person = Person.query.get(person_id)
+    date = AttendanceDate.query.get(date_id)
+    if not person or not date:
+        return jsonify(success=False, error="not_found"), 404
+    # upsert Attendance
+    attendance = Attendance.query.filter_by(person_id=person_id, date_id=date_id).first()
+    if not attendance:
+        attendance = Attendance(person_id=person_id, date_id=date_id, present=present)
+        db.session.add(attendance)
+    else:
+        attendance.present = present
+    db.session.commit()
+    payload = {"person_id": person_id, "date_id": date_id, "present": attendance.present}
+    socketio.emit('attendance_toggled', payload, broadcast=True)
+    return jsonify(success=True, attendance=payload)
+
 
 
 # Calendar Routes
@@ -545,64 +666,6 @@ def handle_article_archived(data):
 @socketio.on('article_activated')
 def handle_article_activated(data):
     emit('article_activated', data, broadcast=True)
-
-@socketio.on("update_attendance")
-def handle_update_attendance(data):
-    person_id = data["person_id"]
-    date_id = data["date_id"]
-    present = data["present"]
-
-    record = Attendance.query.filter_by(person_id=person_id, date_id=date_id).first()
-    if not record:
-        record = Attendance(person_id=person_id, date_id=date_id, present=present)
-        db.session.add(record)
-    else:
-        record.present = present
-    db.session.commit()
-
-    emit("attendance_updated", {
-        "person_id": person_id,
-        "date_id": date_id,
-        "present": present
-    }, broadcast=True)
-
-@socketio.on("toggle_person")
-def handle_toggle_person(data):
-    person = Person.query.get(data["person_id"])
-    if person:
-        person.active = data["active"]
-        db.session.commit()
-        emit("person_toggled", {"person_id": person.id, "active": person.active}, broadcast=True)
-
-@socketio.on("toggle_date")
-def handle_toggle_date(data):
-    date_obj = AttendanceDate.query.get(data["date_id"])
-    if date_obj:
-        if data.get("delete"):
-            Attendance.query.filter_by(date_id=date_obj.id).delete()
-            db.session.delete(date_obj)
-        else:
-            date_obj.date = data["new_date"]
-        db.session.commit()
-        emit("date_toggled", {"date_id": date_obj.id, "date": str(date_obj.date)}, broadcast=True)
-
-@socketio.on('add_person')
-def handle_add_person(data):
-    name = data.get('name')
-    if name:
-        person = Person(name=name, active=True)
-        db.session.add(person)
-        db.session.commit()
-        emit('person_added', {'id': person.id, 'name': person.name}, broadcast=True)
-
-@socketio.on('add_date')
-def handle_add_date(data):
-    date_str = data.get('date')
-    date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
-    new_date = AttendanceDate(date=date_obj)
-    db.session.add(new_date)
-    db.session.commit()
-    emit('date_added', {'id': new_date.id, 'date': date_str}, broadcast=True)
 
 
 
