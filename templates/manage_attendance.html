@@ -6,20 +6,18 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='ccp.ico') }}">
     <script src="https://cdn.socket.io/4.6.1/socket.io.min.js" integrity="" crossorigin="anonymous"></script>
-    <style>
-        body{font-family:system-ui,Segoe UI,Roboto,Arial;margin:16px;}
-        table{border-collapse:collapse;width:100%;max-width:100%;}
-        th,td{border:1px solid #ddd;padding:6px 8px;text-align:center;}
-        th.date-cell{position:relative;}
-        button.small{padding:4px 8px;font-size:12px;}
-        .delete-col, .delete-row {cursor:pointer;color:#b00;border:0;background:transparent;}
-        .controls{margin-bottom:12px;display:flex;gap:8px;align-items:center;}
-        .name-cell{text-align:left;padding-left:12px;}
-        .muted{color:#666;font-size:13px}
-        .sticky-left {position:sticky;left:0;background:white;z-index:2}
-        .sticky-top {position:sticky;top:0;background:#f8f8f8;z-index:3}
-        .col-delete-btn{position:absolute;right:4px;top:4px;opacity:.9}
-    </style>
+     <style>
+        body { font-family: Arial, sans-serif; padding: 16px; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ddd; padding: 6px; text-align: center; }
+        th.date-col { position: sticky; top: 0; background: #fafafa; z-index: 1; }
+        th.person { background: #f0f0f0; text-align:left; }
+        td.cell { cursor: pointer; width: 40px; height: 32px; }
+        td.cell.present { background: #4caf50; color: white; }
+        td.cell.absent { background: #fff; color: #333; }
+        .controls { margin-bottom: 12px; display:flex; gap:8px; align-items:center; }
+        button { padding: 6px 10px; cursor:pointer; }
+      </style>
 </head>
 <body>
 
@@ -38,238 +36,285 @@
     </div>
 
  <div class="controls">
-    <button id="addPersonBtn" class="small">+ Add Person</button>
-    <button id="addDateBtn" class="small">+ Add Date</button>
-    <span class="muted">Tip: multiple users see changes in real time.</span>
+    <button id="btn-add-person">Add Person</button>
+    <button id="btn-add-date">Add Date</button>
+    <button id="btn-refresh">Refresh</button>
   </div>
 
-  <div style="overflow:auto;max-height:70vh;">
-    <table id="attendanceTable">
-      <thead>
-        <tr>
-          <th class="sticky-top sticky-left">Person</th>
-          {% for d in dates %}
-          <th class="date-cell sticky-top" data-date-id="{{ d.id }}">
-            {{ d.date.strftime("%Y-%m-%d") }}
-            <button class="col-delete-btn delete-col" data-date-id="{{ d.id }}" title="Delete date">✕</button>
-          </th>
-          {% endfor %}
-        </tr>
-      </thead>
-      <tbody>
-        {% for p in people %}
-        <tr data-person-id="{{ p.id }}">
-          <td class="name-cell sticky-left">
-            {{ p.name }}
-            <button class="delete-row" data-person-id="{{ p.id }}" title="Delete person">✕</button>
-          </td>
-          {% for d in dates %}
-          {% set checked = attendance.get((p.id, d.id)) %}
-          <td>
-            <input type="checkbox"
-                   class="att-checkbox"
-                   data-person-id="{{ p.id }}"
-                   data-date-id="{{ d.id }}"
-                   {% if checked %}checked{% endif %}>
-          </td>
-          {% endfor %}
-        </tr>
-        {% endfor %}
-      </tbody>
+  <div id="table-wrap" style="overflow:auto; max-height:70vh;">
+    <table id="attendance-table">
+      <!-- built dynamically -->
     </table>
   </div>
 
-  <script>
-    // Minimal helper functions
-    const $ = sel => document.querySelector(sel);
-    const $$ = sel => Array.from(document.querySelectorAll(sel));
+<script>
+const socket = io(); // default path
 
-    const socket = io();
+let people = [];
+let dates = [];
+let attendance = {}; // map "personId|dateId" -> boolean
 
-    // Attach DOM handlers
-    function bindUI() {
-      $('#addPersonBtn').addEventListener('click', onAddPerson);
-      $('#addDateBtn').addEventListener('click', onAddDate);
+function keyFor(p, d) { return `${p}|${d}`; }
 
-      // row delete
-      document.addEventListener('click', e => {
-        if (e.target.matches('.delete-row')) {
-          const id = e.target.dataset.personId;
-          if (!confirm('Delete person and their attendance?')) return;
-          fetch(`/attendance/person/${id}/delete`, {method:'POST'})
-            .then(r=>r.json()).then(resp=>{
-              if (!resp.success) alert('Error deleting person: '+(resp.error||''));
-              // local remove will happen via socket event; but remove if immediate
-              // fallback: if socket missed, remove now:
-              const tr = document.querySelector(`tr[data-person-id="${id}"]`);
-              if (tr) tr.remove();
-            });
-        }
-        if (e.target.matches('.delete-col')) {
-          const id = e.target.dataset.dateId;
-          if (!confirm('Delete date and all records for it?')) return;
-          fetch(`/attendance/date/${id}/delete`, {method:'POST'})
-            .then(r=>r.json()).then(resp=>{
-              if (!resp.success) alert('Error deleting date: '+(resp.error||''));
-              // optimistic removal
-              document.querySelectorAll(`th[data-date-id="${id}"], td[data-date-id="${id}"]`).forEach(n => n.remove());
-              // More robust: full rerender on socket event
-            });
-        }
-      });
+async function loadData() {
+  const resp = await fetch('/api/attendance/data');
+  const data = await resp.json();
+  // server returns attendance as object keyed by (person_id, date_id) but as JSON it will be string keys.
+  // We'll accept either and normalize
+  people = data.people || [];
+  dates = data.dates || [];
+  attendance = {};
 
-      // checkbox toggles
-      document.addEventListener('change', e => {
-        if (e.target.matches('.att-checkbox')) {
-          const cb = e.target;
-          const person_id = cb.dataset.personId;
-          const date_id = cb.dataset.dateId;
-          const present = cb.checked;
-          cb.disabled = true;
-          fetch('/attendance/toggle', {
-            method: 'POST',
-            headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({person_id: person_id, date_id: date_id, present: present})
-          }).then(r=>r.json()).then(resp=>{
-            if (!resp.success) {
-              alert('Error updating attendance: ' + (resp.error || ''));
-              cb.checked = !present; // revert
-            }
-          }).catch(err=>{
-            console.error(err); alert('Network error'); cb.checked = !present;
-          }).finally(()=> cb.disabled = false);
-        }
-      });
-    }
-
-    // Add person/date prompts
-    function onAddPerson(){
-      const name = prompt('New person name:');
-      if (!name) return;
-      const data = new FormData();
-      data.append('name', name);
-      fetch('/attendance/person', {method:'POST', body: data})
-        .then(r=>r.json()).then(resp=>{
-          if (!resp.success) alert('Error: ' + (resp.error||''));
-          // socket will insert
-        }).catch(e=>{console.error(e); alert('Network error');});
-    }
-    function onAddDate(){
-      const date = prompt('Date (YYYY-MM-DD):');
-      if (!date) return;
-      const data = new FormData();
-      data.append('date', date);
-      fetch('/attendance/date', {method:'POST', body: data})
-        .then(r=>r.json()).then(resp=>{
-          if (!resp.success) alert('Error: ' + (resp.error||''));
-        }).catch(e=>{console.error(e); alert('Network error');});
-    }
-
-    // DOM mutation helpers for socket events
-    function insertPersonRow(person) {
-      // create tr with person and checkboxes for current columns
-      const tbody = document.querySelector('#attendanceTable tbody');
-      const tr = document.createElement('tr');
-      tr.dataset.personId = person.id;
-      const nameTd = document.createElement('td');
-      nameTd.className = 'name-cell sticky-left';
-      nameTd.innerHTML = `${escapeHtml(person.name)} <button class="delete-row" data-person-id="${person.id}">✕</button>`;
-      tr.appendChild(nameTd);
-
-      // for each date header, add a cell
-      const dateThs = Array.from(document.querySelectorAll('#attendanceTable thead th.date-cell'));
-      dateThs.forEach(th=>{
-        const dateId = th.dataset.dateId;
-        const td = document.createElement('td');
-        td.innerHTML = `<input type="checkbox" class="att-checkbox" data-person-id="${person.id}" data-date-id="${dateId}">`;
-        tr.appendChild(td);
-      });
-
-      tbody.appendChild(tr);
-    }
-
-    function insertDateColumn(date) {
-      // add header
-      const theadRow = document.querySelector('#attendanceTable thead tr');
-      const th = document.createElement('th');
-      th.className = 'date-cell sticky-top';
-      th.dataset.dateId = date.id;
-      th.innerHTML = `${date.date} <button class="col-delete-btn delete-col" data-date-id="${date.id}">✕</button>`;
-      theadRow.appendChild(th);
-
-      // add a cell in each row (append)
-      const tbodyRows = Array.from(document.querySelectorAll('#attendanceTable tbody tr'));
-      tbodyRows.forEach(tr=>{
-        const td = document.createElement('td');
-        const pid = tr.dataset.personId;
-        td.innerHTML = `<input type="checkbox" class="att-checkbox" data-person-id="${pid}" data-date-id="${date.id}">`;
-        tr.appendChild(td);
-      });
-    }
-
-    function updateCheckbox(person_id, date_id, present) {
-      const selector = `.att-checkbox[data-person-id="${person_id}"][data-date-id="${date_id}"]`;
-      const cb = document.querySelector(selector);
-      if (cb) cb.checked = !!present;
-      // If checkbox doesn't exist (maybe a new date was added after this person), consider creating it.
-    }
-
-    function removePersonRow(person_id) {
-      const tr = document.querySelector(`tr[data-person-id="${person_id}"]`);
-      if (tr) tr.remove();
-    }
-
-    function removeDateColumn(date_id) {
-      // remove header
-      const th = document.querySelector(`th[data-date-id="${date_id}"]`);
-      if (th) th.remove();
-      // remove each corresponding td
-      // Each td doesn't have data-date-id; to find them easily, map header index
-      const headers = Array.from(document.querySelectorAll('#attendanceTable thead th'));
-      const index = headers.findIndex(h => h.dataset.dateId === String(date_id));
-      // If header removed already, fallback: search inputs
-      if (index > 0) {
-        // index 0 is person column; table cells align
-        document.querySelectorAll('#attendanceTable tbody tr').forEach(tr=>{
-          const tds = tr.querySelectorAll('td');
-          if (tds[index-1]) tds[index-1].remove();
-        });
+  // data.attendance may be an object keyed by "('person_id', 'date_id')" or nested - we handle typical shapes:
+  if (data.attendance) {
+    // If keys are like "('1', '2')" or like "1,2" or like "1|2" - attempt to normalize:
+    for (const k of Object.keys(data.attendance)) {
+      const v = data.attendance[k];
+      // try parse common formats:
+      let pid, did;
+      if (k.includes("|")) {
+        [pid, did] = k.split("|");
+      } else if (k.includes(",")) {
+        [pid, did] = k.split(",").map(s => s.replace(/[^\d]/g,''));
       } else {
-        // fallback: remove checkboxes that match data-date-id
-        document.querySelectorAll(`.att-checkbox[data-date-id="${date_id}"]`).forEach(cb=>{
-          const td = cb.closest('td');
-          if (td) td.remove();
-        });
+        // maybe object keys were number strings due to JSON mapping: try to parse
+        // If it's an object like {"(1,2)": true}, remove non-digits.
+        const digits = k.match(/\d+/g);
+        if (digits && digits.length >= 2) {
+          pid = digits[0]; did = digits[1];
+        } else {
+          continue;
+        }
+      }
+      attendance[keyFor(pid, did)] = !!v;
+    }
+  }
+
+  buildTable();
+}
+
+function buildTable() {
+  const table = document.getElementById('attendance-table');
+  table.innerHTML = '';
+
+  // header row
+  const thead = document.createElement('thead');
+  const headRow = document.createElement('tr');
+  const emptyTh = document.createElement('th');
+  emptyTh.className = "person";
+  emptyTh.textContent = "People \\ Dates";
+  headRow.appendChild(emptyTh);
+
+  dates.forEach(d => {
+    const th = document.createElement('th');
+    th.className = "date-col";
+    th.dataset.dateId = d.id;
+    th.textContent = (new Date(d.date)).toISOString().slice(0,10);
+    th.title = "Click to delete this date";
+    th.style.cursor = 'pointer';
+    th.addEventListener('click', () => {
+      if (confirm(`Delete date ${th.textContent}? This will remove all attendance entries for this date.`)) {
+        deleteDate(d.id);
+      }
+    });
+    headRow.appendChild(th);
+  });
+  thead.appendChild(headRow);
+  table.appendChild(thead);
+
+  const tbody = document.createElement('tbody');
+  people.forEach(p => {
+    const tr = document.createElement('tr');
+    const nameTd = document.createElement('td');
+    nameTd.className = "person";
+    nameTd.textContent = p.name;
+    nameTd.style.cursor = 'pointer';
+    nameTd.title = "Click to edit / delete person";
+    nameTd.addEventListener('click', () => handlePersonClick(p));
+    tr.appendChild(nameTd);
+
+    dates.forEach(d => {
+      const td = document.createElement('td');
+      td.className = 'cell absent';
+      td.dataset.personId = p.id;
+      td.dataset.dateId = d.id;
+      const key = keyFor(String(p.id), String(d.id));
+      const present = !!attendance[key];
+      if (present) {
+        td.classList.remove('absent');
+        td.classList.add('present');
+        td.textContent = "✓";
+      } else {
+        td.classList.remove('present');
+        td.classList.add('absent');
+        td.textContent = "";
+      }
+
+      td.addEventListener('click', (ev) => {
+        // toggle locally immediately for snappy UI
+        toggleCellUI(td);
+        toggleCellServer(p.id, d.id); // fire request (no await) 
+      });
+
+      tr.appendChild(td);
+    });
+
+    tbody.appendChild(tr);
+  });
+
+  table.appendChild(tbody);
+}
+
+function toggleCellUI(tdElem) {
+  if (tdElem.classList.contains('present')) {
+    tdElem.classList.remove('present');
+    tdElem.classList.add('absent');
+    tdElem.textContent = "";
+  } else {
+    tdElem.classList.remove('absent');
+    tdElem.classList.add('present');
+    tdElem.textContent = "✓";
+  }
+}
+
+// server toggle call
+async function toggleCellServer(personId, dateId, present=null) {
+  const payload = { person_id: personId, date_id: dateId };
+  if (present !== null) payload.present = present;
+  try {
+    const resp = await fetch('/api/attendance/toggle', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const j = await resp.json();
+    // if server disagrees, we could refresh the cell. For simplicity, accept server state and update map:
+    if (j && j.present !== undefined) {
+      attendance[keyFor(String(personId), String(dateId))] = !!j.present;
+      // ensure UI matches:
+      const td = document.querySelector(`td[data-person-id='${personId}'][data-date-id='${dateId}']`);
+      if (td) {
+        if (j.present) { td.classList.add('present'); td.classList.remove('absent'); td.textContent='✓'; }
+        else { td.classList.remove('present'); td.classList.add('absent'); td.textContent=''; }
       }
     }
+  } catch (err) {
+    console.error("toggle failed", err);
+    // optional: reload to reconcile
+    await loadData();
+  }
+}
 
-    // basic HTML escaper
-    function escapeHtml(s){ return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;'); }
+async function addPerson() {
+  const name = prompt("New person's name:");
+  if (!name) return;
+  const resp = await fetch('/api/attendance/add_person', {
+    method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({name})
+  });
+  if (resp.ok) {
+    await loadData();
+  } else {
+    const j = await resp.json();
+    alert("Error: " + (j.error||resp.statusText));
+  }
+}
 
-    // Socket listeners
-    socket.on('connect', ()=> console.log('socket connected'));
-    socket.on('person_added', (person) => {
-      // avoid duplicate if person already present
-      if (document.querySelector(`tr[data-person-id="${person.id}"]`)) return;
-      insertPersonRow(person);
-    });
-    socket.on('person_deleted', ({id}) => {
-      removePersonRow(id);
-    });
-    socket.on('date_added', (date) => {
-      if (document.querySelector(`th[data-date-id="${date.id}"]`)) return;
-      insertDateColumn(date);
-    });
-    socket.on('date_deleted', ({id}) => {
-      removeDateColumn(id);
-    });
-    socket.on('attendance_toggled', (data) => {
-      updateCheckbox(data.person_id, data.date_id, data.present);
-    });
+async function deletePerson(personId) {
+  if (!confirm("Delete this person and their attendance rows?")) return;
+  const resp = await fetch('/api/attendance/delete_person', {
+    method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({person_id: personId})
+  });
+  if (resp.ok) {
+    await loadData();
+  } else {
+    const j = await resp.json();
+    alert("Error: " + (j.error||resp.statusText));
+  }
+}
 
-    // initialize
-    bindUI();
-  </script>
+function handlePersonClick(p) {
+  const action = prompt(`Edit person "${p.name}":\nType 'rename' to rename or 'delete' to remove.`, "");
+  if (!action) return;
+  if (action.toLowerCase() === 'rename') {
+    const newName = prompt("New name:", p.name);
+    if (!newName) return;
+    // simple serverless rename using existing Article update pattern? no endpoint yet; we'll patch Person here by calling a new endpoint or do inline:
+    // Use a quick fetch to /api/attendance/rename_person
+    fetch('/api/attendance/rename_person', {
+      method: 'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({person_id: p.id, name: newName})
+    }).then(async r => {
+      if (r.ok) await loadData();
+      else {
+        const j = await r.json();
+        alert("Error: " + (j.error || r.statusText));
+      }
+    });
+  } else if (action.toLowerCase() === 'delete') {
+    deletePerson(p.id);
+  }
+}
+
+async function addDate() {
+  const dateStr = prompt("Add date (YYYY-MM-DD):", new Date().toISOString().slice(0,10));
+  if (!dateStr) return;
+  const resp = await fetch('/api/attendance/add_date', {
+    method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({date: dateStr})
+  });
+  if (resp.ok) {
+    await loadData();
+  } else {
+    const j = await resp.json();
+    alert("Error: " + (j.error || resp.statusText));
+  }
+}
+
+async function deleteDate(dateId) {
+  const resp = await fetch('/api/attendance/delete_date', {
+    method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({date_id: dateId})
+  });
+  if (resp.ok) {
+    await loadData();
+  } else {
+    const j = await resp.json();
+    alert("Error: " + (j.error || resp.statusText));
+  }
+}
+
+document.getElementById('btn-add-person').addEventListener('click', addPerson);
+document.getElementById('btn-add-date').addEventListener('click', addDate);
+document.getElementById('btn-refresh').addEventListener('click', loadData);
+
+// Listen to socket events to update live
+socket.on('connect', () => console.log('socket connected'));
+socket.on('attendance_updated', (d) => {
+  // d: { person_id, date_id, present }
+  const key = keyFor(String(d.person_id), String(d.date_id));
+  attendance[key] = !!d.present;
+  const td = document.querySelector(`td[data-person-id='${d.person_id}'][data-date-id='${d.date_id}']`);
+  if (td) {
+    if (d.present) { td.classList.add('present'); td.classList.remove('absent'); td.textContent='✓'; }
+    else { td.classList.remove('present'); td.classList.add('absent'); td.textContent=''; }
+  } else {
+    // If the table doesn't have that column/row (e.g., added later), refresh
+    loadData();
+  }
+});
+
+socket.on('person_added', (p) => {
+  // simple approach: reload to avoid complex incremental insert
+  loadData();
+});
+socket.on('person_deleted', (d) => loadData());
+socket.on('date_added', (d) => loadData());
+socket.on('date_deleted', (d) => loadData());
+
+// rename person socket
+socket.on('person_renamed', (d) => loadData());
+
+// On initial load:
+loadData();
+</script>
 </body>
 </html>
 </body>
