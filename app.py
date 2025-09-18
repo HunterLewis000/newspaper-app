@@ -586,6 +586,25 @@ def handle_toggle_date(data):
         db.session.commit()
         emit("date_toggled", {"date_id": date_obj.id, "date": str(date_obj.date)}, broadcast=True)
 
+@socketio.on('add_person')
+def handle_add_person(data):
+    name = data.get('name')
+    if name:
+        person = Person(name=name, active=True)
+        db.session.add(person)
+        db.session.commit()
+        emit('person_added', {'id': person.id, 'name': person.name}, broadcast=True)
+
+@socketio.on('add_date')
+def handle_add_date(data):
+    date_str = data.get('date')
+    date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
+    new_date = AttendanceDate(date=date_obj)
+    db.session.add(new_date)
+    db.session.commit()
+    emit('date_added', {'id': new_date.id, 'date': date_str}, broadcast=True)
+
+
 
 # Main
 # -----------------------------------------------------------------------------
