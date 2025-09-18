@@ -17,6 +17,27 @@
         td.cell.absent { background: #fff; color: #333; }
         .controls { margin-bottom: 12px; display:flex; gap:8px; align-items:center; }
         button { padding: 6px 10px; cursor:pointer; }
+        th.date-col {
+            position: sticky;
+            top: 0;
+            background: #fafafa;
+            z-index: 1;
+        }
+        td.person, th.person {
+            position: sticky;
+            left: 0;
+            background: #f0f0f0;
+            z-index: 2;
+        }
+        td.person::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 1px;
+            height: 100%;
+            background: #ddd;
+        }
       </style>
 </head>
 <body>
@@ -35,50 +56,43 @@
     <h1 style="display: inline;"><a href="https://www.ccpstudentnews.org" style="font-family: 'Brush Script MT'; text-decoration: none; color: #222; font-size: 45px;">Cardinal and White&nbsp; </a></h1><h1 style="display: inline;">Attendance</h1>
     </div>
 
- <div class="controls">
-    <button id="btn-add-person">Add Person</button>
-    <button id="btn-add-date">Add Date</button>
-    <button id="btn-refresh">Refresh</button>
-  </div>
 
   <div id="table-wrap" style="overflow:auto; max-height:70vh;">
     <table id="attendance-table">
-      <!-- built dynamically -->
+      <!-- dynamic -->
     </table>
   </div>
 
+   <div class="controls">
+    <button id="btn-add-person">Add Person</button>
+    <button id="btn-add-date">Add Date</button>
+  </div>
 <script>
-const socket = io(); // default path
+const socket = io(); 
 
 let people = [];
 let dates = [];
-let attendance = {}; // map "personId|dateId" -> boolean
+let attendance = {}; 
 
 function keyFor(p, d) { return `${p}|${d}`; }
 
 async function loadData() {
   const resp = await fetch('/api/attendance/data');
   const data = await resp.json();
-  // server returns attendance as object keyed by (person_id, date_id) but as JSON it will be string keys.
-  // We'll accept either and normalize
+
   people = data.people || [];
   dates = data.dates || [];
   attendance = {};
 
-  // data.attendance may be an object keyed by "('person_id', 'date_id')" or nested - we handle typical shapes:
   if (data.attendance) {
-    // If keys are like "('1', '2')" or like "1,2" or like "1|2" - attempt to normalize:
     for (const k of Object.keys(data.attendance)) {
       const v = data.attendance[k];
-      // try parse common formats:
       let pid, did;
       if (k.includes("|")) {
         [pid, did] = k.split("|");
       } else if (k.includes(",")) {
         [pid, did] = k.split(",").map(s => s.replace(/[^\d]/g,''));
       } else {
-        // maybe object keys were number strings due to JSON mapping: try to parse
-        // If it's an object like {"(1,2)": true}, remove non-digits.
         const digits = k.match(/\d+/g);
         if (digits && digits.length >= 2) {
           pid = digits[0]; did = digits[1];
@@ -97,12 +111,11 @@ function buildTable() {
   const table = document.getElementById('attendance-table');
   table.innerHTML = '';
 
-  // header row
   const thead = document.createElement('thead');
   const headRow = document.createElement('tr');
   const emptyTh = document.createElement('th');
   emptyTh.className = "person";
-  emptyTh.textContent = "People \\ Dates";
+  emptyTh.textContent = "";
   headRow.appendChild(emptyTh);
 
   dates.forEach(d => {
@@ -151,9 +164,8 @@ function buildTable() {
       }
 
       td.addEventListener('click', (ev) => {
-        // toggle locally immediately for snappy UI
         toggleCellUI(td);
-        toggleCellServer(p.id, d.id); // fire request (no await) 
+        toggleCellServer(p.id, d.id); 
       });
 
       tr.appendChild(td);
@@ -177,7 +189,6 @@ function toggleCellUI(tdElem) {
   }
 }
 
-// server toggle call
 async function toggleCellServer(personId, dateId, present=null) {
   const payload = { person_id: personId, date_id: dateId };
   if (present !== null) payload.present = present;
@@ -188,10 +199,8 @@ async function toggleCellServer(personId, dateId, present=null) {
       body: JSON.stringify(payload)
     });
     const j = await resp.json();
-    // if server disagrees, we could refresh the cell. For simplicity, accept server state and update map:
     if (j && j.present !== undefined) {
       attendance[keyFor(String(personId), String(dateId))] = !!j.present;
-      // ensure UI matches:
       const td = document.querySelector(`td[data-person-id='${personId}'][data-date-id='${dateId}']`);
       if (td) {
         if (j.present) { td.classList.add('present'); td.classList.remove('absent'); td.textContent='✓'; }
@@ -200,7 +209,6 @@ async function toggleCellServer(personId, dateId, present=null) {
     }
   } catch (err) {
     console.error("toggle failed", err);
-    // optional: reload to reconcile
     await loadData();
   }
 }
@@ -238,8 +246,6 @@ function handlePersonClick(p) {
   if (action.toLowerCase() === 'rename') {
     const newName = prompt("New name:", p.name);
     if (!newName) return;
-    // simple serverless rename using existing Article update pattern? no endpoint yet; we'll patch Person here by calling a new endpoint or do inline:
-    // Use a quick fetch to /api/attendance/rename_person
     fetch('/api/attendance/rename_person', {
       method: 'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({person_id: p.id, name: newName})
@@ -283,12 +289,9 @@ async function deleteDate(dateId) {
 
 document.getElementById('btn-add-person').addEventListener('click', addPerson);
 document.getElementById('btn-add-date').addEventListener('click', addDate);
-document.getElementById('btn-refresh').addEventListener('click', loadData);
 
-// Listen to socket events to update live
 socket.on('connect', () => console.log('socket connected'));
 socket.on('attendance_updated', (d) => {
-  // d: { person_id, date_id, present }
   const key = keyFor(String(d.person_id), String(d.date_id));
   attendance[key] = !!d.present;
   const td = document.querySelector(`td[data-person-id='${d.person_id}'][data-date-id='${d.date_id}']`);
@@ -296,23 +299,19 @@ socket.on('attendance_updated', (d) => {
     if (d.present) { td.classList.add('present'); td.classList.remove('absent'); td.textContent='✓'; }
     else { td.classList.remove('present'); td.classList.add('absent'); td.textContent=''; }
   } else {
-    // If the table doesn't have that column/row (e.g., added later), refresh
     loadData();
   }
 });
 
 socket.on('person_added', (p) => {
-  // simple approach: reload to avoid complex incremental insert
   loadData();
 });
 socket.on('person_deleted', (d) => loadData());
 socket.on('date_added', (d) => loadData());
 socket.on('date_deleted', (d) => loadData());
 
-// rename person socket
 socket.on('person_renamed', (d) => loadData());
 
-// On initial load:
 loadData();
 </script>
 </body>

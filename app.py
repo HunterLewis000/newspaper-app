@@ -479,7 +479,6 @@ def manage():
 def manage_attendance():
     if current_user.email not in ALLOWED_EMAILS:
         return "Forbidden", 403
-    # render the UI (template provided below)
     return render_template("manage_attendance.html")
 
 
@@ -493,7 +492,6 @@ def attendance_data():
     dates = AttendanceDate.query.order_by(AttendanceDate.date).all()
     attendances = Attendance.query.all()
 
-    # Convert tuple keys to string keys
     att_map = {f"{a.person_id}_{a.date_id}": a.present for a in attendances}
 
     people_serial = [{"id": p.id, "name": p.name, "active": p.active} for p in people]
@@ -516,7 +514,6 @@ def attendance_toggle():
     data = request.json or {}
     person_id = data.get("person_id")
     date_id = data.get("date_id")
-    # allow explicit set of present or toggle if omitted
     explicit_present = data.get("present", None)
 
     if not person_id or not date_id:
@@ -539,7 +536,6 @@ def attendance_toggle():
 
     db.session.commit()
 
-    # emit to other clients
     socketio.emit("attendance_updated", {
         "person_id": person_id,
         "date_id": date_id,
@@ -559,7 +555,6 @@ def attendance_add_person():
     if not name:
         return jsonify({"error": "empty name"}), 400
 
-    # uniqueness enforced by model -- handle gracefully
     try:
         new_p = Person(name=name, active=True)
         db.session.add(new_p)
@@ -568,10 +563,8 @@ def attendance_add_person():
         db.session.rollback()
         return jsonify({"error": "person exists"}), 400
 
-    # Optionally pre-create Attendance rows for existing dates (not required)
     dates = AttendanceDate.query.all()
     for d in dates:
-        # only create existence if you want a row for each date automatically
         existing = Attendance.query.filter_by(person_id=new_p.id, date_id=d.id).first()
         if not existing:
             db.session.add(Attendance(person_id=new_p.id, date_id=d.id, present=False))
@@ -592,8 +585,6 @@ def attendance_delete_person():
     if not person:
         return jsonify({"error": "not found"}), 404
 
-    # delete related attendances (relationship cascade not defined on Person -> Attendance,
-    # so we'll remove explicitly)
     Attendance.query.filter_by(person_id=person.id).delete()
     db.session.delete(person)
     db.session.commit()
@@ -608,7 +599,7 @@ def attendance_add_date():
     if current_user.email not in ALLOWED_EMAILS:
         return jsonify({"error": "forbidden"}), 403
 
-    date_str = (request.json or {}).get("date")  # expect YYYY-MM-DD
+    date_str = (request.json or {}).get("date") 
     if not date_str:
         return jsonify({"error": "empty date"}), 400
 
@@ -625,7 +616,6 @@ def attendance_add_date():
         db.session.rollback()
         return jsonify({"error": "date exists"}), 400
 
-    # optional: create Attendances for each person for this date
     people = Person.query.all()
     for p in people:
         existing = Attendance.query.filter_by(person_id=p.id, date_id=new_d.id).first()
@@ -648,7 +638,6 @@ def attendance_delete_date():
     if not d:
         return jsonify({"error": "not found"}), 404
 
-    # delete attendances for that date
     Attendance.query.filter_by(date_id=d.id).delete()
     db.session.delete(d)
     db.session.commit()
