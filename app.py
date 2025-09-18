@@ -486,17 +486,15 @@ def manage_attendance():
 @app.route("/api/attendance/data")
 @login_required
 def attendance_data():
-    """Return full attendance data: people, dates, and attendance map."""
     if current_user.email not in ALLOWED_EMAILS:
         return jsonify({"error": "forbidden"}), 403
 
     people = Person.query.order_by(Person.name).all()
     dates = AttendanceDate.query.order_by(AttendanceDate.date).all()
-
-    # Preload attendances
     attendances = Attendance.query.all()
-    # map (person_id, date_id) -> present
-    att_map = {(a.person_id, a.date_id): a.present for a in attendances}
+
+    # Convert tuple keys to string keys
+    att_map = {f"{a.person_id}_{a.date_id}": a.present for a in attendances}
 
     people_serial = [{"id": p.id, "name": p.name, "active": p.active} for p in people]
     dates_serial = [{"id": d.id, "date": d.date.isoformat()} for d in dates]
