@@ -81,7 +81,7 @@ async function loadData() {
   const data = await resp.json();
 
   people = data.people || [];
-  dates = data.dates || [];
+  dates = (data.dates || []).sort((a, b) => new Date(b.date) - new Date(a.date));
   attendance = {};
 
   if (data.attendance) {
