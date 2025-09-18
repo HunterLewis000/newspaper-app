@@ -544,7 +544,7 @@ def attendance_toggle():
         "person_id": person_id,
         "date_id": date_id,
         "present": att.present
-    }, broadcast=True)
+    })
 
     return jsonify({"person_id": person_id, "date_id": date_id, "present": att.present})
 
@@ -577,7 +577,7 @@ def attendance_add_person():
             db.session.add(Attendance(person_id=new_p.id, date_id=d.id, present=False))
     db.session.commit()
 
-    socketio.emit("person_added", {"id": new_p.id, "name": new_p.name}, broadcast=True)
+    socketio.emit("person_added", {"id": new_p.id, "name": new_p.name})
     return jsonify({"id": new_p.id, "name": new_p.name})
 
 
@@ -598,7 +598,7 @@ def attendance_delete_person():
     db.session.delete(person)
     db.session.commit()
 
-    socketio.emit("person_deleted", {"person_id": person_id}, broadcast=True)
+    socketio.emit("person_deleted", {"person_id": person_id})
     return jsonify({"ok": True})
 
 
@@ -633,7 +633,7 @@ def attendance_add_date():
             db.session.add(Attendance(person_id=p.id, date_id=new_d.id, present=False))
     db.session.commit()
 
-    socketio.emit("date_added", {"id": new_d.id, "date": new_d.date.isoformat()}, broadcast=True)
+    socketio.emit("date_added", {"id": new_d.id, "date": new_d.date.isoformat()})
     return jsonify({"id": new_d.id, "date": new_d.date.isoformat()})
 
 
@@ -653,7 +653,7 @@ def attendance_delete_date():
     db.session.delete(d)
     db.session.commit()
 
-    socketio.emit("date_deleted", {"date_id": date_id}, broadcast=True)
+    socketio.emit("date_deleted", {"date_id": date_id})
     return jsonify({"ok": True})
 
 
