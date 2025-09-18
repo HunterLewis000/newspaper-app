@@ -33,135 +33,175 @@
     <h1 style="display: inline;"><a href="https://www.ccpstudentnews.org" style="font-family: 'Brush Script MT'; text-decoration: none; color: #222; font-size: 45px;">Cardinal and White&nbsp; </a></h1><h1 style="display: inline;">Attendance</h1>
     </div>
 
-   <div>
-        <button onclick="showModal('addPersonModal')">Add Person</button>
-        <button onclick="showModal('addDateModal')">Add Date</button>
-    </div>
+    <button id="add-person-btn">Add Person</button>
+    <button id="add-date-btn">Add Date</button>
 
     <table id="attendance-table">
         <thead>
-            <tr>
-                <th>Person / Date</th>
+            <tr id="attendance-header-row">
+                <th>Person</th>
                 {% for date in dates %}
-                    <th>{{ date.date }}</th>
+                <th data-date-id="{{ date.id }}">
+                    {{ date.date }}
+                    <span class="delete-btn" data-date-id="{{ date.id }}">x</span>
+                </th>
                 {% endfor %}
             </tr>
         </thead>
         <tbody>
             {% for person in people %}
-                <tr data-person-id="{{ person.id }}">
-                    <td>{{ person.name }}</td>
-                    {% for date in dates %}
-                        <td>
-                            <input type="checkbox"
-                                   class="attendance-checkbox"
-                                   data-person="{{ person.id }}"
-                                   data-date="{{ date.id }}"
-                                   {% if attendance.get(person.id, {}).get(date.id) %} checked {% endif %}>
-                        </td>
-                    {% endfor %}
-                </tr>
+            <tr class="attendance-row" data-person-id="{{ person.id }}">
+                <td>
+                    {{ person.name }}
+                    <span class="delete-btn delete-person-btn" data-person-id="{{ person.id }}">x</span>
+                </td>
+                {% for date in dates %}
+                <td>
+                    <input type="checkbox" class="attendance-checkbox"
+                           data-person-id="{{ person.id }}"
+                           data-date-id="{{ date.id }}"
+                           {% if attendance.get((person.id, date.id)) %}checked{% endif %}>
+                </td>
+                {% endfor %}
+            </tr>
             {% endfor %}
         </tbody>
     </table>
 
     <!-- Add Person Modal -->
-    <div id="addPersonModal" class="modal">
+    <div id="person-modal" class="modal">
         <div class="modal-content">
-            <span class="close" onclick="hideModal('addPersonModal')">&times;</span>
             <h3>Add Person</h3>
-            <input type="text" id="person-name" placeholder="Name">
-            <button id="save-person">Save</button>
+            <input type="text" id="new-person-name" placeholder="Person Name">
+            <button id="save-person-btn">Save</button>
+            <button id="close-person-modal">Cancel</button>
         </div>
     </div>
 
     <!-- Add Date Modal -->
-    <div id="addDateModal" class="modal">
+    <div id="date-modal" class="modal">
         <div class="modal-content">
-            <span class="close" onclick="hideModal('addDateModal')">&times;</span>
             <h3>Add Date</h3>
-            <input type="date" id="attendance-date">
-            <button id="save-date">Save</button>
+            <input type="date" id="new-date">
+            <button id="save-date-btn">Save</button>
+            <button id="close-date-modal">Cancel</button>
         </div>
     </div>
 
     <script>
         const socket = io();
 
-        // Show/hide modals
-        function showModal(id) { document.getElementById(id).style.display = 'flex'; }
-        function hideModal(id) { document.getElementById(id).style.display = 'none'; }
+        // -------------------
+        // Add Person Modal
+        // -------------------
+        const personModal = document.getElementById("person-modal");
+        document.getElementById("add-person-btn").onclick = () => personModal.classList.add("show");
+        document.getElementById("close-person-modal").onclick = () => personModal.classList.remove("show");
 
-        // Attendance checkbox changed
-        $('.attendance-checkbox').change(function() {
-            socket.emit('update_attendance', {
-                person_id: $(this).data('person'),
-                date_id: $(this).data('date'),
-                present: $(this).is(':checked')
+        document.getElementById("save-person-btn").onclick = () => {
+            const name = document.getElementById("new-person-name").value.trim();
+            if(!name) return alert("Enter a name");
+            socket.emit("add_person", { name });
+            document.getElementById("new-person-name").value = "";
+            personModal.classList.remove("show");
+        }
+
+        // -------------------
+        // Add Date Modal
+        // -------------------
+        const dateModal = document.getElementById("date-modal");
+        document.getElementById("add-date-btn").onclick = () => dateModal.classList.add("show");
+        document.getElementById("close-date-modal").onclick = () => dateModal.classList.remove("show");
+
+        document.getElementById("save-date-btn").onclick = () => {
+            const date = document.getElementById("new-date").value;
+            if(!date) return alert("Pick a date");
+            socket.emit("add_date", { date });
+            document.getElementById("new-date").value = "";
+            dateModal.classList.remove("show");
+        }
+
+        // -------------------
+        // Add / Delete Live Updates
+        // -------------------
+        socket.on("person_added", data => {
+            const tbody = document.querySelector("#attendance-table tbody");
+            const tr = document.createElement("tr");
+            tr.classList.add("attendance-row");
+            tr.dataset.personId = data.id;
+            tr.innerHTML = `<td>${data.name} <span class="delete-btn delete-person-btn" data-person-id="${data.id}">x</span></td>`;
+            
+            // Add checkbox cells for existing dates
+            document.querySelectorAll("#attendance-header-row th[data-date-id]").forEach(th => {
+                const td = document.createElement("td");
+                const checkbox = document.createElement("input");
+                checkbox.type = "checkbox";
+                checkbox.classList.add("attendance-checkbox");
+                checkbox.dataset.personId = data.id;
+                checkbox.dataset.dateId = th.dataset.dateId;
+                td.appendChild(checkbox);
+                tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
+        });
+
+        socket.on("date_added", data => {
+            // Add header
+            const th = document.createElement("th");
+            th.dataset.dateId = data.id;
+            th.innerHTML = `${data.date} <span class="delete-btn" data-date-id="${data.id}">x</span>`;
+            document.getElementById("attendance-header-row").appendChild(th);
+
+            // Add checkbox cell for each person row
+            document.querySelectorAll(".attendance-row").forEach(tr => {
+                const td = document.createElement("td");
+                const checkbox = document.createElement("input");
+                checkbox.type = "checkbox";
+                checkbox.classList.add("attendance-checkbox");
+                checkbox.dataset.personId = tr.dataset.personId;
+                checkbox.dataset.dateId = data.id;
+                td.appendChild(checkbox);
+                tr.appendChild(td);
             });
         });
 
-        // Receive attendance update from server
-        socket.on('attendance_updated', function(data) {
-            const selector = `.attendance-checkbox[data-person='${data.person_id}'][data-date='${data.date_id}']`;
-            $(selector).prop('checked', data.present);
-        });
-
-        // Add person via modal
-        $('#save-person').click(function() {
-            const name = $('#person-name').val();
-            if (name.trim() !== '') {
-                socket.emit('add_person', { name });
-                hideModal('addPersonModal');
-                $('#person-name').val('');
+        socket.on("person_toggled", data => {
+            if(!data.active) {
+                document.querySelector(`.attendance-row[data-person-id="${data.person_id}"]`)?.remove();
             }
         });
 
-        // Add date via modal
-        $('#save-date').click(function() {
-            const date = $('#attendance-date').val();
-            if (date) {
-                socket.emit('add_date', { date });
-                hideModal('addDateModal');
-                $('#attendance-date').val('');
+        socket.on("date_toggled", data => {
+            const idx = Array.from(document.querySelectorAll("#attendance-header-row th")).findIndex(th => th.dataset.dateId == data.date_id);
+            if(idx >= 0){
+                document.querySelectorAll("#attendance-table tr").forEach(tr => {
+                    tr.removeChild(tr.children[idx]);
+                });
             }
         });
 
-        // Update table dynamically when server broadcasts new person
-        socket.on('person_added', function(data) {
-            let newRow = `<tr data-person-id="${data.id}"><td>${data.name}</td>`;
-            {% for date in dates %}
-                newRow += `<td><input type="checkbox" class="attendance-checkbox" data-person="${data.id}" data-date="{{ date.id }}"></td>`;
-            {% endfor %}
-            newRow += '</tr>';
-            $('#attendance-table tbody').append(newRow);
-
-            // Re-bind checkbox event
-            $('.attendance-checkbox').off('change').on('change', function() {
-                socket.emit('update_attendance', {
-                    person_id: $(this).data('person'),
-                    date_id: $(this).data('date'),
-                    present: $(this).is(':checked')
-                });
-            });
+        // -------------------
+        // Checkbox change
+        // -------------------
+        document.addEventListener("change", e => {
+            if(e.target.classList.contains("attendance-checkbox")){
+                const personId = e.target.dataset.personId;
+                const dateId = e.target.dataset.dateId;
+                const present = e.target.checked;
+                socket.emit("update_attendance", { person_id: personId, date_id: dateId, present });
+            }
         });
 
-        // Update table dynamically when server broadcasts new date
-        socket.on('date_added', function(data) {
-            $('#attendance-table thead tr').append(`<th>${data.date}</th>`);
-            $('#attendance-table tbody tr').each(function() {
-                const personId = $(this).data('person-id');
-                $(this).append(`<td><input type="checkbox" class="attendance-checkbox" data-person="${personId}" data-date="${data.id}"></td>`);
-            });
-
-            // Re-bind checkbox event
-            $('.attendance-checkbox').off('change').on('change', function() {
-                socket.emit('update_attendance', {
-                    person_id: $(this).data('person'),
-                    date_id: $(this).data('date'),
-                    present: $(this).is(':checked')
-                });
-            });
+        // -------------------
+        // Delete buttons
+        // -------------------
+        document.addEventListener("click", e => {
+            if(e.target.classList.contains("delete-person-btn")){
+                socket.emit("toggle_person", { person_id: e.target.dataset.personId, active: false });
+            }
+            if(e.target.classList.contains("delete-btn") && e.target.dataset.dateId){
+                socket.emit("toggle_date", { date_id: e.target.dataset.dateId, delete: true });
+            }
         });
     </script>
 </body>
