@@ -328,11 +328,15 @@ window.addEventListener('click', e => { if (e.target.id === 'fileManagerModal') 
 window.addEventListener('keydown', e => { if (e.key === 'Escape') closeFileManager(); });
 
 function loadFiles(articleId) {
+    const ul = document.getElementById('fileList');
+
+    ul.innerHTML = '<li class="loading">Loading…</li>';
+
     fetch(`/files/${articleId}`)
         .then(res => res.json())
         .then(data => {
-            const ul = document.getElementById('fileList');
             ul.innerHTML = '';
+
             (data.files || []).forEach(f => {
                 const li = document.createElement('li');
                 li.id = `file-${f.id}`;
@@ -346,6 +350,9 @@ function loadFiles(articleId) {
                 `;
                 ul.appendChild(li);
             });
+        })
+        .catch(() => {
+            ul.innerHTML = '<li class="error">Failed to load files</li>';
         });
 }
 
