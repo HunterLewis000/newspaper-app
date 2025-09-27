@@ -400,6 +400,41 @@ td.arcac, th.arcac {
     transition: background-color 0.3s ease;
 }
 
+.attendance-page {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  padding: 16px;
+}
+.attendance-page table { border-collapse: collapse; width: 100%; }
+.attendance-page th, .attendance-page td { border: 1px solid #ddd; padding: 6px; text-align: center; }
+.attendance-page th.date-col { position: sticky; top: 0; background: #fafafa; z-index: 1; }
+.attendance-page th.person { background: #f0f0f0; text-align:left; }
+.attendance-page td.cell { cursor: pointer; width: 120px; height: 32px; }
+.attendance-page td.cell.present { background: #4caf50; color: white; }
+.attendance-page td.cell.absent { background: #fff; color: #333; }
+.attendance-page .controls { margin-bottom: 12px; display:flex; gap:8px; align-items:center; }
+.attendance-page button { padding: 6px 10px; cursor:pointer; }
+.attendance-page th.date-col {
+  position: sticky;
+  top: 0;
+  background: #fafafa;
+  z-index: 1;
+}
+.attendance-page td.person, .attendance-page th.person {
+  position: sticky;
+  left: 0;
+  background: #f0f0f0;
+  z-index: 2;
+}
+.attendance-page td.person::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 1px;
+  height: 100%;
+  background: #ddd;
+}
+
 .center-buttons button:hover {
     background-color: #2563eb; 
 }

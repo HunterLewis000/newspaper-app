@@ -6,41 +6,8 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='ccp.ico') }}">
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js" integrity="sha384-A9xjF58i..." crossorigin="anonymous"></script>
-     <style>
-        body { font-family: Arial, sans-serif; padding: 16px; }
-        table { border-collapse: collapse; width: 100%; }
-        th, td { border: 1px solid #ddd; padding: 6px; text-align: center; }
-        th.date-col { position: sticky; top: 0; background: #fafafa; z-index: 1; }
-        th.person { background: #f0f0f0; text-align:left; }
-        td.cell { cursor: pointer; width: 120px; height: 32px; }
-        td.cell.present { background: #4caf50; color: white; }
-        td.cell.absent { background: #fff; color: #333; }
-        .controls { margin-bottom: 12px; display:flex; gap:8px; align-items:center; }
-        button { padding: 6px 10px; cursor:pointer; }
-        th.date-col {
-            position: sticky;
-            top: 0;
-            background: #fafafa;
-            z-index: 1;
-        }
-        td.person, th.person {
-            position: sticky;
-            left: 0;
-            background: #f0f0f0;
-            z-index: 2;
-        }
-        td.person::after {
-            content: "";
-            position: absolute;
-            top: 0;
-            right: 0;
-            width: 1px;
-            height: 100%;
-            background: #ddd;
-        }
-      </style>
 </head>
-<body>
+<body class="attendance-page">
 
 <a href="{{ url_for('manage') }}" class="back-button">← Back to Admin Settings</a>
 
