@@ -305,6 +305,7 @@ td.filescol, th.filescol {
     text-decoration: none;
     border-radius: 4px;
     transition: background 0.3s ease;
+  font-weight: 600;
 }
 
 .back-button:hover {
@@ -341,6 +342,7 @@ td.arcac, th.arcac {
     border-radius: 6px;
     box-sizing: border-box;
     transition: background-color 0.2s;
+  font-weight: 600;
 }
 
 .footerbut a:hover {
