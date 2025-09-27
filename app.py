@@ -55,10 +55,7 @@ class User(UserMixin):
 users = {} 
 
 ALLOWED_EMAILS = {
-    "hlewis26@ccp-stl.org",
-    "jcopley26@ccp-stl.org",
-    "tschilly@chaminade-stl.org",
-    "hbryant@chaminade-stl.org"
+    "hlewis26@ccp-stl.org"
 }
 
 
