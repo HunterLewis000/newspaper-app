@@ -61,13 +61,54 @@ ALLOWED_EMAILS = {
     "hbryant@chaminade-stl.org"
 }
 
+
+# Persisted allowed emails so admins can edit them from the UI.
+class AllowedEmail(db.Model):
+    __tablename__ = 'allowed_email'
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(200), unique=True, nullable=False)
+
+
+def _get_allowed_emails_from_db():
+    """Return a set of allowed emails from DB; if DB isn't ready or empty, fall back to the in-memory set and try to seed the DB."""
+    try:
+        rows = AllowedEmail.query.all()
+        if rows:
+            return set(r.email for r in rows)
+        # Seed DB with initial set if empty
+        for e in ALLOWED_EMAILS:
+            db.session.add(AllowedEmail(email=e.lower()))
+        db.session.commit()
+        rows = AllowedEmail.query.all()
+        return set(r.email for r in rows)
+    except Exception:
+        # If the table doesn't exist yet or something else goes wrong, fall back to the in-memory set
+        try:
+            db.session.rollback()
+        except Exception:
+            pass
+        return set(ALLOWED_EMAILS)
+
+
+def is_allowed_email(email: str) -> bool:
+    if not email:
+        return False
+    email = email.lower()
+    try:
+        # Prefer checking DB - this will also ensure seeding happens when first needed.
+        allowed = _get_allowed_emails_from_db()
+        return email in allowed
+    except Exception:
+        return email in set(ALLOWED_EMAILS)
+
 @login_manager.user_loader
 def load_user(user_id):
     return users.get(user_id)
 
 @app.context_processor
 def inject_allowed_emails():
-    return dict(ALLOWED_EMAILS=ALLOWED_EMAILS)
+    # return as a list so Jinja can reliably test membership and iterate
+    return dict(ALLOWED_EMAILS=list(_get_allowed_emails_from_db()))
 
 
 
@@ -470,14 +511,14 @@ def update_order():
 @app.route("/manage")
 @login_required
 def manage():
-    if current_user.email not in ALLOWED_EMAILS:
+    if not is_allowed_email(current_user.email):
         return "Forbidden", 403
     return render_template("manage.html")
 
 @app.route("/manage/attendance")
 @login_required
 def manage_attendance():
-    if current_user.email not in ALLOWED_EMAILS:
+    if not is_allowed_email(current_user.email):
         return "Forbidden", 403
     return render_template("manage_attendance.html")
 
@@ -485,7 +526,7 @@ def manage_attendance():
 @app.route("/api/attendance/data")
 @login_required
 def attendance_data():
-    if current_user.email not in ALLOWED_EMAILS:
+    if not is_allowed_email(current_user.email):
         return jsonify({"error": "forbidden"}), 403
 
     people = Person.query.order_by(Person.name).all()
@@ -508,7 +549,7 @@ def attendance_data():
 @login_required
 def attendance_toggle():
     """Toggle a single cell: person_id + date_id + optional present boolean."""
-    if current_user.email not in ALLOWED_EMAILS:
+    if not is_allowed_email(current_user.email):
         return jsonify({"error": "forbidden"}), 403
 
     data = request.json or {}
@@ -548,7 +589,7 @@ def attendance_toggle():
 @app.route("/api/attendance/add_person", methods=["POST"])
 @login_required
 def attendance_add_person():
-    if current_user.email not in ALLOWED_EMAILS:
+    if not is_allowed_email(current_user.email):
         return jsonify({"error": "forbidden"}), 403
 
     name = (request.json or {}).get("name", "").strip()
@@ -577,7 +618,7 @@ def attendance_add_person():
 @app.route("/api/attendance/delete_person", methods=["POST"])
 @login_required
 def attendance_delete_person():
-    if current_user.email not in ALLOWED_EMAILS:
+    if not is_allowed_email(current_user.email):
         return jsonify({"error": "forbidden"}), 403
 
     person_id = (request.json or {}).get("person_id")
@@ -596,7 +637,7 @@ def attendance_delete_person():
 @app.route("/api/attendance/add_date", methods=["POST"])
 @login_required
 def attendance_add_date():
-    if current_user.email not in ALLOWED_EMAILS:
+    if not is_allowed_email(current_user.email):
         return jsonify({"error": "forbidden"}), 403
 
     date_str = (request.json or {}).get("date") 
@@ -630,7 +671,7 @@ def attendance_add_date():
 @app.route("/api/attendance/delete_date", methods=["POST"])
 @login_required
 def attendance_delete_date():
-    if current_user.email not in ALLOWED_EMAILS:
+    if not is_allowed_email(current_user.email):
         return jsonify({"error": "forbidden"}), 403
 
     date_id = (request.json or {}).get("date_id")
@@ -649,16 +690,69 @@ def attendance_delete_date():
 @app.route("/manage/permissions")
 @login_required
 def manage_permissions():
-    if current_user.email not in ALLOWED_EMAILS:
+    if not is_allowed_email(current_user.email):
         return "Forbidden", 403
     return render_template("manage_permissions.html")
 
 @app.route("/manage/about")
 @login_required
 def manage_about():
-    if current_user.email not in ALLOWED_EMAILS:
+    if not is_allowed_email(current_user.email):
         return "Forbidden", 403
     return render_template("manage_about.html")
+
+
+# Permissions API: list/add/remove allowed emails (only accessible to currently-allowed users)
+@app.route('/api/permissions/list')
+@login_required
+def permissions_list():
+    if not is_allowed_email(current_user.email):
+        return jsonify({'error': 'forbidden'}), 403
+    allowed = list(_get_allowed_emails_from_db())
+    return jsonify({'allowed': allowed})
+
+
+@app.route('/api/permissions/add', methods=['POST'])
+@login_required
+def permissions_add():
+    if not is_allowed_email(current_user.email):
+        return jsonify({'error': 'forbidden'}), 403
+    data = request.json or {}
+    email = (data.get('email') or '').strip().lower()
+    if not email or '@' not in email:
+        return jsonify({'error': 'invalid email'}), 400
+    try:
+        existing = AllowedEmail.query.filter_by(email=email).first()
+        if existing:
+            return jsonify({'error': 'exists'}), 400
+        new = AllowedEmail(email=email)
+        db.session.add(new)
+        db.session.commit()
+        return jsonify({'ok': True, 'email': email})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': 'db error', 'details': str(e)}), 500
+
+
+@app.route('/api/permissions/delete', methods=['POST'])
+@login_required
+def permissions_delete():
+    if not is_allowed_email(current_user.email):
+        return jsonify({'error': 'forbidden'}), 403
+    data = request.json or {}
+    email = (data.get('email') or '').strip().lower()
+    if not email:
+        return jsonify({'error': 'invalid email'}), 400
+    try:
+        existing = AllowedEmail.query.filter_by(email=email).first()
+        if not existing:
+            return jsonify({'error': 'not found'}), 404
+        db.session.delete(existing)
+        db.session.commit()
+        return jsonify({'ok': True, 'email': email})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': 'db error', 'details': str(e)}), 500
 
 
 # Calendar Routes

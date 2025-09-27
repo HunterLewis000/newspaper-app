@@ -23,5 +23,72 @@
     <h1 style="display: inline;"><a href="https://www.ccpstudentnews.org" style="font-family: 'Brush Script MT'; text-decoration: none; color: #222; font-size: 45px;">Cardinal and White&nbsp; </a></h1><h1 style="display: inline;">Permissions</h1>
     </div>
 
+<main style="max-width:800px;margin:20px auto;padding:10px;">
+  <section>
+    <p>Manage which users are allowed to access admin sections. Entries should be full email addresses.</p>
+
+    <div id="messages" style="color: red; margin-bottom: 8px;"></div>
+
+    <div style="display:flex; gap:8px; margin-bottom:12px;">
+      <input id="new-email" type="text" placeholder="user@example.org" style="flex:1;padding:6px;" />
+      <button id="add-btn">Add</button>
+    </div>
+
+    <ul id="allowed-list" style="list-style:none;padding:0;margin:0;">
+      <!-- dynamically populated -->
+    </ul>
+  </section>
+</main>
+
+<script>
+async function showMessage(msg, isError=true){
+  const el = document.getElementById('messages');
+  el.textContent = msg;
+  el.style.color = isError ? 'red' : 'green';
+  if(msg){ setTimeout(()=>el.textContent='', 4000); }
+}
+
+async function fetchList(){
+  const res = await fetch('/api/permissions/list');
+  if(res.status !== 200){ showMessage('Failed to load list'); return; }
+  const data = await res.json();
+  const ul = document.getElementById('allowed-list');
+  ul.innerHTML = '';
+  (data.allowed || []).sort().forEach(email=>{
+    const li = document.createElement('li');
+    li.style.display='flex'; li.style.justifyContent='space-between'; li.style.padding='6px 0';
+    const span = document.createElement('span'); span.textContent = email;
+    const del = document.createElement('button'); del.textContent='Remove'; del.style.marginLeft='12px';
+    del.addEventListener('click', ()=>removeEmail(email));
+    li.appendChild(span); li.appendChild(del);
+    ul.appendChild(li);
+  });
+}
+
+async function addEmail(email){
+  const res = await fetch('/api/permissions/add', {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({email})});
+  const data = await res.json();
+  if(res.ok){ showMessage('Added: '+email, false); fetchList(); }
+  else showMessage((data && data.error) ? data.error : 'Add failed');
+}
+
+async function removeEmail(email){
+  if(!confirm('Remove '+email+' from allowed list?')) return;
+  const res = await fetch('/api/permissions/delete', {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({email})});
+  const data = await res.json();
+  if(res.ok){ showMessage('Removed: '+email, false); fetchList(); }
+  else showMessage((data && data.error) ? data.error : 'Remove failed');
+}
+
+document.getElementById('add-btn').addEventListener('click', ()=>{
+  const v = document.getElementById('new-email').value.trim();
+  if(!v) return showMessage('Enter an email');
+  addEmail(v);
+  document.getElementById('new-email').value='';
+});
+
+fetchList().catch(()=>showMessage('Unable to load permissions'));
+</script>
+
 </body>
 </html>
