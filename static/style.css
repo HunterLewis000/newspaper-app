@@ -250,18 +250,35 @@ td.status {
   align-items: center;
   gap: 8px;
 }
-td.status select {
-  /* keep select compact — user wants it smaller than the column */
-  max-width: 140px;
-  min-width: 90px;
-}
 .status-color {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
+  padding: 0;
   border-radius: 50%;
   border: 1px solid #cfcfcf;
   cursor: pointer;
   box-shadow: 0 0 0 2px transparent;
+  box-sizing: border-box;
+  display: inline-block;
+  flex: 0 0 auto;
+  vertical-align: middle;
+}
+.status-color.white { background: white; }
+.status-color.red { background: #ec0a0a; }
+.status-color.yellow { background: #fbff16; }
+.status-color:focus {
+  outline: none;
+}
+
+td.status select {
+  /* prevent the select from clipping long option text */
+  min-width: 150px;
+  /* leave space for the dot + gap; ensures it won't overflow cell */
+  max-width: calc(100% - 32px - 8px);
+  box-sizing: border-box;
+  padding: 6px 8px;
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 .status-color.white { background: white; }
 .status-color.red { background: #ef4444; }
