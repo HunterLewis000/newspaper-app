@@ -467,7 +467,39 @@ socket.on('update_article_order', (data) => {
     });
 });
 
+socket.on('connect', () => {
+    try { socket.emit('request_sync'); } catch (e) { console.error('sync request failed', e); }
+});
 
+
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+        try { socket.emit('request_sync'); } catch (e) { console.error('sync request failed', e); }
+    }
+});
+
+
+socket.on('sync_articles', (payload) => {
+    if (!payload || !Array.isArray(payload.articles)) return;
+    const server = payload.articles;
+    const tbody = document.getElementById('articles-tbody');
+
+    const existing = {};
+    [...tbody.querySelectorAll('tr')].forEach(r => { existing[r.dataset.id] = r; });
+
+    const seen = new Set();
+    server.forEach(a => {
+        addOrUpdateRow(a);
+        seen.add(String(a.id));
+    });
+
+    Object.keys(existing).forEach(id => {
+        if (!seen.has(String(id))) {
+            const r = existing[id];
+            if (r) r.remove();
+        }
+    });
+});
 
 </script>
 <script>
