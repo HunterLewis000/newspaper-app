@@ -412,7 +412,6 @@ td.arcac, th.arcac {
 .attendance-page td.cell.present { background: #4caf50; color: white; }
 .attendance-page td.cell.absent { background: #fff; color: #333; }
 .attendance-page .controls { margin-bottom: 12px; display:flex; gap:8px; align-items:center; }
-.attendance-page button { padding: 6px 10px; cursor:pointer; }
 .attendance-page th.date-col {
   position: sticky;
   top: 0;
