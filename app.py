@@ -786,26 +786,6 @@ def handle_article_activated(data):
     emit('article_activated', data, broadcast=True)
 
 
-@socketio.on('request_sync')
-def handle_request_sync():
-    try:
-        articles = Article.query.filter_by(archived=False).order_by(Article.position).all()
-        out = []
-        for a in articles:
-            out.append({
-                'id': a.id,
-                'title': a.title,
-                'author': a.author,
-                'status': a.status,
-                'editor': a.editor,
-                'deadline': a.deadline,
-                'cat': a.cat,
-            })
-        emit('sync_articles', {'articles': out})
-    except Exception:
-        app.logger.exception('request_sync failed')
-    
-
 # Main
 # -----------------------------------------------------------------------------
 # if __name__ == '__main__':
