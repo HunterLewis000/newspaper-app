@@ -1,5 +1,3 @@
-# import eventlet
-# eventlet.monkey_patch()
 
 import boto3
 import requests
