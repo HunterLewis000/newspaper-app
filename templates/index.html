@@ -69,15 +69,16 @@
       </td>
       <td class="title">{{ article.title }}</td>
       <td class="author">{{ article.author }}</td>
-      <td class="status">
-        <select onchange="updateStatus({{ article.id }}, this.value)">
-          <option value="Not Started" {% if article.status == 'Not Started' %}selected{% endif %}>Not Started</option>
-          <option value="In Progress" {% if article.status == 'In Progress' %}selected{% endif %}>In Progress</option>
-          <option value="Needs Edit" {% if article.status == 'Needs Edit' %}selected{% endif %}>Needs Edit</option>
-          <option value="Edited" {% if article.status == 'Edited' %}selected{% endif %}>Edited</option>
-          <option value="Published" {% if article.status == 'Published' %}selected{% endif %}>Published</option>
-        </select>
-      </td>
+            <td class="status">
+                <select onchange="updateStatus({{ article.id }}, this.value)">
+                    <option value="Not Started" {% if article.status == 'Not Started' %}selected{% endif %}>Not Started</option>
+                    <option value="In Progress" {% if article.status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                    <option value="Needs Edit" {% if article.status == 'Needs Edit' %}selected{% endif %}>Needs Edit</option>
+                    <option value="Edited" {% if article.status == 'Edited' %}selected{% endif %}>Edited</option>
+                    <option value="Published" {% if article.status == 'Published' %}selected{% endif %}>Published</option>
+                </select>
+                <button class="status-color {% if article.status_color == 'red' %}red{% elif article.status_color == 'yellow' %}yellow{% else %}white{% endif %}" aria-label="Status Color" onclick="cycleStatusColor({{ article.id }}, event)"></button>
+            </td>
       <td class="editor">
   <select onchange="updateEditor({{ article.id }}, this.value)">
     <option value="">-- Select --</option>
@@ -179,6 +180,7 @@ function addOrUpdateRow(data) {
                 <option value="Edited" ${(currentStatus || data.status) === 'Edited' ? 'selected' : ''}>Edited</option>
                 <option value="Published" ${(currentStatus || data.status) === 'Published' ? 'selected' : ''}>Published</option>
             </select>
+            <button class="status-color ${ (data.status_color === 'red') ? 'red' : (data.status_color === 'yellow' ? 'yellow' : 'white') }" aria-label="Status Color" onclick="cycleStatusColor(${data.id}, event)"></button>
         </td>
         <td class="editor">
             <select onchange="updateEditor(${data.id}, this.value)">
@@ -266,6 +268,43 @@ function updateStatus(articleId, newStatus) {
               socket.emit('status_updated', { id: articleId, status: newStatus });
           } else alert('Error updating status!');
       });
+}
+
+function cycleStatusColor(articleId, event) {
+    event.stopPropagation();
+    event.preventDefault();
+
+    const row = document.getElementById(`row-${articleId}`);
+    if (!row) return;
+    const dot = row.querySelector('.status-color');
+    if (!dot) return;
+
+    const classes = ['white','red','yellow'];
+    const current = classes.find(c => dot.classList.contains(c)) || 'white';
+    const next = classes[(classes.indexOf(current) + 1) % classes.length];
+
+    dot.classList.remove('white','red','yellow');
+    dot.classList.add(next);
+
+    fetch(`/update_status_color/${articleId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ color: next })
+    }).then(res => {
+        if (!res.ok) {
+        
+            dot.classList.remove('white','red','yellow');
+            dot.classList.add(current);
+            return res.json().then(j => { throw new Error(j.error || 'update failed'); });
+        }
+        return res.json();
+    }).then(json => {
+        if (json.success) {
+            socket.emit('status_color_updated', { id: articleId, status_color: next });
+        }
+    }).catch(err => {
+        console.error('Failed to update status color', err);
+    });
 }
 
 function updateCat(articleId, cat) {
@@ -432,6 +471,14 @@ socket.on('status_updated', data => {
             `;
         } 
     }
+});
+socket.on('status_color_updated', data => {
+    const row = document.getElementById(`row-${data.id}`);
+    if (!row) return;
+    const dot = row.querySelector('.status-color');
+    if (!dot) return;
+    dot.classList.remove('white','red','yellow');
+    dot.classList.add(data.status_color || 'white');
 });
 socket.on('editor_updated', data => {
     const row = document.getElementById(`row-${data.id}`);

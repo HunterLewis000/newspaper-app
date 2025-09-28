@@ -1,5 +1,3 @@
-import eventlet
-eventlet.monkey_patch()
 
 import boto3
 import requests
@@ -132,6 +130,7 @@ class Article(db.Model):
     title = db.Column(db.String(200), nullable=False)
     author = db.Column(db.String(100), nullable=False)
     status = db.Column(db.String(50), nullable=False, default="Not Started")
+    status_color = db.Column(db.String(20), nullable=False, default='white')
     editor = db.Column(db.String(50), nullable=True)
     deadline = db.Column(db.String(20))
     files = db.relationship('ArticleFile', backref='article', lazy=True, cascade="all, delete-orphan")
@@ -347,6 +346,7 @@ def add_article():
         'cat': cat,
         'author': author,
         'status': new_article.status,
+        'status_color': new_article.status_color,
         'deadline': deadline,
         'editor': new_article.editor
     })
@@ -396,7 +396,8 @@ def update_article(article_id):
             'id': article.id,
             'title': article.title,
             'author': article.author,
-            'deadline': article.deadline
+            'deadline': article.deadline,
+            'status_color': article.status_color
         })
         return jsonify(success=True)
     return jsonify(success=False), 404
@@ -410,6 +411,22 @@ def update_status(article_id):
         article.status = new_status
         db.session.commit()
         socketio.emit('status_updated', {'id': article_id, 'status': new_status})
+        return jsonify(success=True)
+    return jsonify(success=False), 404
+
+
+@app.route('/update_status_color/<int:article_id>', methods=['POST'])
+@login_required
+def update_status_color(article_id):
+    article = Article.query.get(article_id)
+    if article:
+        new_color = request.json.get('color')
+
+        if new_color not in ('white', 'red', 'yellow'):
+            return jsonify(success=False, error='invalid color'), 400
+        article.status_color = new_color
+        db.session.commit()
+        socketio.emit('status_color_updated', {'id': article_id, 'status_color': new_color})
         return jsonify(success=True)
     return jsonify(success=False), 404
 

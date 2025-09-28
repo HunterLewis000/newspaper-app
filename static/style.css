@@ -244,6 +244,31 @@ td.title, th.title {
 td.status, th.status {
   width: 15%;  
 }
+/* Make the status cell layout hold a compact select and a small color indicator */
+td.status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+td.status select {
+  /* keep select compact — user wants it smaller than the column */
+  max-width: 140px;
+  min-width: 90px;
+}
+.status-color {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid #cfcfcf;
+  cursor: pointer;
+  box-shadow: 0 0 0 2px transparent;
+}
+.status-color.white { background: white; }
+.status-color.red { background: #ef4444; }
+.status-color.yellow { background: #f59e0b; }
+.status-color:focus {
+  outline: none;
+}
 td.drag-handle, th.drag-handle {
   width: 2.5%;
   padding: 14px 6px;
