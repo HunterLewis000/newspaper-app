@@ -275,6 +275,7 @@ function cycleStatusColor(articleId, event) {
     event.preventDefault();
 
     const row = document.getElementById(`row-${articleId}`);
+    if (row && row.classList.contains('published')) return;
     if (!row) return;
     const dot = row.querySelector('.status-color');
     if (!dot) return;

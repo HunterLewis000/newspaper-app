@@ -232,6 +232,19 @@ tr.published button.mark-complete {
 tr.published button:hover {
     background-color: #b91c1c; 
 }
+
+tr.published .status-color {
+  background: #d9d9d9 !important;
+  border-color: #cfcfcf !important;
+  cursor: default !important;
+  opacity: 0.9;
+  pointer-events: none; /* prevent clicks */
+}
+tr.published .status select,
+tr.published select {
+  pointer-events: none;
+  opacity: 0.95;
+}
 th, td {
   box-sizing: border-box;
 }
