@@ -271,10 +271,9 @@ td.status {
 }
 
 td.status select {
-  /* prevent the select from clipping long option text */
-  min-width: 150px;
-  /* leave space for the dot + gap; ensures it won't overflow cell */
-  max-width: calc(100% - 32px - 8px);
+  width: 100px;
+  min-width: 100px;
+  max-width: 100px;
   box-sizing: border-box;
   padding: 6px 8px;
   flex: 0 0 auto;
