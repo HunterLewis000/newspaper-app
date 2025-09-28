@@ -59,7 +59,6 @@ ALLOWED_EMAILS = {
 }
 
 
-# Persisted allowed emails so admins can edit them from the UI.
 class AllowedEmail(db.Model):
     __tablename__ = 'allowed_email'
     id = db.Column(db.Integer, primary_key=True)
@@ -72,14 +71,13 @@ def _get_allowed_emails_from_db():
         rows = AllowedEmail.query.all()
         if rows:
             return set(r.email for r in rows)
-        # Seed DB with initial set if empty
+
         for e in ALLOWED_EMAILS:
             db.session.add(AllowedEmail(email=e.lower()))
         db.session.commit()
         rows = AllowedEmail.query.all()
         return set(r.email for r in rows)
     except Exception:
-        # If the table doesn't exist yet or something else goes wrong, fall back to the in-memory set
         try:
             db.session.rollback()
         except Exception:
@@ -92,7 +90,7 @@ def is_allowed_email(email: str) -> bool:
         return False
     email = email.lower()
     try:
-        # Prefer checking DB - this will also ensure seeding happens when first needed.
+       
         allowed = _get_allowed_emails_from_db()
         return email in allowed
     except Exception:
