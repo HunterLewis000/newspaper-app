@@ -238,12 +238,7 @@ tr.published .status-color {
   border-color: #cfcfcf !important;
   cursor: default !important;
   opacity: 0.9;
-  pointer-events: none; /* prevent clicks */
-}
-tr.published .status select,
-tr.published select {
-  pointer-events: none;
-  opacity: 0.95;
+  pointer-events: none; 
 }
 th, td {
   box-sizing: border-box;
@@ -257,7 +252,7 @@ td.title, th.title {
 td.status, th.status {
   width: 15%;  
 }
-/* Make the status cell layout hold a compact select and a small color indicator */
+
 td.status {
   display: flex;
   align-items: center;
