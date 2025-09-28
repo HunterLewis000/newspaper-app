@@ -271,17 +271,17 @@ td.status {
 }
 
 td.status select {
-  width: 100px;
-  min-width: 100px;
-  max-width: 100px;
+  width: 125px;
+  min-width: 125px;
+  max-width: 125px;
   box-sizing: border-box;
   padding: 6px 8px;
   flex: 0 0 auto;
   white-space: nowrap;
 }
 .status-color.white { background: white; }
-.status-color.red { background: #ef4444; }
-.status-color.yellow { background: #f59e0b; }
+.status-color.red { background: #f12525; }
+.status-color.yellow { background: #edbd0f; }
 .status-color:focus {
   outline: none;
 }
