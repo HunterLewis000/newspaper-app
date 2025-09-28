@@ -54,13 +54,23 @@ async function fetchList(){
   const data = await res.json();
   const ul = document.getElementById('allowed-list');
   ul.innerHTML = '';
-  (data.allowed || []).sort().forEach(email=>{
+  // API returns objects: {email: string, protected: bool}
+  (data.allowed || []).sort((a,b)=>a.email.localeCompare(b.email)).forEach(item=>{
     const li = document.createElement('li');
     li.style.display='flex'; li.style.justifyContent='space-between'; li.style.padding='6px 0';
-    const span = document.createElement('span'); span.textContent = email;
-    const del = document.createElement('button'); del.textContent='Remove'; del.style.marginLeft='12px';
-    del.addEventListener('click', ()=>removeEmail(email));
-    li.appendChild(span); li.appendChild(del);
+    const span = document.createElement('span'); span.textContent = item.email;
+    const right = document.createElement('div');
+    if(item.protected){
+      const prot = document.createElement('span'); prot.textContent='(protected)'; prot.style.marginRight='12px'; prot.style.color='#666';
+      right.appendChild(prot);
+      const del = document.createElement('button'); del.textContent='Remove'; del.style.marginLeft='12px'; del.disabled = true; del.title = 'This email is permanently protected';
+      right.appendChild(del);
+    } else {
+      const del = document.createElement('button'); del.textContent='Remove'; del.style.marginLeft='12px';
+      del.addEventListener('click', ()=>removeEmail(item.email));
+      right.appendChild(del);
+    }
+    li.appendChild(span); li.appendChild(right);
     ul.appendChild(li);
   });
 }

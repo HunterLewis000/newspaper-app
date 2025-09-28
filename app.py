@@ -70,6 +70,16 @@ def _get_allowed_emails_from_db():
     try:
         rows = AllowedEmail.query.all()
         if rows:
+            existing = set(r.email.lower() for r in rows)
+            to_add = [e.lower() for e in ALLOWED_EMAILS if e.lower() not in existing]
+            if to_add:
+                for e in to_add:
+                    db.session.add(AllowedEmail(email=e))
+                try:
+                    db.session.commit()
+                except Exception:
+                    db.session.rollback()
+                rows = AllowedEmail.query.all()
             return set(r.email for r in rows)
 
         for e in ALLOWED_EMAILS:
@@ -703,7 +713,10 @@ def manage_about():
 def permissions_list():
     if not is_allowed_email(current_user.email):
         return jsonify({'error': 'forbidden'}), 403
-    allowed = list(_get_allowed_emails_from_db())
+    # Return list of objects with a protected flag so the UI can disable removal
+    raw_allowed = list(_get_allowed_emails_from_db())
+    protected_lower = set(e.lower() for e in ALLOWED_EMAILS)
+    allowed = [{'email': e, 'protected': (e.lower() in protected_lower)} for e in raw_allowed]
     return jsonify({'allowed': allowed})
 
 
@@ -739,6 +752,11 @@ def permissions_delete():
     if not email:
         return jsonify({'error': 'invalid email'}), 400
     try:
+        # Prevent removal of permanently-protected emails defined in ALLOWED_EMAILS
+        protected_lower = set(e.lower() for e in ALLOWED_EMAILS)
+        if email in protected_lower:
+            return jsonify({'error': 'protected'}), 403
+
         existing = AllowedEmail.query.filter_by(email=email).first()
         if not existing:
             return jsonify({'error': 'not found'}), 404
