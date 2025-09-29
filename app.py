@@ -112,7 +112,7 @@ def load_user(user_id):
 
 @app.context_processor
 def inject_allowed_emails():
-    # return as a list so Jinja can reliably test membership and iterate
+
     return dict(ALLOWED_EMAILS=list(_get_allowed_emails_from_db()))
 
 
@@ -358,8 +358,6 @@ def add_article():
 
     return redirect('/')
 
-
-
 @app.route('/delete/<int:article_id>', methods=['POST'])
 @login_required
 def delete_article(article_id):
@@ -572,7 +570,6 @@ def attendance_data():
 @app.route("/api/attendance/toggle", methods=["POST"])
 @login_required
 def attendance_toggle():
-    """Toggle a single cell: person_id + date_id + optional present boolean."""
     if not is_allowed_email(current_user.email):
         return jsonify({"error": "forbidden"}), 403
 
@@ -726,13 +723,13 @@ def manage_about():
     return render_template("manage_about.html")
 
 
-# Permissions API: list/add/remove allowed emails (only accessible to currently-allowed users)
+# Permissions: list/add/remove allowed emails 
 @app.route('/api/permissions/list')
 @login_required
 def permissions_list():
     if not is_allowed_email(current_user.email):
         return jsonify({'error': 'forbidden'}), 403
-    # Return list of objects with a protected flag so the UI can disable removal
+
     raw_allowed = list(_get_allowed_emails_from_db())
     protected_lower = set(e.lower() for e in ALLOWED_EMAILS)
     allowed = [{'email': e, 'protected': (e.lower() in protected_lower)} for e in raw_allowed]
@@ -771,7 +768,7 @@ def permissions_delete():
     if not email:
         return jsonify({'error': 'invalid email'}), 400
     try:
-        # Prevent removal of permanently-protected emails defined in ALLOWED_EMAILS
+        # Prevent removal of protected emails
         protected_lower = set(e.lower() for e in ALLOWED_EMAILS)
         if email in protected_lower:
             return jsonify({'error': 'protected'}), 403

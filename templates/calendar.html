@@ -126,7 +126,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     calendar.render();
 
-    // Socket
+    // Socket Updates
     var socket = io();
     socket.on('calendar_event_added', function(data) {
         calendar.addEvent(data);
