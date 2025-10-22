@@ -94,177 +94,195 @@
 </div>
 
 <script>
-const socket = io();
-let currentArticleId = null;
 
-// Add or Update Row
-function addOrUpdateRow(article) {
-    const tbody = document.getElementById('archived-tbody');
-    let row = document.getElementById(`row-${article.id}`);
-    if (!row) {
-        row = document.createElement('tr');
-        row.id = `row-${article.id}`;
-        tbody.appendChild(row);
-    }
+document.addEventListener('DOMContentLoaded', () => {
+  const socket = io();
+  window.currentArticleId = null;
 
-    row.innerHTML = `
-        <td>${article.title}</td>
-        <td>${article.author}</td>
-        <td>${article.editor || '—'}</td>
-        <td>${article.deadline || ''}</td>
-        <td>
-            <button class="file-icon-btn" onclick="openFileManager(${article.id})">Files</button>
-        </td>
-        <td>
-            <button onclick="activateArticle(${article.id})" class="btn-activate">Activate</button>
-            <button onclick="deleteArticle(${article.id})" class="btn-delete">Delete</button>
-        </td>
-    `;
-}
+  // Add or Update Row
+  window.addOrUpdateRow = function(article) {
+      const tbody = document.getElementById('archived-tbody');
+      let row = document.getElementById(`row-${article.id}`);
+      if (!row) {
+          row = document.createElement('tr');
+          row.id = `row-${article.id}`;
+          tbody.appendChild(row);
+      }
 
-// Activate Article
-function activateArticle(articleId) {
-    fetch(`/activate/${articleId}`, { method: 'POST' })
-        .then(res => res.json())
-        .then data => {
-            if (data.success) {
-                const row = document.getElementById(`row-${articleId}`);
-                if (row) row.remove();
-            }
-        });
-}
+      row.innerHTML = `
+          <td>${article.title}</td>
+          <td>${article.author}</td>
+          <td>${article.editor || '—'}</td>
+          <td>${article.deadline || ''}</td>
+          <td>
+              <button class="file-icon-btn" onclick="openFileManager(${article.id})">Files</button>
+          </td>
+          <td>
+              <button onclick="activateArticle(${article.id})" class="btn-activate">Activate</button>
+              <button onclick="deleteArticle(${article.id})" class="btn-delete">Delete</button>
+          </td>
+      `;
+  };
 
-// Delete Article
-function deleteArticle(articleId) {
-    if (!confirm('Are you sure you want to delete this article?')) return;
-    fetch(`/delete/${articleId}`, { method: 'POST' })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                const row = document.getElementById(`row-${articleId}`);
-                if (row) row.remove();
-                socket.emit('article_deleted', { id: articleId });
-            }
-        });
-}
+  // Activate Article
+  window.activateArticle = function(articleId) {
+      fetch(`/activate/${articleId}`, { method: 'POST' })
+          .then(res => res.json())
+          .then(data => {
+              if (data.success) {
+                  const row = document.getElementById(`row-${articleId}`);
+                  if (row) row.remove();
+              } else {
+                  console.warn('Activate failed', data);
+              }
+          })
+          .catch(err => console.error('Activate error', err));
+  };
 
-// File Manager
-function openFileManager(articleId) {
-    currentArticleId = articleId;
-    const modal = document.getElementById('fileManagerModal');
-    modal.style.display = 'block';
-    modal.setAttribute('aria-hidden', 'false');
-    loadFiles(articleId);
-}
+  // Delete Article
+  window.deleteArticle = function(articleId) {
+      if (!confirm('Are you sure you want to delete this article?')) return;
+      fetch(`/delete/${articleId}`, { method: 'POST' })
+          .then(res => res.json())
+          .then(data => {
+              if (data.success) {
+                  const row = document.getElementById(`row-${articleId}`);
+                  if (row) row.remove();
+                  socket.emit('article_deleted', { id: articleId });
+              } else {
+                  console.warn('Delete failed', data);
+              }
+          })
+          .catch(err => console.error('Delete error', err));
+  };
 
-function closeFileManager() {
-    const modal = document.getElementById('fileManagerModal');
-    modal.style.display = 'none';
-    modal.setAttribute('aria-hidden', 'true');
-    currentArticleId = null;
-    document.getElementById('fileList').innerHTML = '';
-    document.getElementById('uploadForm').reset();
-}
+  // File Manager
+  window.openFileManager = function(articleId) {
+      window.currentArticleId = articleId;
+      const modal = document.getElementById('fileManagerModal');
+      modal.style.display = 'block';
+      modal.setAttribute('aria-hidden', 'false');
+      loadFiles(articleId);
+  };
 
-function loadFiles(articleId) {
-    const ul = document.getElementById('fileList');
+  window.closeFileManager = function() {
+      const modal = document.getElementById('fileManagerModal');
+      modal.style.display = 'none';
+      modal.setAttribute('aria-hidden', 'true');
+      window.currentArticleId = null;
+      document.getElementById('fileList').innerHTML = '';
+      const uf = document.getElementById('uploadForm');
+      if (uf) uf.reset();
+  };
 
-    ul.innerHTML = '<li class="loading">Loading…</li>';
+  function loadFiles(articleId) {
+      const ul = document.getElementById('fileList');
 
-    fetch(`/files/${articleId}`)
-        .then(res => res.json())
-        .then(data => {
-            ul.innerHTML = '';
+      ul.innerHTML = '<li class="loading">Loading…</li>';
 
-            (data.files || []).forEach(f => {
-                const li = document.createElement('li');
-                li.id = `file-${f.id}`;
-                li.innerHTML = `
-                    <div class="file-actions">
-                        <a href="/download_file/${f.id}" target="_blank">
-                            <button class="download-btn">${f.filename}</button>
-                        </a>
-                        <button onclick="deleteFile(${f.id})" class="delete-btn">Delete</button>
-                    </div>
-                `;
-                ul.appendChild(li);
-            });
-        })
-        .catch(() => {
-            ul.innerHTML = '<li class="error">Failed to load files</li>';
-        });
-}
+      fetch(`/files/${articleId}`)
+          .then(res => res.json())
+          .then(data => {
+              ul.innerHTML = '';
 
-document.getElementById('uploadForm').addEventListener('submit', async e => {
-    e.preventDefault();
-    if (!currentArticleId) return;
+              (data.files || []).forEach(f => {
+                  const li = document.createElement('li');
+                  li.id = `file-${f.id}`;
+                  li.innerHTML = `
+                      <div class="file-actions">
+                          <a href="/download_file/${f.id}" target="_blank">
+                              <button class="download-btn">${f.filename}</button>
+                          </a>
+                          <button onclick="deleteFile(${f.id})" class="delete-btn">Delete</button>
+                      </div>
+                  `;
+                  ul.appendChild(li);
+              });
+          })
+          .catch(err => {
+              console.error('Load files error', err);
+              ul.innerHTML = '<li class="error">Failed to load files</li>';
+          });
+  }
 
-    const fileInput = document.getElementById('fileInput');
-    if (!fileInput.files.length) return;
+  const uploadForm = document.getElementById('uploadForm');
+  if (uploadForm) {
+      uploadForm.addEventListener('submit', async e => {
+          e.preventDefault();
+          if (!window.currentArticleId) return;
 
-    const formData = new FormData(e.target);
+          const fileInput = document.getElementById('fileInput');
+          if (!fileInput || !fileInput.files.length) return;
 
-    const uploadBtn = e.target.querySelector('button[type="submit"]');
-    uploadBtn.disabled = true;
-    uploadBtn.textContent = "Wait...";
+          const formData = new FormData(e.target);
 
-    try {
-        const res = await fetch(`/upload/${currentArticleId}`, {
-            method: 'POST',
-            body: formData
-        });
-        const data = await res.json();
+          const uploadBtn = e.target.querySelector('button[type="submit"]');
+          if (uploadBtn) {
+              uploadBtn.disabled = true;
+              uploadBtn.textContent = "Wait...";
+          }
 
-        if (data.success) {
+          try {
+              const res = await fetch(`/upload/${window.currentArticleId}`, {
+                  method: 'POST',
+                  body: formData
+              });
+              const data = await res.json();
 
-            fileInput.value = "";
+              if (data.success) {
+                  fileInput.value = "";
+                  loadFiles(window.currentArticleId);
+              } else {
+                  alert("Upload failed: " + (data.message || "Unknown error"));
+              }
+          } catch (err) {
+              alert("Upload failed. Please try again.");
+              console.error('Upload error', err);
+          } finally {
+              if (uploadBtn) {
+                  uploadBtn.disabled = false;
+                  uploadBtn.textContent = "Upload";
+              }
+          }
+      });
+  }
 
-            loadFiles(currentArticleId);
-        } else {
-            alert("Upload failed: " + (data.message || "Unknown error"));
-        }
-    } catch (err) {
-        alert("Upload failed. Please try again.");
-        console.error(err);
-    } finally {
+  window.deleteFile = function(fileId) {
+      if (!confirm('Delete this file?')) return;
+      fetch(`/delete_file/${fileId}`, { method: 'POST' })
+          .then(res => res.json())
+          .then(data => { if (data.success) {
+              const el = document.getElementById(`file-${fileId}`);
+              if (el) el.remove();
+          }})
+          .catch(err => console.error('Delete file error', err));
+  };
 
-        uploadBtn.disabled = false;
-        uploadBtn.textContent = "Upload";
-    }
+  window.addEventListener('click', e => { if (e.target.id === 'fileManagerModal') closeFileManager(); });
+  window.addEventListener('keydown', e => { if (e.key === 'Escape') closeFileManager(); });
+
+  // Socket.IO Listeners
+  socket.on('article_archived', data => {
+      fetch(`/article/${data.id}`)
+          .then(res => res.json())
+          .then(article => addOrUpdateRow(article))
+          .catch(err => console.error('socket article_archived fetch error', err));
+  });
+
+  socket.on('article_activated', data => {
+      const row = document.getElementById(`row-${data.id}`);
+      if (row) row.remove();
+  });
+
+  socket.on('article_deleted', data => {
+      const row = document.getElementById(`row-${data.id}`);
+      if (row) row.remove();
+  });
+
+  socket.on('file_uploaded', data => { if (window.currentArticleId === data.articleId) loadFiles(window.currentArticleId); });
+  socket.on('file_deleted', data => { const li = document.getElementById(`file-${data.file_id}`); if (li) li.remove(); });
+
 });
-
-
-function deleteFile(fileId) {
-    if (!confirm('Delete this file?')) return;
-    fetch(`/delete_file/${fileId}`, { method: 'POST' })
-        .then(res => res.json())
-        .then(data => { if (data.success) document.getElementById(`file-${fileId}`).remove(); });
-}
-
-window.addEventListener('click', e => { if (e.target.id === 'fileManagerModal') closeFileManager(); });
-window.addEventListener('keydown', e => { if (e.key === 'Escape') closeFileManager(); });
-
-// Socket.IO Listeners
-socket.on('article_archived', data => {
-    fetch(`/article/${data.id}`)
-        .then(res => res.json())
-        .then(article => addOrUpdateRow(article));
-});
-
-socket.on('article_activated', data => {
-    const row = document.getElementById(`row-${data.id}`);
-    if (row) row.remove();
-});
-
-
-socket.on('article_deleted', data => {
-    const row = document.getElementById(`row-${data.id}`);
-    if (row) row.remove();
-});
-
-socket.on('file_uploaded', data => { if (currentArticleId === data.articleId) loadFiles(currentArticleId); });
-socket.on('file_deleted', data => { const li = document.getElementById(`file-${data.file_id}`); if (li) li.remove(); });
-
 </script>
 </body>
 </html>
