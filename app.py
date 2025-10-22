@@ -485,7 +485,7 @@ def archive_article(article_id):
 def archived():
  
     page = request.args.get('page', 1, type=int)
-    per_page = 20  
+    per_page = 10  
 
     articles = Article.query.filter_by(archived=True).all()
 
