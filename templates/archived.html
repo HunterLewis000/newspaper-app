@@ -62,17 +62,17 @@
   {% if total > 0 %}
     <nav aria-label="Archived pages">
       {% if page > 1 %}
-        <a class="page-link" href="{{ url_for('archived', page=page-1) }}">&larr; Previous</a>
+        <a class="pager-button" href="{{ url_for('archived', page=page-1) }}">&larr; Previous</a>
       {% else %}
-        <span class="page-link disabled">&larr; Previous</span>
+        <span class="pager-button disabled">&larr; Previous</span>
       {% endif %}
 
       <span style="margin: 0 12px;">Page {{ page }} of {{ total_pages }} ({{ total }} articles)</span>
 
       {% if page < total_pages %}
-        <a class="page-link" href="{{ url_for('archived', page=page+1) }}">Next &rarr;</a>
+        <a class="pager-button" href="{{ url_for('archived', page=page+1) }}">Next &rarr;</a>
       {% else %}
-        <span class="page-link disabled">Next &rarr;</span>
+        <span class="pager-button disabled">Next &rarr;</span>
       {% endif %}
     </nav>
   {% endif %}
@@ -126,7 +126,7 @@ function addOrUpdateRow(article) {
 function activateArticle(articleId) {
     fetch(`/activate/${articleId}`, { method: 'POST' })
         .then(res => res.json())
-        .then(data => {
+        .then data => {
             if (data.success) {
                 const row = document.getElementById(`row-${articleId}`);
                 if (row) row.remove();
@@ -216,7 +216,7 @@ document.getElementById('uploadForm').addEventListener('submit', async e => {
         const data = await res.json();
 
         if (data.success) {
-        
+
             fileInput.value = "";
 
             loadFiles(currentArticleId);
@@ -227,7 +227,7 @@ document.getElementById('uploadForm').addEventListener('submit', async e => {
         alert("Upload failed. Please try again.");
         console.error(err);
     } finally {
-  
+
         uploadBtn.disabled = false;
         uploadBtn.textContent = "Upload";
     }
