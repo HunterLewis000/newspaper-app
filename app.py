@@ -483,18 +483,40 @@ def archive_article(article_id):
 @app.route('/archived')
 @login_required
 def archived():
+ 
+    page = request.args.get('page', 1, type=int)
+    per_page = 20  
 
     articles = Article.query.filter_by(archived=True).all()
-    
+
     def parse_deadline(article):
         try:
             return datetime.strptime(article.deadline, "%Y-%m-%d")
         except (TypeError, ValueError):
-            return datetime.min  
+            return datetime.min
 
     articles_sorted = sorted(articles, key=parse_deadline, reverse=True)
 
-    return render_template('archived.html', articles=articles_sorted)
+    total = len(articles_sorted)
+    total_pages = max(1, (total + per_page - 1) // per_page)
+
+    if page < 1:
+        page = 1
+    if page > total_pages:
+        page = total_pages
+
+    start = (page - 1) * per_page
+    end = start + per_page
+    page_articles = articles_sorted[start:end]
+
+    return render_template(
+        'archived.html',
+        articles=page_articles,
+        page=page,
+        total_pages=total_pages,
+        per_page=per_page,
+        total=total
+    )
 
 @app.route('/calendar')
 @login_required
