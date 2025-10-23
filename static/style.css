@@ -453,26 +453,59 @@ td.arcac, th.arcac {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   padding: 16px;
 }
-.attendance-page table { border-collapse: collapse; width: 100%; }
-.attendance-page th, .attendance-page td { border: 1px solid #ddd; padding: 6px; text-align: center; }
-.attendance-page th.date-col { position: sticky; top: 0; background: #fafafa; z-index: 1; }
-.attendance-page th.person { background: #f0f0f0; text-align:left; }
-.attendance-page td.cell { cursor: pointer; width: 120px; height: 32px; }
-.attendance-page td.cell.present { background: #4caf50; color: white; }
-.attendance-page td.cell.absent { background: #fff; color: #333; }
-.attendance-page .controls { margin-bottom: 12px; display:flex; gap:8px; align-items:center; }
+
+/* Parameters for attendance table layout: adjust these to change visible columns */
+:root {
+  --person-col-width: 200px; /* width reserved for the names column (sticky) */
+  --date-col-width: 120px;   /* width of each date column */
+  --visible-dates: 5;        /* number of date columns visible before horizontal scrolling */
+}
+
+/* Table wrapper: limit the visible width to names + N date columns, allow horizontal scroll for more */
+#table-wrap {
+  overflow: auto;
+  max-height: 70vh; /* kept from inline style in template as well */
+  max-width: calc(var(--person-col-width) + var(--date-col-width) * var(--visible-dates));
+}
+
+/* Attendance-specific table behavior:
+   - let the attendance table size itself by content so the wrapper produces horizontal scroll
+   - enforce fixed widths for person and date columns so visibility is predictable */
+.attendance-page table {
+  border-collapse: collapse;
+  width: auto; /* allow the table to be wider than the container so horizontal scrolling works */
+  min-width: calc(var(--person-col-width) + var(--date-col-width) * var(--visible-dates));
+  table-layout: fixed;
+}
+.attendance-page th, .attendance-page td {
+  border: 1px solid #ddd;
+  padding: 6px;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+/* date header stays stuck at top */
 .attendance-page th.date-col {
   position: sticky;
   top: 0;
   background: #fafafa;
   z-index: 1;
 }
-.attendance-page td.person, .attendance-page th.person {
+
+/* person column (names) stays fixed at left */
+.attendance-page th.person, .attendance-page td.person {
   position: sticky;
   left: 0;
   background: #f0f0f0;
-  z-index: 2;
+  z-index: 3; /* higher than date headers so it stays on top when overlapping */
+  width: var(--person-col-width);
+  min-width: var(--person-col-width);
+  max-width: var(--person-col-width);
+  text-align: left;
+  padding-left: 10px;
 }
+
+/* visual divider on the right edge of person column */
 .attendance-page td.person::after {
   content: "";
   position: absolute;
@@ -483,6 +516,28 @@ td.arcac, th.arcac {
   background: #ddd;
 }
 
+/* date cells fixed width */
+.attendance-page td.cell {
+  cursor: pointer;
+  width: var(--date-col-width);
+  min-width: var(--date-col-width);
+  max-width: var(--date-col-width);
+  height: 32px;
+}
+
+/* present/absent styles */
+.attendance-page td.cell.present { background: #4caf50; color: white; }
+.attendance-page td.cell.absent { background: #fff; color: #333; }
+
+/* controls layout */
+.attendance-page .controls { margin-bottom: 12px; display:flex; gap:8px; align-items:center; }
+
+.attendance-page th.date-col {
+  position: sticky;
+  top: 0;
+  background: #fafafa;
+  z-index: 1;
+}
 .center-buttons button:hover {
     background-color: #2563eb;
 }
@@ -514,7 +569,6 @@ td.arcac, th.arcac {
 .pager-button:hover {
   background-color: #0056b3;
 }
-/* disabled state */
 .pager-button.disabled {
   background-color: #e5e7eb;
   color: #6b7280;
