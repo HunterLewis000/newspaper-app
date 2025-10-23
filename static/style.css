@@ -452,35 +452,33 @@ td.arcac, th.arcac {
 .attendance-page {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   padding: 16px;
-  max-width: 1200px; /* keep the attendance section itself constrained and centered */
+  max-width: 1200px;
   margin: 0 auto 24px;
 }
 
-/* Parameters for attendance table layout: adjust these to change visible columns */
 :root {
   --person-col-width: 200px; /* width reserved for the names column (sticky) */
   --date-col-width: 120px;   /* width of each date column */
   --visible-dates: 5;        /* number of date columns visible before horizontal scrolling */
 }
 
-/* Table wrapper: center and allow it to grow wider on larger screens */
+
 #table-wrap {
   overflow: auto;
-  max-height: 70vh; /* kept from inline style in template as well */
+  max-height: 70vh;
   margin: 0 auto;
-  width: min(1200px, 95vw); /* wider and centered; will clamp to viewport */
+  width: min(1200px, 95vw);
   box-sizing: border-box;
-  padding: 8px; /* small padding so the sticky column divider isn't flush to the edge */
+  padding: 8px;
+  -webkit-overflow-scrolling: touch;
 }
 
-/* Attendance-specific table behavior:
-   - table stretches to fill the wrapper when there are few columns
-   - enforces a minimum width so extra dates still cause horizontal scroll */
 .attendance-page table {
   border-collapse: collapse;
-  width: 100%; /* stretch to wrapper so it looks wider/centered when few dates */
+  width: auto; 
   min-width: calc(var(--person-col-width) + var(--date-col-width) * var(--visible-dates));
   table-layout: fixed;
+  margin: 0 auto; 
 }
 .attendance-page th, .attendance-page td {
   border: 1px solid #ddd;
