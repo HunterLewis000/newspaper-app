@@ -5,6 +5,24 @@
     <title>C&W Story Tracker</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='ccp.ico') }}">
+    <style>
+      /* Tooltip used for truncated titles on hover */
+      .title-tooltip {
+        position: fixed;
+        background: rgba(0,0,0,0.88);
+        color: #fff;
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-size: 0.95rem;
+        line-height: 1.3;
+        pointer-events: none;
+        z-index: 2500;
+        white-space: normal;
+        max-width: 70vw;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+        display: none;
+      }
+    </style>
 </head>
 <body>
 
@@ -520,7 +538,7 @@ socket.on('update_article_order', (data) => {
 function markComplete(articleId) {
     fetch(`/archive/${articleId}`, { method: 'POST' })
         .then(res => res.json())
-        .then(data => {
+        .then data => {
             if (data.success) {
                 // Remove row from main table
                 const row = document.getElementById(`row-${articleId}`);
@@ -557,6 +575,91 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 });
+</script>
+
+<!-- Tooltip script: show full title after a short hover delay -->
+<script>
+(function(){
+  const HOVER_DELAY = 800; // ms
+  let hoverTimer = null;
+  let currentCell = null;
+
+  const tooltip = document.createElement('div');
+  tooltip.className = 'title-tooltip';
+  document.body.appendChild(tooltip);
+
+  function showTooltipFor(cell) {
+    const text = cell.textContent?.trim();
+    if (!text) return;
+    tooltip.textContent = text;
+    tooltip.style.display = 'block';
+
+    requestAnimationFrame(() => {
+      const rect = cell.getBoundingClientRect();
+      const ttRect = tooltip.getBoundingClientRect();
+  
+      let top = rect.top - ttRect.height - 8;
+      if (top < 8) top = rect.bottom + 8;
+
+      let left = rect.left;
+      if (left + ttRect.width > window.innerWidth - 8) {
+        left = Math.max(8, window.innerWidth - ttRect.width - 8);
+      }
+      tooltip.style.top = `${Math.round(top)}px`;
+      tooltip.style.left = `${Math.round(left)}px`;
+    });
+  }
+
+  function hideTooltip() {
+    tooltip.style.display = 'none';
+    tooltip.textContent = '';
+  }
+
+  document.addEventListener('mouseover', (e) => {
+    const cell = e.target.closest('td.title, th.title');
+    if (!cell) return;
+    
+    const isOverflowing = cell.scrollWidth > cell.clientWidth;
+    if (!isOverflowing) return;
+    currentCell = cell;
+    hoverTimer = setTimeout(() => {
+      showTooltipFor(cell);
+      hoverTimer = null;
+    }, HOVER_DELAY);
+  });
+
+  document.addEventListener('mouseout', (e) => {
+    const related = e.relatedTarget;
+    const cell = e.target.closest('td.title, th.title');
+    if (hoverTimer) { clearTimeout(hoverTimer); hoverTimer = null; }
+    if (cell && (!related || !related.closest || !related.closest('td.title, th.title'))) {
+      hideTooltip();
+      currentCell = null;
+    }
+  });
+
+  // also hide on scroll / resize / touch
+  ['scroll','resize','touchstart'].forEach(evt => {
+    window.addEventListener(evt, () => {
+      if (hoverTimer) { clearTimeout(hoverTimer); hoverTimer = null; }
+      hideTooltip();
+    }, { passive: true });
+  });
+
+
+  document.addEventListener('focusin', (e) => {
+    const cell = e.target.closest && e.target.closest('td.title, th.title');
+    if (!cell) return;
+    const isOverflowing = cell.scrollWidth > cell.clientWidth;
+    if (!isOverflowing) return;
+    hoverTimer = setTimeout(() => showTooltipFor(cell), 350);
+  });
+
+  document.addEventListener('focusout', (e) => {
+    if (hoverTimer) { clearTimeout(hoverTimer); hoverTimer = null; }
+    hideTooltip();
+  });
+})();
 </script>
 
 </body>
