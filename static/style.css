@@ -141,8 +141,8 @@ td.title, td.author {
 
 .modal-content {
   background: #fff;
-  width: 520px;
-  max-width: 90vw;
+  width: 720px;              
+  max-width: calc(100vw - 40px);
   margin: 6vh auto;
   padding: 18px;
   border-radius: 10px;
@@ -521,4 +521,59 @@ td.arcac, th.arcac {
   pointer-events: none;
   cursor: default;
   box-shadow: none;
+}
+
+
+.file-actions {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  box-sizing: border-box;
+}
+
+
+.file-actions .download-btn {
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: blue;
+  text-decoration: underline;
+  cursor: pointer;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  max-width: calc(100% - 90px); 
+}
+
+
+.file-actions .delete-btn {
+  margin-left: 12px;
+  flex: 0 0 auto;
+  padding: 6px 10px;
+  background: #ef4444;
+  border-radius: 6px;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+
+.file-list li > .file-actions {
+  width: 100%;
+}
+
+/* Smaller screens: ensure modal still fits and filename truncation works cleanly */
+@media (max-width: 760px) {
+  .modal-content {
+    width: 90vw;
+    padding: 12px;
+  }
+
+  .file-actions .download-btn {
+    max-width: calc(100% - 80px);
+  }
 }
