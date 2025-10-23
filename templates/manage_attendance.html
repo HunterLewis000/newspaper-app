@@ -33,6 +33,7 @@
    <div class="controls">
     <button id="btn-add-person">Add Person</button>
     <button id="btn-add-date">Add Date</button>
+    <button id="btn-export-csv">Export CSV</button>
   </div>
 <script>
 const socket = io(); 
@@ -254,8 +255,48 @@ async function deleteDate(dateId) {
   }
 }
 
+/* CSV export: builds a CSV with header "Name" + date columns, then one row per person.
+   Uses the client-side `people`, `dates`, and `attendance` structures so exported CSV
+   matches the current UI state. */
+function exportCSV() {
+  if (!people.length) { alert("No people to export."); return; }
+
+  const header = ["Name"].concat(dates.map(d => (new Date(d.date)).toISOString().slice(0,10)));
+
+  const rows = [header];
+  people.forEach(p => {
+    const row = [p.name];
+    dates.forEach(d => {
+      const key = keyFor(String(p.id), String(d.id));
+      row.push(attendance[key] ? "Present" : "");
+    });
+    rows.push(row);
+  });
+
+  const csvLines = rows.map(cols => cols.map(cell => {
+    if (cell === null || cell === undefined) cell = "";
+    cell = String(cell);
+    if (cell.includes('"') || cell.includes(',') || cell.includes('\n')) {
+      return '"' + cell.replace(/"/g, '""') + '"';
+    }
+    return cell;
+  }).join(','));
+
+  const csv = csvLines.join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const now = new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
+  a.download = `attendance-${now}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1000);
+}
+
 document.getElementById('btn-add-person').addEventListener('click', addPerson);
 document.getElementById('btn-add-date').addEventListener('click', addDate);
+document.getElementById('btn-export-csv').addEventListener('click', exportCSV);
 
 socket.on('connect', () => console.log('socket connected'));
 socket.on('attendance_updated', (d) => {
