@@ -635,3 +635,29 @@ td.arcac, th.arcac {
     max-width: calc(100% - 80px);
   }
 }
+
+
+.attendance-page table {
+
+  width: auto !important;
+  border-collapse: collapse;
+  min-width: calc(var(--person-col-width) + var(--date-col-width) * var(--visible-dates));
+  table-layout: fixed;
+  margin: 0 auto;
+}
+
+.attendance-page th.date-col {
+  position: sticky;
+  top: 0;
+  background: #fafafa;
+  z-index: 30; 
+}
+
+
+.attendance-page th.person,
+.attendance-page td.person {
+  position: sticky; 
+  left: 0;
+  z-index: 40;
+  background: #f0f0f0;
+}
