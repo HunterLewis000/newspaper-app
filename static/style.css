@@ -141,7 +141,7 @@ td.title, td.author {
 
 .modal-content {
   background: #fff;
-  width: 720px;              
+  width: 600px;              
   max-width: calc(100vw - 40px);
   margin: 6vh auto;
   padding: 18px;
@@ -559,13 +559,14 @@ td.arcac, th.arcac {
   margin-left: 12px;
   padding: 6px 10px;
   background: black;
-  color: #ef4444; /* red text */
+  color: #ff0000;
   border-radius: 6px;
   border: none;
   cursor: pointer;
   font-weight: 600;
 }
 
+/* Hover: same behavior as other buttons (red background, white text) */
 .file-actions .delete-btn:hover {
   background: #b91c1c;
 }
