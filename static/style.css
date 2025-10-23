@@ -458,8 +458,8 @@ td.arcac, th.arcac {
 
 :root {
   --person-col-width: 200px; /* width reserved for the names column (sticky) */
-  --date-col-width: 120px;   /* width of each date column */
-  --visible-dates: 5;        /* number of date columns visible before horizontal scrolling */
+  --date-col-width: 160px;   /* width of each date column */
+  --visible-dates: 7;        /* number of date columns visible before horizontal scrolling */
 }
 
 
@@ -469,17 +469,10 @@ td.arcac, th.arcac {
   margin: 0 auto;
   width: min(1200px, 95vw);
   box-sizing: border-box;
-  padding: 8px;
+  padding: 0; /* removed padding so sticky headers sit flush */
   -webkit-overflow-scrolling: touch;
 }
 
-.attendance-page table {
-  border-collapse: collapse;
-  width: auto; 
-  min-width: calc(var(--person-col-width) + var(--date-col-width) * var(--visible-dates));
-  table-layout: fixed;
-  margin: 0 auto; 
-}
 .attendance-page th, .attendance-page td {
   border: 1px solid #ddd;
   padding: 6px;
@@ -492,7 +485,7 @@ td.arcac, th.arcac {
   position: sticky;
   top: 0;
   background: #fafafa;
-  z-index: 1;
+  z-index: 30; 
 }
 
 /* person column (names) stays fixed at left */
@@ -500,7 +493,7 @@ td.arcac, th.arcac {
   position: sticky;
   left: 0;
   background: #f0f0f0;
-  z-index: 3; /* higher than date headers so it stays on top when overlapping */
+  z-index: 40; 
   width: var(--person-col-width);
   min-width: var(--person-col-width);
   max-width: var(--person-col-width);
