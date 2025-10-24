@@ -16,7 +16,7 @@ from io import BytesIO
 import os
 import google.oauth2.id_token
 import google.auth.transport.requests
-from sqlalchemy import desc, and_
+from sqlalchemy import desc, and_, or_
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime
 
@@ -486,8 +486,17 @@ def archived():
  
     page = request.args.get('page', 1, type=int)
     per_page = 10  
+    q = (request.args.get('q') or '').strip()
 
-    articles = Article.query.filter_by(archived=True).all()
+    # Base query for archived articles
+    base_q = Article.query.filter_by(archived=True)
+
+    # If search query provided, filter by title OR author (case-insensitive)
+    if q:
+        pattern = f"%{q}%"
+        base_q = base_q.filter(or_(Article.title.ilike(pattern), Article.author.ilike(pattern)))
+
+    articles = base_q.all()
 
     def parse_deadline(article):
         try:
@@ -515,7 +524,8 @@ def archived():
         page=page,
         total_pages=total_pages,
         per_page=per_page,
-        total=total
+        total=total,
+        q=q
     )
 
 @app.route('/calendar')
@@ -742,7 +752,7 @@ def manage_permissions():
 def manage_about():
     if not is_allowed_email(current_user.email):
         return "Forbidden", 403
-    return render_template("manage_about.html")
+    return render_template("manage_about.html"):
 
 
 # Permissions: list/add/remove allowed emails 
@@ -819,12 +829,13 @@ def calendar_events():
         return jsonify([]), 500
 
     data = resp.json()
-    events = [{
+    events = [>({
         'id': e['id'],
         'title': e.get('summary', 'No Title'),
         'start': e.get('start', {}).get('dateTime') or e.get('start', {}).get('date'),
         'end': e.get('end', {}).get('dateTime') or e.get('end', {}).get('date'),
         'description': e.get('description', ''),
+
         'location': e.get('location', '')
     } for e in data.get('items', [])]
 

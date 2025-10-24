@@ -28,7 +28,18 @@
     <h1 style="display: inline;"><a href="https://www.ccpstudentnews.org" style="font-family: 'Brush Script MT'; text-decoration: none; color: #222; font-size: 45px;">Cardinal and White&nbsp; </a></h1><h1 style="display: inline;">Archived Articles</h1>
     </div>
 
-<table id="archive-table" border="1" style="width:100%; border-collapse: collapse; margin-top: 50px;">
+<!-- Search form -->
+<div style="text-align:center; margin-top:18px;">
+  <form method="get" action="{{ url_for('archived') }}" style="display:inline-flex; align-items:center; gap:8px;">
+    <input type="search" name="q" placeholder="Search title or author" value="{{ q or '' }}" aria-label="Search archived articles" style="padding:6px 8px; width:320px;" />
+    <button type="submit">Search</button>
+    {% if q %}
+      <a class="pager-button" href="{{ url_for('archived') }}" title="Clear search" style="margin-left:6px;">× Clear</a>
+    {% endif %}
+  </form>
+</div>
+
+<table id="archive-table" border="1" style="width:100%; border-collapse: collapse; margin-top: 22px;">
     <thead>
         <tr>
             <th class="arcti">Title</th>
@@ -62,7 +73,7 @@
   {% if total > 0 %}
     <nav aria-label="Archived pages">
       {% if page > 1 %}
-        <a class="pager-button" href="{{ url_for('archived', page=page-1) }}">&larr; Previous</a>
+        <a class="pager-button" href="{{ url_for('archived', page=page-1, q=q) }}">&larr; Previous</a>
       {% else %}
         <span class="pager-button disabled">&larr; Previous</span>
       {% endif %}
@@ -70,7 +81,7 @@
       <span style="margin: 0 12px;">Page {{ page }} of {{ total_pages }} ({{ total }} articles)</span>
 
       {% if page < total_pages %}
-        <a class="pager-button" href="{{ url_for('archived', page=page+1) }}">Next &rarr;</a>
+        <a class="pager-button" href="{{ url_for('archived', page=page+1, q=q) }}">Next &rarr;</a>
       {% else %}
         <span class="pager-button disabled">Next &rarr;</span>
       {% endif %}
@@ -128,7 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
   window.activateArticle = function(articleId) {
       fetch(`/activate/${articleId}`, { method: 'POST' })
           .then(res => res.json())
-          .then(data => {
+          .then data => {
               if (data.success) {
                   const row = document.getElementById(`row-${articleId}`);
                   if (row) row.remove();
@@ -144,7 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!confirm('Are you sure you want to delete this article?')) return;
       fetch(`/delete/${articleId}`, { method: 'POST' })
           .then(res => res.json())
-          .then(data => {
+          .then data => {
               if (data.success) {
                   const row = document.getElementById(`row-${articleId}`);
                   if (row) row.remove();
@@ -182,7 +193,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       fetch(`/files/${articleId}`)
           .then(res => res.json())
-          .then(data => {
+          .then data => {
               ul.innerHTML = '';
 
               (data.files || []).forEach(f => {
@@ -250,10 +261,10 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!confirm('Delete this file?')) return;
       fetch(`/delete_file/${fileId}`, { method: 'POST' })
           .then(res => res.json())
-          .then(data => { if (data.success) {
+          .then data => { if (data.success) {
               const el = document.getElementById(`file-${fileId}`);
               if (el) el.remove();
-          }})
+          }}
           .catch(err => console.error('Delete file error', err));
   };
 
