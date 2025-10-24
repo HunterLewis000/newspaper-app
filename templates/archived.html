@@ -139,7 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
   window.activateArticle = function(articleId) {
       fetch(`/activate/${articleId}`, { method: 'POST' })
           .then(res => res.json())
-          .then data => {
+          .then(data => {
               if (data.success) {
                   const row = document.getElementById(`row-${articleId}`);
                   if (row) row.remove();
@@ -155,7 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!confirm('Are you sure you want to delete this article?')) return;
       fetch(`/delete/${articleId}`, { method: 'POST' })
           .then(res => res.json())
-          .then data => {
+          .then(data => {
               if (data.success) {
                   const row = document.getElementById(`row-${articleId}`);
                   if (row) row.remove();
@@ -193,7 +193,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       fetch(`/files/${articleId}`)
           .then(res => res.json())
-          .then data => {
+          .then(data => {
               ul.innerHTML = '';
 
               (data.files || []).forEach(f => {
@@ -261,10 +261,12 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!confirm('Delete this file?')) return;
       fetch(`/delete_file/${fileId}`, { method: 'POST' })
           .then(res => res.json())
-          .then data => { if (data.success) {
-              const el = document.getElementById(`file-${fileId}`);
-              if (el) el.remove();
-          }}
+          .then(data => {
+              if (data.success) {
+                  const el = document.getElementById(`file-${fileId}`);
+                  if (el) el.remove();
+              }
+          })
           .catch(err => console.error('Delete file error', err));
   };
 
