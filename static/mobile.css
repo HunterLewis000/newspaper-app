@@ -1,0 +1,149 @@
+:root {
+  --mobile-gap: 10px;
+  --mobile-padding: 10px;
+  --mobile-font: 14px;
+}
+
+/* Base adjustments */
+body {
+  margin: 16px;
+  font-size: var(--mobile-font);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Make header/title area more compact */
+h1 { font-size: 1.25rem; }
+.back-button { padding: 6px 10px; font-size: 13px; }
+
+/* User box smaller */
+.user-box {
+  top: 8px;
+  right: 8px;
+  padding: 4px 6px;
+  height: auto;
+  font-size: 0.78rem;
+}
+
+/* Forms stack vertically and inputs stretch full-width */
+form.typ,
+.search-form,
+.upload-section form {
+  flex-direction: column;
+  gap: var(--mobile-gap);
+  padding: var(--mobile-padding);
+}
+
+form.typ input,
+form.typ select,
+.search-form .search-input,
+.upload-section input[type="file"] {
+  width: 100% !important;
+  box-sizing: border-box;
+  font-size: var(--mobile-font);
+  padding: 10px;
+}
+
+form.typ button,
+.search-form .search-btn,
+.upload-section button {
+  width: 100%;
+  padding: 10px;
+  font-size: var(--mobile-font);
+  border-radius: 8px;
+}
+
+/* Search form specifics */
+.search-form {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  justify-content: center;
+  padding: 0 8px;
+  box-sizing: border-box;
+}
+.search-form .search-input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.search-form .search-btn {
+  flex: 0 0 auto;
+  min-width: 84px;
+}
+
+/* Tables: allow horizontal scroll, reduce paddings and font-size */
+#archive-table,
+table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  white-space: nowrap;
+}
+
+table thead,
+table tbody,
+table tr {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+}
+
+th, td {
+  padding: 8px 10px;
+  font-size: 13px;
+}
+
+/* Reduce file list modal size and padding */
+.modal-content {
+  width: calc(100vw - 24px) !important;
+  margin: 6vh auto;
+  padding: 12px;
+}
+
+/* File list buttons smaller */
+.file-actions .delete-btn,
+.file-actions .download-btn {
+  font-size: 13px;
+}
+
+/* Pager buttons and clear link alignment (ensure consistent height) */
+.pager-button,
+.search-form .search-btn {
+  height: 36px;
+  line-height: 36px;
+  font-size: 14px;
+  padding: 0 12px;
+  box-sizing: border-box;
+}
+
+/* Compact table rows (stackable feel) */
+tbody tr {
+  display: table-row;
+}
+
+/* Make action buttons easier to tap */
+button, .pager-button, .file-actions .delete-btn {
+  touch-action: manipulation;
+}
+
+/* Small screens: hide less important columns to improve readability if desired.
+   Uncomment any rules below to hide columns on very small screens (<= 420px). */
+/*
+@media (max-width: 420px) {
+  th.arced, td.arced, th.arcde, td.arcde, th.arcfi, td.arcfi { display: none; }
+}
+*/
+
+/* Minor accessibility improvement: increase hit area for .file-icon-btn */
+.file-icon-btn {
+  padding: 8px 10px;
+  font-size: 13px;
+}
+
+/* Avoid overly large shadows on mobile */
+tbody tr {
+  box-shadow: none;
+  border-radius: 6px;
+  background: #fff;
+}
