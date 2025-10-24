@@ -30,9 +30,9 @@
 
 <!-- Search form -->
 <div style="text-align:center; margin-top:18px;">
-  <form method="get" action="{{ url_for('archived') }}" style="display:inline-flex; align-items:center; gap:8px;">
-    <input type="search" name="q" placeholder="Search title or author" value="{{ q or '' }}" aria-label="Search archived articles" style="padding:6px 8px; width:320px;" />
-    <button type="submit">Search</button>
+  <form method="get" action="{{ url_for('archived') }}" class="search-form">
+    <input type="search" name="q" class="search-input" placeholder="Search title or author" value="{{ q or '' }}" aria-label="Search archived articles" />
+    <button type="submit" class="search-btn">Search</button>
     {% if q %}
       <a class="pager-button" href="{{ url_for('archived') }}" title="Clear search" style="margin-left:6px;">× Clear</a>
     {% endif %}
