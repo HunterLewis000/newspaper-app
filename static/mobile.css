@@ -232,3 +232,24 @@ tbody tr {
   border-radius: 6px;
   background: #fff;
 }
+
+/* Ensure status color stays a perfect circle on mobile */
+@media (max-width: 760px) {
+  .status-color {
+    flex: 0 0 auto !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    width: 20px !important;
+    height: 20px !important;
+    min-width: 20px !important;
+    min-height: 20px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    box-sizing: border-box !important;
+
+    transform: none !important;
+    writing-mode: horizontal-tb !important;
+  }
+}
