@@ -104,22 +104,26 @@ table tbody tr {
   border: 1px solid #eee;
   box-shadow: none;
   box-sizing: border-box;
+  position: relative; /* keep internal elements contained */
 }
 
-/* Mobile tweaks to make each card's label/value layout stable and prevent random right-alignment */
+/* Stable label/value layout */
 table tbody td {
   display: flex;
   align-items: center;
-  gap: 12px;                 /* space between label and value */
+  gap: 12px;                   /* space between label and value */
   justify-content: flex-start; /* keep value left-aligned after label */
   padding: 8px 6px;
   min-height: 36px;
   box-sizing: border-box;
+  overflow: visible;
 }
 
 /* fixed label column for every "row" inside the card */
 table tbody td::before {
-  flex: 0 0 84px;           /* stable label width */
+  content: attr(data-label);   /* prefer data-label if present in HTML; falls back below to nth-child */
+  display: inline-block;
+  flex: 0 0 84px;              /* stable label width */
   min-width: 64px;
   max-width: 120px;
   white-space: nowrap;
@@ -129,7 +133,18 @@ table tbody td::before {
   font-weight: 600;
   color: #444;
   font-size: 13px;
+  text-align: left;
 }
+
+/* Fallback labels by column index if template doesn't include data-label attributes */
+table tbody td:nth-child(2)::before { content: "Type"; }
+table tbody td:nth-child(3)::before { content: "Title"; }
+table tbody td:nth-child(4)::before { content: "Author"; }
+table tbody td:nth-child(5)::before { content: "Status"; }
+table tbody td:nth-child(6)::before { content: "Editor"; }
+table tbody td:nth-child(7)::before { content: "Deadline"; }
+table tbody td:nth-child(8)::before { content: "Files"; }
+table tbody td:nth-child(9)::before { content: "Actions"; }
 
 /* Make the actual cell content take remaining space and be able to wrap */
 table tbody td > * {
@@ -147,15 +162,16 @@ table tbody td.title * {
   overflow: visible !important;
 }
 
-/* Controls (selects/buttons) — keep them constrained, but not shoved to the far right */
+/* Controls (selects/buttons) — keep them constrained, but don't stretch */
 table tbody td select,
 table tbody td input[type="date"],
 table tbody td .status-color {
   flex: 0 0 auto;          /* don't stretch to fill entire row */
   max-width: 240px;
+  min-width: 90px;
 }
 
-/* Smaller controls get a sensible min width so they don't collapse vertically */
+/* Smaller controls sensible min width so they don't collapse vertically */
 .file-icon-btn,
 table tbody td select,
 td.actions button {
@@ -165,23 +181,27 @@ td.actions button {
   align-items: center;
   justify-content: center;
   white-space: nowrap;
+  position: relative;      /* prevent being taken out of flow */
 }
 
-/* Actions: keep buttons grouped and avoid full row stretching */
+/* Actions styles: grouped and right-aligned */
 td.actions {
   display: flex;
   gap: 8px;
   justify-content: flex-end;
   flex-wrap: wrap;
+  width: 100%;
+  box-sizing: border-box;
 }
 td.actions button {
   flex: 0 0 auto;
   min-width: 96px;
+  margin-left: 0;          /* prevent negative offset */
 }
 
-/* If a specific cell needs a smaller select, use a helper */
-.table-small-select {
-  max-width: 120px;
+/* Ensure labels remain visible if templates don't provide data-labels */
+table tbody td::before {
+  /* already defined above; keep high specificity to avoid being hidden */
 }
 
 /* Fix any vertical/rotated text artifacts (ensure horizontal layout) */
@@ -191,7 +211,15 @@ td.actions button {
   transform: none !important;
 }
 
-/* Ensure label width slightly smaller on very small screens */
+/* Ensure select and buttons have consistent alignment in the value area */
+table tbody td .file-icon-btn,
+table tbody td select,
+table tbody td input[type="date"] {
+  margin: 0;
+  vertical-align: middle;
+}
+
+/* Ensure the label column is slightly smaller on tiny screens */
 @media (max-width: 420px) {
   table tbody td::before { flex: 0 0 72px; min-width: 56px; }
   td.actions button { min-width: 84px; }
