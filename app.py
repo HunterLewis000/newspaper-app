@@ -752,7 +752,7 @@ def manage_permissions():
 def manage_about():
     if not is_allowed_email(current_user.email):
         return "Forbidden", 403
-    return render_template("manage_about.html"):
+    return render_template("manage_about.html")
 
 
 # Permissions: list/add/remove allowed emails 
@@ -829,7 +829,7 @@ def calendar_events():
         return jsonify([]), 500
 
     data = resp.json()
-    events = [>({
+    events = [{
         'id': e['id'],
         'title': e.get('summary', 'No Title'),
         'start': e.get('start', {}).get('dateTime') or e.get('start', {}).get('date'),
