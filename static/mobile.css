@@ -106,87 +106,68 @@ table tbody tr {
   box-sizing: border-box;
 }
 
-/* Each cell becomes a row inside the card */
+/* Mobile tweaks to make each card's label/value layout stable and prevent random right-alignment */
 table tbody td {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 6px 0;
-  font-size: 13px;
+  gap: 12px;                 /* space between label and value */
+  justify-content: flex-start; /* keep value left-aligned after label */
+  padding: 8px 6px;
+  min-height: 36px;
   box-sizing: border-box;
-  min-height: 28px;
-  white-space: normal; /* allow wrapping */
-  overflow: visible;
 }
 
-/* Hide drag handle on mobile (first column) */
-table tbody td:first-child {
-  display: none;
-}
-
-/* Give labels to cells using nth-child (matches column order in HTML)
-   Column mapping:
-   1: drag-handle (hidden)
-   2: cat (Type)
-   3: title (Title)
-   4: author (Author)
-   5: status (Status)
-   6: editor (Editor)
-   7: deadline (Deadline)
-   8: filescol (Files)
-   9: actions (Actions)
-*/
-table tbody td:nth-child(2)::before { content: "Type"; font-weight:600; color:#444; margin-right:8px; }
-table tbody td:nth-child(3)::before { content: "Title"; font-weight:600; color:#444; margin-right:8px; }
-table tbody td:nth-child(4)::before { content: "Author"; font-weight:600; color:#444; margin-right:8px; }
-table tbody td:nth-child(5)::before { content: "Status"; font-weight:600; color:#444; margin-right:8px; }
-table tbody td:nth-child(6)::before { content: "Editor"; font-weight:600; color:#444; margin-right:8px; }
-table tbody td:nth-child(7)::before { content: "Deadline"; font-weight:600; color:#444; margin-right:8px; }
-table tbody td:nth-child(8)::before { content: "Files"; font-weight:600; color:#444; margin-right:8px; }
-table tbody td:nth-child(9)::before { content: "Actions"; font-weight:600; color:#444; margin-right:8px; }
-
-/* Styling for the label pseudo-element */
+/* fixed label column for every "row" inside the card */
 table tbody td::before {
-  display: inline-block;
-  min-width: 80px;
-  margin-right: 12px;
+  flex: 0 0 84px;           /* stable label width */
+  min-width: 64px;
+  max-width: 120px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0;
+  font-weight: 600;
   color: #444;
   font-size: 13px;
-  flex: 0 0 auto;
 }
 
-/* Let the actual value take remaining space and wrap */
-table tbody td > *:last-child,
+/* Make the actual cell content take remaining space and be able to wrap */
 table tbody td > * {
-  max-width: calc(100% - 100px);
+  flex: 1 1 auto;
+  min-width: 0;            /* allows content to shrink and wrap inside flex */
+  max-width: 100%;
   overflow-wrap: anywhere;
-  text-overflow: ellipsis;
+  white-space: normal;
 }
 
-/* Title should wrap nicely */
-td.title, td.title * {
+/* Title value should wrap naturally and be readable */
+table tbody td.title,
+table tbody td.title * {
   white-space: normal !important;
   overflow: visible !important;
 }
 
-/* Make selects and buttons fit nicely inside the card rows */
-table tbody td select {
-  max-width: 160px;
-  width: auto;
-  flex: 0 0 auto;
-}
-.table-small-select {
-  max-width: 120px;
+/* Controls (selects/buttons) — keep them constrained, but not shoved to the far right */
+table tbody td select,
+table tbody td input[type="date"],
+table tbody td .status-color {
+  flex: 0 0 auto;          /* don't stretch to fill entire row */
+  max-width: 240px;
 }
 
-/* File button */
-.file-icon-btn {
+/* Smaller controls get a sensible min width so they don't collapse vertically */
+.file-icon-btn,
+table tbody td select,
+td.actions button {
+  min-width: 72px;
   padding: 8px 10px;
-  font-size: 13px;
-  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
 }
 
-/* Actions area: stack buttons and make them easy to tap */
+/* Actions: keep buttons grouped and avoid full row stretching */
 td.actions {
   display: flex;
   gap: 8px;
@@ -194,57 +175,27 @@ td.actions {
   flex-wrap: wrap;
 }
 td.actions button {
-  flex: 1 1 auto;
-  min-width: 100px;
-  padding: 8px 10px;
-  font-size: 13px;
-  border-radius: 8px;
+  flex: 0 0 auto;
+  min-width: 96px;
 }
 
-/* Smaller modal and buttons */
-.modal-content {
-  width: calc(100vw - 24px) !important;
-  margin: 6vh auto;
-  padding: 12px;
+/* If a specific cell needs a smaller select, use a helper */
+.table-small-select {
+  max-width: 120px;
 }
 
-/* File list buttons smaller */
-.file-actions .delete-btn,
-.file-actions .download-btn {
-  font-size: 13px;
+/* Fix any vertical/rotated text artifacts (ensure horizontal layout) */
+.file-icon-btn,
+.download-btn {
+  writing-mode: horizontal-tb !important;
+  transform: none !important;
 }
 
-/* Pager buttons and clear link alignment (ensure consistent height) */
-.pager-button,
-.search-form .search-btn {
-  height: 36px;
-  line-height: 36px;
-  font-size: 14px;
-  padding: 0 12px;
-  box-sizing: border-box;
-}
-
-/* Make interactive elements easier to tap */
-button, .pager-button, .file-actions .delete-btn, .file-icon-btn {
-  touch-action: manipulation;
-}
-
-/* Minor accessibility improvement: increase hit area for .file-icon-btn */
-.file-icon-btn {
-  padding: 8px 10px;
-  font-size: 13px;
-}
-
-/* Optional: hide less-important columns on very small screens */
+/* Ensure label width slightly smaller on very small screens */
 @media (max-width: 420px) {
-  /* Hide Editor & Deadline to declutter */
-  table tbody td:nth-child(6),
-  table tbody td:nth-child(7) {
-    display: none;
-  }
-
-  /* Reduce label width */
-  table tbody td::before { min-width: 72px; }
+  table tbody td::before { flex: 0 0 72px; min-width: 56px; }
+  td.actions button { min-width: 84px; }
+  .file-icon-btn { min-width: 64px; }
 }
 
 /* Prevent overly large shadows on mobile */
