@@ -539,9 +539,8 @@ socket.on('update_article_order', (data) => {
 function markComplete(articleId) {
     fetch(`/archive/${articleId}`, { method: 'POST' })
         .then(res => res.json())
-        .then data => {
+        .then(data => {
             if (data.success) {
-                // Remove row from main table
                 const row = document.getElementById(`row-${articleId}`);
                 if (row) row.remove();
             } else {
