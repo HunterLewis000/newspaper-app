@@ -14,7 +14,7 @@
             margin: 0;
             padding: 0;
             min-height: 100vh;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -30,7 +30,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background-image: url("{{ url_for('static', filename='DJI_0925.jpg') }}");
+            background-image: url("{{ url_for('static', filename='DJI_0925.JPG') }}");
             background-size: cover;
             background-position: center;
             opacity: 0.3;
@@ -42,8 +42,12 @@
             z-index: 1;
             width: 90%;
             max-width: 480px;
+            height: 75vh;
+            max-height: 800px;
             padding: 0;
             animation: fadeInUp 0.6s ease-out;
+            display: flex;
+            align-items: center;
         }
 
         @keyframes fadeInUp {
@@ -64,6 +68,8 @@
             padding: 50px 40px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             text-align: center;
+            width: 100%;
+            overflow-y: auto;
         }
 
         .header-section {
@@ -93,7 +99,7 @@
         }
 
         .title-wrapper h1 a:hover {
-            color: #667eea;
+            color: #3b82f6;
         }
 
         .title-wrapper h1:last-child {
@@ -147,10 +153,9 @@
 
         .features-title {
             color: #444;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
             font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
             margin-bottom: 20px;
         }
 
@@ -280,23 +285,23 @@ function handleCredentialResponse(response) {
         {% endwith %}
 
         <div class="features-section">
-            <div class="features-title">What's Inside</div>
+            <div class="features-title">Features</div>
             <div class="features-grid">
                 <div class="feature-item">
                     <div class="feature-icon">📝</div>
-                    <div class="feature-label">Story Management</div>
+                    <div class="feature-label">Article Management</div>
                 </div>
                 <div class="feature-item">
                     <div class="feature-icon">📅</div>
                     <div class="feature-label">Deadline Tracking</div>
                 </div>
                 <div class="feature-item">
-                    <div class="feature-icon">👥</div>
-                    <div class="feature-label">Team Collaboration</div>
+                    <div class="feature-icon">✏️</div>
+                    <div class="feature-label">Editing Workflow</div>
                 </div>
                 <div class="feature-item">
-                    <div class="feature-icon">📊</div>
-                    <div class="feature-label">Progress Reports</div>
+                    <div class="feature-icon">📁</div>
+                    <div class="feature-label">File Storage</div>
                 </div>
             </div>
         </div>
