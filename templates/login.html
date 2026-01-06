@@ -12,7 +12,7 @@
         /* Login page specific styles */
         body.login-page {
             margin: 0;
-            padding: 0;
+            padding: 5vh 0;
             min-height: 100vh;
             background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
             display: flex;
@@ -21,11 +21,12 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             position: relative;
             overflow-x: hidden;
+            box-sizing: border-box;
         }
 
         body.login-page::before {
             content: '';
-            position: absolute;
+            position: fixed;
             top: 0;
             left: 0;
             right: 0;
@@ -33,6 +34,7 @@
             background-image: url("{{ url_for('static', filename='DJI_0925.JPG') }}");
             background-size: cover;
             background-position: center;
+            background-repeat: no-repeat;
             opacity: 0.3;
             z-index: 0;
         }
@@ -40,10 +42,9 @@
         .login-container {
             position: relative;
             z-index: 1;
-            width: 90%;
-            max-width: 480px;
-            height: 75vh;
-            max-height: 800px;
+            width: 75%;
+            max-width: 1200px;
+            max-height: 90vh;
             padding: 0;
             animation: fadeInUp 0.6s ease-out;
             display: flex;
@@ -244,8 +245,8 @@ function handleCredentialResponse(response) {
                 </h1>
                 <h1>Story Tracker</h1>
             </div>
-            <p class="subtitle">Streamline your newsroom workflow</p>
-            <p class="tagline">Track stories, manage deadlines, and collaborate seamlessly</p>
+            <p class="subtitle">A simplified newspaper management system</p>
+            <p class="tagline">Managing stories for the Chaminade College Prep Newspaper</p>
         </div>
 
         <div class="divider"></div>
@@ -307,7 +308,7 @@ function handleCredentialResponse(response) {
         </div>
 
         <p class="footer-note">
-            Questions? Contact your editor or newspaper advisor
+            Need help accessing the tracker? Contact hlewis26@ccp-stl.org
         </p>
     </div>
 </div>
