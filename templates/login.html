@@ -2,69 +2,310 @@
 <html>
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>C&W Story Tracker</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='ccp.ico') }}">
     <!-- Google Identity Services -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <style>
+        /* Login page specific styles */
+        body.login-page {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body.login-page::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: url("{{ url_for('static', filename='DJI_0925.jpg') }}");
+            background-size: cover;
+            background-position: center;
+            opacity: 0.3;
+            z-index: 0;
+        }
+
+        .login-container {
+            position: relative;
+            z-index: 1;
+            width: 90%;
+            max-width: 480px;
+            padding: 0;
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .login-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 50px 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+
+        .header-section {
+            margin-bottom: 40px;
+        }
+
+        .title-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .title-wrapper h1 {
+            margin: 0;
+            line-height: 1.2;
+        }
+
+        .title-wrapper h1 a {
+            font-family: 'Brush Script MT', cursive;
+            text-decoration: none;
+            color: #222;
+            font-size: 42px;
+            transition: color 0.3s ease;
+        }
+
+        .title-wrapper h1 a:hover {
+            color: #667eea;
+        }
+
+        .title-wrapper h1:last-child {
+            font-size: 42px;
+            color: #222;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.1rem;
+            margin: 15px 0 0 0;
+            font-weight: 400;
+        }
+
+        .tagline {
+            color: #888;
+            font-size: 0.95rem;
+            margin-top: 8px;
+        }
+
+        .divider {
+            height: 1px;
+            background: linear-gradient(to right, transparent, #ddd, transparent);
+            margin: 30px 0;
+        }
+
+        .signin-section {
+            margin: 35px 0;
+        }
+
+        .signin-instruction {
+            color: #555;
+            font-size: 1rem;
+            margin-bottom: 25px;
+            line-height: 1.6;
+        }
+
+        .google-signin-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 44px;
+        }
+
+        .features-section {
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .features-title {
+            color: #444;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 20px;
+            text-align: center;
+        }
+
+        .feature-item {
+            padding: 15px 10px;
+            border-radius: 10px;
+            background: #f8f9fa;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .feature-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .feature-icon {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .feature-label {
+            color: #555;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .flash-messages {
+            margin-top: 20px;
+        }
+
+        .flash-message {
+            color: #dc2626;
+            background: #fee2e2;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            margin-top: 10px;
+            border-left: 4px solid #dc2626;
+        }
+
+        .footer-note {
+            margin-top: 30px;
+            color: #999;
+            font-size: 0.85rem;
+        }
+
+        @media (max-width: 600px) {
+            .login-card {
+                padding: 40px 30px;
+            }
+
+            .title-wrapper h1 a,
+            .title-wrapper h1:last-child {
+                font-size: 32px;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
 </head>
-<body>
+<body class="login-page">
 
 <script>
 function handleCredentialResponse(response) {
-
     window.location.href = "{{ url_for('google_login', _external=True) }}?credential=" + response.credential;
 }
 </script>
 
-   
-    <div style="display: flex; justify-content: center; align-items: center; margin-top: 40px;">
-        <h1 style="display: inline;">
-            <a href="https://www.ccpstudentnews.org" 
-               style="font-family: 'Brush Script MT'; text-decoration: none; color: #222; font-size: 45px;">
-               Cardinal and White&nbsp;
-            </a>
-        </h1>
-        <h1 style="display: inline;">Story Tracker</h1>
-    </div>
-
-   
-    <div style="display: flex; justify-content: center; margin-top: 50px;">
-        <!-- Google Sign-In Button -->
-<div id="g_id_onload"
-     data-client_id="{{ google_client_id }}"
-     data-login_uri="{{ url_for('google_login', _external=True) }}"
-     data-auto_prompt="false"
-     data-callback="handleCredentialResponse">
-</div>
-
-
-        <div class="g_id_signin"
-             data-type="standard"
-             data-size="medium"
-             data-theme="outline"
-             data-text="sign_in_with"
-             data-shape="rectangular"
-             data-logo_alignment="left">
+<div class="login-container">
+    <div class="login-card">
+        <div class="header-section">
+            <div class="title-wrapper">
+                <h1>
+                    <a href="https://www.ccpstudentnews.org">
+                        Cardinal and White&nbsp;
+                    </a>
+                </h1>
+                <h1>Story Tracker</h1>
+            </div>
+            <p class="subtitle">Streamline your newsroom workflow</p>
+            <p class="tagline">Track stories, manage deadlines, and collaborate seamlessly</p>
         </div>
+
+        <div class="divider"></div>
+
+        <div class="signin-section">
+            <p class="signin-instruction">
+                Sign in with your Chaminade Google account to access the tracker
+            </p>
+            
+            <div class="google-signin-wrapper">
+                <div id="g_id_onload"
+                     data-client_id="{{ google_client_id }}"
+                     data-login_uri="{{ url_for('google_login', _external=True) }}"
+                     data-auto_prompt="false"
+                     data-callback="handleCredentialResponse">
+                </div>
+
+                <div class="g_id_signin"
+                     data-type="standard"
+                     data-size="large"
+                     data-theme="outline"
+                     data-text="sign_in_with"
+                     data-shape="rectangular"
+                     data-logo_alignment="left">
+                </div>
+            </div>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="flash-messages">
+              {% for category, message in messages %}
+                <div class="flash-message">{{ message }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        <div class="features-section">
+            <div class="features-title">What's Inside</div>
+            <div class="features-grid">
+                <div class="feature-item">
+                    <div class="feature-icon">📝</div>
+                    <div class="feature-label">Story Management</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">📅</div>
+                    <div class="feature-label">Deadline Tracking</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">👥</div>
+                    <div class="feature-label">Team Collaboration</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">📊</div>
+                    <div class="feature-label">Progress Reports</div>
+                </div>
+            </div>
+        </div>
+
+        <p class="footer-note">
+            Questions? Contact your editor or newspaper advisor
+        </p>
     </div>
-
- 
-    <p style="text-align: center; margin-top: 20px; font-size: 1rem; color: #555;">
-        Please sign in with your Chaminade Google account to access the Story Tracker.
-    </p>
-
-
-{% with messages = get_flashed_messages(with_categories=true) %}
-  {% if messages %}
-    <div style="text-align: center; margin-top: 20px;">
-      {% for category, message in messages %}
-        <p style="color: red; font-weight: bold;">{{ message }}</p>
-      {% endfor %}
-    </div>
-  {% endif %}
-{% endwith %}
-
+</div>
 
 </body>
 </html>
