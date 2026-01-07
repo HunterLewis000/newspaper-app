@@ -661,13 +661,9 @@ async function changeStatus(articleId, newStatus) {
         
         // Check if we're reverting to a previous status
         if (currentStatusIndex > newStatusIndex) {
-            // Check if the status we're reverting to already has history
-            const hasHistory = history.some(h => h.status === newStatus);
-            if (hasHistory) {
-                const confirmed = confirm(`Are you sure you want to revert to "${newStatus}"?`);
-                if (!confirmed) {
-                    return;
-                }
+            const confirmed = confirm(`Are you sure you want to revert to "${newStatus}"?`);
+            if (!confirmed) {
+                return;
             }
         }
         
