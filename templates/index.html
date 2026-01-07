@@ -72,6 +72,26 @@
         margin: 0 0 20px 0;
       }
 
+      @keyframes drawLine {
+        from {
+          transform: scaleY(0);
+        }
+        to {
+          transform: scaleY(1);
+        }
+      }
+
+      @keyframes drawDot {
+        from {
+          transform: scale(0);
+          opacity: 0;
+        }
+        to {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+
       .status-timeline {
         position: relative;
         padding-left: 50px;
@@ -93,11 +113,13 @@
         bottom: 0;
         width: 3px;
         background: #e0e0e0;
-        transition: background-color 0.6s ease;
+        transform-origin: top;
+        transform: scaleY(0);
       }
 
       .status-timeline-line.active {
         background: #4CAF50;
+        animation: drawLine 0.5s ease-out forwards;
       }
 
       .status-timeline-line.published {
@@ -115,22 +137,26 @@
         border: 3px solid #fff;
         box-shadow: 0 0 0 2px #e0e0e0;
         z-index: 1;
-        transition: all 0.6s ease;
+        transform: scale(0);
+        opacity: 0;
       }
 
       .status-timeline-dot.active {
         background: #4CAF50;
         box-shadow: 0 0 0 2px #4CAF50;
+        animation: drawDot 0.3s ease-out forwards;
       }
 
       .status-timeline-dot.completed {
         background: #4CAF50;
         box-shadow: 0 0 0 2px #4CAF50;
+        animation: drawDot 0.3s ease-out forwards;
       }
 
       .status-timeline-dot.published {
         background: #FFD700;
         box-shadow: 0 0 0 2px #FFD700;
+        animation: drawDot 0.3s ease-out forwards;
       }
 
       .status-timeline-status {
@@ -140,7 +166,7 @@
         margin-bottom: 8px;
         cursor: pointer;
         display: inline-block;
-        transition: color 0.2s;
+        transition: color 0.3s ease;
         word-wrap: break-word;
         overflow-wrap: break-word;
         max-width: 100%;
@@ -421,6 +447,10 @@ function renderStatusTimeline(history, articleId) {
         const historyEntry = statusMap[status];
         const isActive = historyEntry && history[history.length - 1]?.status === status;
         
+        // Check if the current overall status is Published
+        const currentStatus = history.length > 0 ? history[history.length - 1].status : null;
+        const isPublished = currentStatus === 'Published';
+        
         // Status is completed if:
         // 1. It has a history entry, OR
         // 2. It's between the first completed status and current status (skipped but should show green)
@@ -433,9 +463,10 @@ function renderStatusTimeline(history, articleId) {
         line.className = 'status-timeline-line';
         if (index < currentStatusIndex || shouldShowGreen) {
             line.classList.add('active');
+            line.style.animationDelay = `${index * 0.1}s`;
         }
-        // Add published class if this or any before it is Published
-        if (status === 'Published' && (isActive || shouldShowGreen)) {
+        // Add published class if overall status is Published
+        if (isPublished && shouldShowGreen) {
             line.classList.add('published');
         }
         
@@ -447,8 +478,9 @@ function renderStatusTimeline(history, articleId) {
         } else if (shouldShowGreen) {
             dot.classList.add('completed');
         }
-        // Add published class for Published status
-        if (status === 'Published' && (isActive || shouldShowGreen)) {
+        dot.style.animationDelay = `${index * 0.1 + 0.4}s`;
+        // Add published class if overall status is Published
+        if (isPublished && shouldShowGreen) {
             dot.classList.remove('active', 'completed');
             dot.classList.add('published');
         }
@@ -459,8 +491,8 @@ function renderStatusTimeline(history, articleId) {
         if (isActive) {
             statusLabel.classList.add('active');
         }
-        // Add published class for Published status
-        if (status === 'Published' && isActive) {
+        // Add published class if overall status is Published and this status is active
+        if (isPublished && isActive) {
             statusLabel.classList.remove('active');
             statusLabel.classList.add('published');
         }
@@ -519,6 +551,10 @@ async function updateStatusTimelineInPlace(articleId) {
         const currentStatusIndex = history.length > 0 ? 
             STATUS_OPTIONS.indexOf(history[history.length - 1].status) : -1;
         
+        // Check if the current overall status is Published
+        const currentStatus = history.length > 0 ? history[history.length - 1].status : null;
+        const isPublished = currentStatus === 'Published';
+        
         // Update each timeline item in place
         const timeline = document.getElementById('statusTimeline');
         const items = timeline.querySelectorAll('.status-timeline-item');
@@ -540,8 +576,8 @@ async function updateStatusTimelineInPlace(articleId) {
                 if (index < currentStatusIndex || shouldShowGreen) {
                     line.classList.add('active');
                 }
-                // Add published class if this is Published status
-                if (status === 'Published' && (isActive || shouldShowGreen)) {
+                // Add published class if overall status is Published
+                if (isPublished && shouldShowGreen) {
                     line.classList.add('published');
                 }
             }
@@ -555,8 +591,8 @@ async function updateStatusTimelineInPlace(articleId) {
                 } else if (shouldShowGreen) {
                     dot.classList.add('completed');
                 }
-                // Add published class for Published status
-                if (status === 'Published' && (isActive || shouldShowGreen)) {
+                // Add published class if overall status is Published
+                if (isPublished && shouldShowGreen) {
                     dot.classList.remove('active', 'completed');
                     dot.classList.add('published');
                 }
@@ -569,8 +605,8 @@ async function updateStatusTimelineInPlace(articleId) {
                 if (isActive) {
                     statusLabel.classList.add('active');
                 }
-                // Add published class for Published status
-                if (status === 'Published' && isActive) {
+                // Add published class if overall status is Published and this is active
+                if (isPublished && isActive) {
                     statusLabel.classList.remove('active');
                     statusLabel.classList.add('published');
                 }
