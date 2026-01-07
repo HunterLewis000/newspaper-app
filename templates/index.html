@@ -160,7 +160,11 @@
         background: #fff;
         color: #000;
         cursor: pointer;
-        font-size: 14px;
+        font-size: 13.3333px;
+        font-weight: normal;
+        font-family: inherit;
+        width: 92px;
+        text-align: left;
         transition: all 0.2s;
       }
 
@@ -423,7 +427,9 @@ function renderStatusTimeline(history, articleId) {
         meta.className = 'status-timeline-meta';
         
         if (historyEntry) {
-            const date = new Date(historyEntry.timestamp);
+            // The timestamp from server is in UTC but doesn't have Z suffix, so add it
+            const utcTimestamp = historyEntry.timestamp.endsWith('Z') ? historyEntry.timestamp : historyEntry.timestamp + 'Z';
+            const date = new Date(utcTimestamp);
             const dateStr = date.toLocaleString('en-US', { 
                 month: 'short', 
                 day: 'numeric', 

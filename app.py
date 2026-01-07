@@ -430,17 +430,47 @@ def update_status(article_id):
     if article:
         new_status = request.json.get('status')
         old_status = article.status
+        
+        # Define status order
+        STATUS_ORDER = ['Not Started', 'In Progress', 'Needs Edit', 'Edited', 'Published']
+        
+        # Get all existing history for this article
+        existing_history = StatusHistory.query.filter_by(article_id=article.id).all()
+        
+        # Check if we're reverting to a previous status
+        if existing_history:
+            current_status_index = STATUS_ORDER.index(old_status) if old_status in STATUS_ORDER else -1
+            new_status_index = STATUS_ORDER.index(new_status) if new_status in STATUS_ORDER else -1
+            
+            # If reverting (going to an earlier status), remove all history entries for statuses after the new status
+            if new_status_index < current_status_index:
+                for history_entry in existing_history:
+                    entry_status_index = STATUS_ORDER.index(history_entry.status) if history_entry.status in STATUS_ORDER else -1
+                    if entry_status_index > new_status_index:
+                        db.session.delete(history_entry)
+        
         article.status = new_status
         
-        # Create status history entry
-        status_entry = StatusHistory(
-            article_id=article.id,
-            status=new_status,
-            user_name=current_user.name,
-            user_email=current_user.email,
-            timestamp=datetime.utcnow()
-        )
-        db.session.add(status_entry)
+        # Check if this status already has a history entry
+        existing_entry = StatusHistory.query.filter_by(article_id=article.id, status=new_status).first()
+        
+        if not existing_entry:
+            # Create new status history entry
+            status_entry = StatusHistory(
+                article_id=article.id,
+                status=new_status,
+                user_name=current_user.name,
+                user_email=current_user.email,
+                timestamp=datetime.utcnow()
+            )
+            db.session.add(status_entry)
+        else:
+            # Update existing entry with new timestamp and user
+            existing_entry.user_name = current_user.name
+            existing_entry.user_email = current_user.email
+            existing_entry.timestamp = datetime.utcnow()
+            status_entry = existing_entry
+        
         db.session.commit()
         
         socketio.emit('status_updated', {
