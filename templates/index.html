@@ -157,15 +157,20 @@
         padding: 6px 12px;
         border: 1px solid #ddd;
         border-radius: 4px;
-        background: #f8f8f8;
+        background: #fff;
+        color: #000;
         cursor: pointer;
         font-size: 14px;
         transition: all 0.2s;
       }
 
       .status-button:hover {
-        background: #e8e8e8;
+        background: #f5f5f5;
         border-color: #ccc;
+      }
+
+      tr.published .status-button {
+        color: #999;
       }
     </style>
 </head>
@@ -290,7 +295,7 @@
 <div id="statusModal" class="status-modal" aria-hidden="true">
   <div class="status-modal-content">
     <button type="button" class="status-modal-close" aria-label="Close" onclick="closeStatusModal()">×</button>
-    <h3>Article Status Timeline</h3>
+    <h3>Status</h3>
     <div class="status-timeline" id="statusTimeline">
       <!-- Timeline items will be dynamically inserted here -->
     </div>
@@ -380,12 +385,18 @@ function renderStatusTimeline(history, articleId) {
         
         const historyEntry = statusMap[status];
         const isActive = historyEntry && history[history.length - 1]?.status === status;
+        
+        // Status is completed if:
+        // 1. It has a history entry, OR
+        // 2. It's between the first completed status and current status (skipped but should show green)
         const isCompleted = historyEntry !== undefined;
+        const isSkipped = !isCompleted && index > 0 && index < currentStatusIndex;
+        const shouldShowGreen = isCompleted || isSkipped;
         
         // Create line
         const line = document.createElement('div');
         line.className = 'status-timeline-line';
-        if (index < currentStatusIndex || isCompleted) {
+        if (index < currentStatusIndex || shouldShowGreen) {
             line.classList.add('active');
         }
         
@@ -394,7 +405,7 @@ function renderStatusTimeline(history, articleId) {
         dot.className = 'status-timeline-dot';
         if (isActive) {
             dot.classList.add('active');
-        } else if (isCompleted) {
+        } else if (shouldShowGreen) {
             dot.classList.add('completed');
         }
         
@@ -407,22 +418,23 @@ function renderStatusTimeline(history, articleId) {
         statusLabel.textContent = status;
         statusLabel.onclick = () => changeStatus(articleId, status);
         
-        // Create meta info
+        // Create meta info - only show if there's actual history entry (not skipped)
         const meta = document.createElement('div');
         meta.className = 'status-timeline-meta';
         
         if (historyEntry) {
             const date = new Date(historyEntry.timestamp);
-            const dateStr = date.toLocaleDateString('en-US', { 
+            const dateStr = date.toLocaleString('en-US', { 
                 month: 'short', 
                 day: 'numeric', 
                 year: 'numeric',
                 hour: 'numeric',
-                minute: '2-digit'
+                minute: '2-digit',
+                hour12: true
             });
             
             meta.innerHTML = `
-                <div><strong>Changed by:</strong> ${historyEntry.user_name}</div>
+                <div><strong>Updated by:</strong> ${historyEntry.user_name}</div>
                 <div><strong>Date:</strong> ${dateStr}</div>
             `;
         }
@@ -440,6 +452,27 @@ function renderStatusTimeline(history, articleId) {
 
 async function changeStatus(articleId, newStatus) {
     try {
+        // First, get the current history to check if we're reverting
+        const historyRes = await fetch(`/status_history/${articleId}`);
+        const historyData = await historyRes.json();
+        const history = historyData.history;
+        
+        const currentStatusIndex = history.length > 0 ? 
+            STATUS_OPTIONS.indexOf(history[history.length - 1].status) : -1;
+        const newStatusIndex = STATUS_OPTIONS.indexOf(newStatus);
+        
+        // Check if we're reverting to a previous status
+        if (currentStatusIndex > newStatusIndex) {
+            // Check if the status we're reverting to already has history
+            const hasHistory = history.some(h => h.status === newStatus);
+            if (hasHistory) {
+                const confirmed = confirm(`Are you sure you want to revert to "${newStatus}"?`);
+                if (!confirmed) {
+                    return;
+                }
+            }
+        }
+        
         const res = await fetch(`/update_status/${articleId}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
