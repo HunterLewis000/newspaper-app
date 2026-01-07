@@ -167,14 +167,14 @@
         font-size: 1rem;
         font-weight: normal;
         font-family: inherit;
-        width: 100px;
-        min-width: 100px;
-        max-width: 100px;
+        width: 110px;
+        min-width: 110px;
+        max-width: 110px;
         box-sizing: border-box;
         text-align: left;
         transition: all 0.2s;
         overflow: hidden;
-        text-overflow: ellipsis;
+        text-overflow: clip;
         white-space: nowrap;
         display: inline-block;
       }
@@ -472,6 +472,99 @@ function renderStatusTimeline(history, articleId) {
     });
 }
 
+async function updateStatusTimelineInPlace(articleId) {
+    try {
+        const res = await fetch(`/status_history/${articleId}`);
+        const data = await res.json();
+        const history = data.history;
+        
+        // Create a map of status to history entry
+        const statusMap = {};
+        history.forEach(h => {
+            if (!statusMap[h.status] || new Date(h.timestamp) > new Date(statusMap[h.status].timestamp)) {
+                statusMap[h.status] = h;
+            }
+        });
+        
+        // Get current status
+        const currentStatusIndex = history.length > 0 ? 
+            STATUS_OPTIONS.indexOf(history[history.length - 1].status) : -1;
+        
+        // Update each timeline item in place
+        const timeline = document.getElementById('statusTimeline');
+        const items = timeline.querySelectorAll('.status-timeline-item');
+        
+        STATUS_OPTIONS.forEach((status, index) => {
+            const item = items[index];
+            if (!item) return;
+            
+            const historyEntry = statusMap[status];
+            const isActive = historyEntry && history[history.length - 1]?.status === status;
+            const isCompleted = historyEntry !== undefined;
+            const isSkipped = !isCompleted && index > 0 && index < currentStatusIndex;
+            const shouldShowGreen = isCompleted || isSkipped;
+            
+            // Update line
+            const line = item.querySelector('.status-timeline-line');
+            if (line) {
+                if (index < currentStatusIndex || shouldShowGreen) {
+                    line.classList.add('active');
+                } else {
+                    line.classList.remove('active');
+                }
+            }
+            
+            // Update dot
+            const dot = item.querySelector('.status-timeline-dot');
+            if (dot) {
+                dot.classList.remove('active', 'completed');
+                if (isActive) {
+                    dot.classList.add('active');
+                } else if (shouldShowGreen) {
+                    dot.classList.add('completed');
+                }
+            }
+            
+            // Update status label
+            const statusLabel = item.querySelector('.status-timeline-status');
+            if (statusLabel) {
+                statusLabel.classList.remove('active');
+                if (isActive) {
+                    statusLabel.classList.add('active');
+                }
+            }
+            
+            // Update meta
+            const meta = item.querySelector('.status-timeline-meta');
+            if (meta) {
+                if (historyEntry) {
+                    const utcTimestamp = historyEntry.timestamp.endsWith('Z') ? historyEntry.timestamp : historyEntry.timestamp + 'Z';
+                    const date = new Date(utcTimestamp);
+                    const dateStr = date.toLocaleString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric', 
+                        year: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        hour12: true
+                    });
+                    
+                    meta.innerHTML = `
+                        <div><strong>Updated by:</strong> ${historyEntry.user_name}</div>
+                        <div><strong>Date:</strong> ${dateStr}</div>
+                    `;
+                    meta.style.display = 'block';
+                } else {
+                    meta.innerHTML = '';
+                    meta.style.display = 'none';
+                }
+            }
+        });
+    } catch (err) {
+        console.error('Failed to update status timeline:', err);
+    }
+}
+
 async function changeStatus(articleId, newStatus) {
     try {
         // First, get the current history to check if we're reverting
@@ -503,8 +596,8 @@ async function changeStatus(articleId, newStatus) {
         
         const data = await res.json();
         if (data.success) {
-            // Reload the timeline to show the update
-            await loadStatusHistory(articleId);
+            // Update the timeline in place without full rebuild
+            await updateStatusTimelineInPlace(articleId);
             
             // Update the status button in the table
             const row = document.getElementById(`row-${articleId}`);
@@ -874,7 +967,7 @@ socket.on('status_updated', data => {
         
         // If the status modal is open for this article, reload it
         if (currentStatusArticleId === data.id) {
-            loadStatusHistory(data.id);
+            updateStatusTimelineInPlace(data.id);
         }
     }
 });
