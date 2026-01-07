@@ -44,7 +44,7 @@
         border-radius: 12px;
         max-width: 600px;
         width: 90%;
-        max-height: 80vh;
+        max-height: 90vh;
         overflow-y: auto;
         overflow-x: hidden;
         box-shadow: 0 10px 40px rgba(0,0,0,0.3);
@@ -61,6 +61,11 @@
         cursor: pointer;
         padding: 0;
         line-height: 1;
+      }
+
+      .status-modal-close:hover {
+        background: transparent;
+        color: red;
       }
 
       .status-modal h3 {
@@ -516,6 +521,17 @@ async function changeStatus(articleId, newStatus) {
                     row.classList.remove('published');
                 }
                 
+                // Update disabled state of dropdowns
+                const catSelect = row.querySelector('.cat select');
+                const editorSelect = row.querySelector('.editor select');
+                if (newStatus === 'Published') {
+                    if (catSelect) catSelect.disabled = true;
+                    if (editorSelect) editorSelect.disabled = true;
+                } else {
+                    if (catSelect) catSelect.disabled = false;
+                    if (editorSelect) editorSelect.disabled = false;
+                }
+                
                 // Update actions cell if needed
                 const actionsCell = row.querySelector('.actions');
                 if (newStatus === 'Published') {
@@ -833,6 +849,17 @@ socket.on('status_updated', data => {
         }
 
         row.classList.toggle('published', data.status === 'Published');
+
+        // Update disabled state of dropdowns
+        const catSelect = row.querySelector('.cat select');
+        const editorSelect = row.querySelector('.editor select');
+        if (data.status === 'Published') {
+            if (catSelect) catSelect.disabled = true;
+            if (editorSelect) editorSelect.disabled = true;
+        } else {
+            if (catSelect) catSelect.disabled = false;
+            if (editorSelect) editorSelect.disabled = false;
+        }
 
         // Update actions cell
         const actionsCell = row.querySelector('.actions');
