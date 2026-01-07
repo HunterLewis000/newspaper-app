@@ -613,29 +613,34 @@ async function updateStatusTimelineInPlace(articleId) {
             }
             
             // Update meta
-            const meta = item.querySelector('.status-timeline-meta');
-            if (meta) {
-                if (historyEntry) {
-                    const utcTimestamp = historyEntry.timestamp.endsWith('Z') ? historyEntry.timestamp : historyEntry.timestamp + 'Z';
-                    const date = new Date(utcTimestamp);
-                    const dateStr = date.toLocaleString('en-US', { 
-                        month: 'short', 
-                        day: 'numeric', 
-                        year: 'numeric',
-                        hour: 'numeric',
-                        minute: '2-digit',
-                        hour12: true
-                    });
-                    
-                    meta.innerHTML = `
-                        <div><strong>Updated by:</strong> ${historyEntry.user_name}</div>
-                        <div><strong>Date:</strong> ${dateStr}</div>
-                    `;
-                    meta.style.display = 'block';
-                } else {
-                    meta.innerHTML = '';
-                    meta.style.display = 'none';
-                }
+            let meta = item.querySelector('.status-timeline-meta');
+            if (!meta) {
+                // Create meta element if it doesn't exist
+                meta = document.createElement('div');
+                meta.className = 'status-timeline-meta';
+                item.appendChild(meta);
+            }
+            
+            if (historyEntry) {
+                const utcTimestamp = historyEntry.timestamp.endsWith('Z') ? historyEntry.timestamp : historyEntry.timestamp + 'Z';
+                const date = new Date(utcTimestamp);
+                const dateStr = date.toLocaleString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric', 
+                    year: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                });
+                
+                meta.innerHTML = `
+                    <div><strong>Updated by:</strong> ${historyEntry.user_name}</div>
+                    <div><strong>Date:</strong> ${dateStr}</div>
+                `;
+                meta.style.display = 'block';
+            } else {
+                meta.innerHTML = '';
+                meta.style.display = 'none';
             }
         });
     } catch (err) {
