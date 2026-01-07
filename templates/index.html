@@ -53,27 +53,18 @@
       }
 
       .status-modal-close {
-        position: absolute;
-        top: 15px;
-        right: 20px;
-        font-size: 28px;
-        font-weight: bold;
-        color: #999;
-        cursor: pointer;
-        background: none;
+        float: right;
         border: none;
+        background: transparent;
+        color: red;
+        font-size: 1.5rem;
+        cursor: pointer;
         padding: 0;
         line-height: 1;
       }
 
-      .status-modal-close:hover {
-        color: #333;
-      }
-
       .status-modal h3 {
-        margin: 0 0 30px 0;
-        font-size: 24px;
-        color: #333;
+        margin: 0 0 20px 0;
       }
 
       .status-timeline {
@@ -83,7 +74,7 @@
 
       .status-timeline-item {
         position: relative;
-        padding-bottom: 40px;
+        padding-bottom: 25px;
       }
 
       .status-timeline-item:last-child {
@@ -192,6 +183,10 @@
         color: #999;
         background: #E5E5E5;
       }
+
+      select:disabled {
+        cursor: default;
+      }
     </style>
 </head>
 <body>
@@ -249,7 +244,7 @@
     <tr id="row-{{ article.id }}" data-id="{{ article.id }}" class="{% if article.status == 'Published' %}published{% endif %}">
       <td class="drag-handle" style="cursor: grab;">☰</td>
       <td class="cat">
-        <select onchange="updateCat({{ article.id }}, this.value)">
+        <select onchange="updateCat({{ article.id }}, this.value)" {% if article.status == 'Published' %}disabled{% endif %}>
           <option value="F" {% if article.cat == 'F' %}selected{% endif %}>F</option>
           <option value="N" {% if article.cat == 'N' %}selected{% endif %}>N</option>
           <option value="O" {% if article.cat == 'O' %}selected{% endif %}>O</option>
@@ -264,7 +259,7 @@
                 <button class="status-color {% if article.status_color == 'red' %}red{% elif article.status_color == 'yellow' %}yellow{% else %}white{% endif %}" aria-label="Status Color" onclick="cycleStatusColor({{ article.id }}, event)"></button>
             </td>
       <td class="editor">
-  <select onchange="updateEditor({{ article.id }}, this.value)">
+  <select onchange="updateEditor({{ article.id }}, this.value)" {% if article.status == 'Published' %}disabled{% endif %}>
     <option value="">-- Select --</option>
     <option value="Copley" {% if article.editor == 'Copley' %}selected{% endif %}>Copley</option>
     <option value="Lewis" {% if article.editor == 'Lewis' %}selected{% endif %}>Lewis</option>
@@ -560,7 +555,7 @@ function addOrUpdateRow(data) {
     row.innerHTML = `
         <td class="drag-handle" style="cursor: grab;">☰</td>
         <td class="cat">
-            <select onchange="updateCat(${data.id}, this.value)">
+            <select onchange="updateCat(${data.id}, this.value)" ${currentStatus === 'Published' ? 'disabled' : ''}>
                 <option value="F" ${(currentCat || data.cat) === 'F' ? 'selected' : ''}>F</option>
                 <option value="N" ${(currentCat || data.cat) === 'N' ? 'selected' : ''}>N</option>
                 <option value="O" ${(currentCat || data.cat) === 'O' ? 'selected' : ''}>O</option>
@@ -576,7 +571,7 @@ function addOrUpdateRow(data) {
             <button class="status-color ${ (data.status_color === 'red') ? 'red' : (data.status_color === 'yellow' ? 'yellow' : 'white') }" aria-label="Status Color" onclick="cycleStatusColor(${data.id}, event)"></button>
         </td>
         <td class="editor">
-            <select onchange="updateEditor(${data.id}, this.value)">
+            <select onchange="updateEditor(${data.id}, this.value)" ${currentStatus === 'Published' ? 'disabled' : ''}>
                 <option value="">-- Select --</option>
                 <option value="Copley" ${(currentEditor || data.editor) === 'Copley' ? 'selected' : ''}>Copley</option>
                 <option value="Lewis" ${(currentEditor || data.editor) === 'Lewis' ? 'selected' : ''}>Lewis</option>
