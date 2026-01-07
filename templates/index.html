@@ -93,10 +93,15 @@
         bottom: 0;
         width: 3px;
         background: #e0e0e0;
+        transition: background-color 0.6s ease;
       }
 
       .status-timeline-line.active {
         background: #4CAF50;
+      }
+
+      .status-timeline-line.published {
+        background: #FFD700;
       }
 
       .status-timeline-dot {
@@ -110,6 +115,7 @@
         border: 3px solid #fff;
         box-shadow: 0 0 0 2px #e0e0e0;
         z-index: 1;
+        transition: all 0.6s ease;
       }
 
       .status-timeline-dot.active {
@@ -120,6 +126,11 @@
       .status-timeline-dot.completed {
         background: #4CAF50;
         box-shadow: 0 0 0 2px #4CAF50;
+      }
+
+      .status-timeline-dot.published {
+        background: #FFD700;
+        box-shadow: 0 0 0 2px #FFD700;
       }
 
       .status-timeline-status {
@@ -141,6 +152,10 @@
 
       .status-timeline-status.active {
         color: #4CAF50;
+      }
+
+      .status-timeline-status.published {
+        color: #FFD700;
       }
 
       .status-timeline-meta {
@@ -419,6 +434,10 @@ function renderStatusTimeline(history, articleId) {
         if (index < currentStatusIndex || shouldShowGreen) {
             line.classList.add('active');
         }
+        // Add published class if this or any before it is Published
+        if (status === 'Published' && (isActive || shouldShowGreen)) {
+            line.classList.add('published');
+        }
         
         // Create dot
         const dot = document.createElement('div');
@@ -428,12 +447,22 @@ function renderStatusTimeline(history, articleId) {
         } else if (shouldShowGreen) {
             dot.classList.add('completed');
         }
+        // Add published class for Published status
+        if (status === 'Published' && (isActive || shouldShowGreen)) {
+            dot.classList.remove('active', 'completed');
+            dot.classList.add('published');
+        }
         
         // Create status label
         const statusLabel = document.createElement('div');
         statusLabel.className = 'status-timeline-status';
         if (isActive) {
             statusLabel.classList.add('active');
+        }
+        // Add published class for Published status
+        if (status === 'Published' && isActive) {
+            statusLabel.classList.remove('active');
+            statusLabel.classList.add('published');
         }
         statusLabel.textContent = status;
         statusLabel.onclick = () => changeStatus(articleId, status);
@@ -507,30 +536,43 @@ async function updateStatusTimelineInPlace(articleId) {
             // Update line
             const line = item.querySelector('.status-timeline-line');
             if (line) {
+                line.classList.remove('active', 'published');
                 if (index < currentStatusIndex || shouldShowGreen) {
                     line.classList.add('active');
-                } else {
-                    line.classList.remove('active');
+                }
+                // Add published class if this is Published status
+                if (status === 'Published' && (isActive || shouldShowGreen)) {
+                    line.classList.add('published');
                 }
             }
             
             // Update dot
             const dot = item.querySelector('.status-timeline-dot');
             if (dot) {
-                dot.classList.remove('active', 'completed');
+                dot.classList.remove('active', 'completed', 'published');
                 if (isActive) {
                     dot.classList.add('active');
                 } else if (shouldShowGreen) {
                     dot.classList.add('completed');
+                }
+                // Add published class for Published status
+                if (status === 'Published' && (isActive || shouldShowGreen)) {
+                    dot.classList.remove('active', 'completed');
+                    dot.classList.add('published');
                 }
             }
             
             // Update status label
             const statusLabel = item.querySelector('.status-timeline-status');
             if (statusLabel) {
-                statusLabel.classList.remove('active');
+                statusLabel.classList.remove('active', 'published');
                 if (isActive) {
                     statusLabel.classList.add('active');
+                }
+                // Add published class for Published status
+                if (status === 'Published' && isActive) {
+                    statusLabel.classList.remove('active');
+                    statusLabel.classList.add('published');
                 }
             }
             
