@@ -1,33 +1,29 @@
+# Imports
 from gevent import monkey
-monkey.patch_all()  
+monkey.patch_all()
+
+import os
+import uuid
+import mimetypes
+from io import BytesIO
+from datetime import datetime
 
 import boto3
 import requests
+import google.oauth2.id_token
+import google.auth.transport.requests
+from botocore.exceptions import ClientError
 from flask import Flask, render_template, request, redirect, jsonify, send_file, url_for, flash, abort
 from flask_sqlalchemy import SQLAlchemy
 from flask_socketio import SocketIO, emit
 from flask_migrate import Migrate
-from flask_login import (
-    LoginManager, UserMixin, login_user, logout_user,
-    login_required, current_user
-)
+from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.middleware.proxy_fix import ProxyFix
-from io import BytesIO
-import os
-import google.oauth2.id_token
-import google.auth.transport.requests
+from werkzeug.utils import secure_filename
 from sqlalchemy import desc, and_, or_
 from sqlalchemy.exc import IntegrityError
-from datetime import datetime
 
-from werkzeug.utils import secure_filename
-import uuid
-import mimetypes
-from botocore.exceptions import ClientError
-
-
-
-# App + DB setup
+# Application Configuration
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://newspaper_db_47wk_user:2WQbescUw19AeDpYVPPGZzFeVnyePdiV@dpg-d2e1sv3e5dus73feem00-a.ohio-postgres.render.com/newspaper_db_47wk'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -38,12 +34,12 @@ db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-
-# Flask-Login Config
+# Authentication Setup
 login_manager = LoginManager()
-login_manager.login_view = "home"  
+login_manager.login_view = "home"
 login_manager.init_app(app)
 
+# User Model and Authentication
 class User(UserMixin):
     def __init__(self, id, email=None, name=None, token=None):
         self.id = id
@@ -52,7 +48,7 @@ class User(UserMixin):
         self.token = token
 
 
-users = {} 
+users = {}
 
 ALLOWED_EMAILS = {
     "hlewis26@ccp-stl.org"
@@ -66,7 +62,6 @@ class AllowedEmail(db.Model):
 
 
 def _get_allowed_emails_from_db():
-    """Return a set of allowed emails from DB; if DB isn't ready or empty, fall back to the in-memory set and try to seed the DB."""
     try:
         rows = AllowedEmail.query.all()
         if rows:
@@ -100,24 +95,23 @@ def is_allowed_email(email: str) -> bool:
         return False
     email = email.lower()
     try:
-       
         allowed = _get_allowed_emails_from_db()
         return email in allowed
     except Exception:
         return email in set(ALLOWED_EMAILS)
 
+
 @login_manager.user_loader
 def load_user(user_id):
     return users.get(user_id)
 
+
 @app.context_processor
 def inject_allowed_emails():
-
     return dict(ALLOWED_EMAILS=list(_get_allowed_emails_from_db()))
 
 
-
-# AWS S3 setup
+# AWS S3 Configuration
 s3_client = boto3.client(
     's3',
     aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'],
@@ -126,7 +120,8 @@ s3_client = boto3.client(
 )
 BUCKET_NAME = os.environ['S3_BUCKET_NAME']
 
-# Models
+# Database Models
+
 class Article(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
@@ -140,11 +135,13 @@ class Article(db.Model):
     position = db.Column(db.Integer, nullable=False, default=0)
     cat = db.Column(db.String(50), nullable=True)
 
+
 class ArticleFile(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     article_id = db.Column(db.Integer, db.ForeignKey('article.id'), nullable=False)
     filename = db.Column(db.String(200), nullable=False)
     s3_key = db.Column(db.String(200), nullable=False)
+
 
 class StatusHistory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -153,17 +150,19 @@ class StatusHistory(db.Model):
     user_name = db.Column(db.String(100), nullable=False)
     user_email = db.Column(db.String(200), nullable=False)
     timestamp = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    
     article = db.relationship('Article', backref=db.backref('status_history', lazy=True, cascade="all, delete-orphan"))
+
 
 class Person(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False, unique=True)
     active = db.Column(db.Boolean, default=True)
 
+
 class AttendanceDate(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     date = db.Column(db.Date, nullable=False, unique=True)
+
 
 class Attendance(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -174,17 +173,15 @@ class Attendance(db.Model):
     person = db.relationship("Person")
     date = db.relationship("AttendanceDate")
 
-# Login + Logout
 
+# Authentication Routes
 @app.route("/google_login")
 def google_login():
-   
     token = request.args.get("credential")
     if not token:
         flash("No credential received.", "error")
         return redirect(url_for("home"))
 
-    # Verify
     request_adapter = google.auth.transport.requests.Request()
     try:
         id_info = google.oauth2.id_token.verify_oauth2_token(
@@ -196,7 +193,6 @@ def google_login():
         flash("Invalid Google token.", "error")
         return redirect(url_for("home"))
 
-    # Extract
     email = id_info.get("email", "")
 
     allowed_domains = ["@ccp-stl.org", "@chaminade-stl.org"]
@@ -208,7 +204,6 @@ def google_login():
     user_id = id_info["sub"]
     full_name = id_info.get("name", "")
 
-    # Store
     if user_id not in users:
         users[user_id] = User(user_id, email=email, name=full_name)
     login_user(users[user_id])
@@ -222,8 +217,7 @@ def logout():
     return redirect(url_for("home"))
 
 
-# Routes (protected)
-
+# Main Application Routes
 @app.route("/")
 def home():
     if current_user.is_authenticated:
@@ -236,6 +230,8 @@ def index():
     articles = Article.query.filter_by(archived=False).order_by(Article.position).all()
     return render_template('index.html', articles=articles)
 
+
+# Article Management Routes
 @app.route('/upload/<int:article_id>', methods=['POST'])
 @login_required
 def upload_file(article_id):
@@ -248,7 +244,6 @@ def upload_file(article_id):
     if not file or file.filename.strip() == '':
         return jsonify(success=False, message="Empty filename"), 400
 
-    
     filename = secure_filename(file.filename)
     s3_key = f"articles/{article_id}/{uuid.uuid4().hex}_{filename}"
 
@@ -265,7 +260,6 @@ def upload_file(article_id):
         app.logger.error(f"S3 upload failed: {e}")
         return jsonify(success=False, message="Upload failed"), 500
 
- 
     new_file = ArticleFile(
         article_id=article.id,
         filename=filename,
@@ -312,7 +306,6 @@ def download_file(file_id):
 
     file_obj.seek(0)
 
-   
     mtype, _ = mimetypes.guess_type(file.filename)
     mimetype = mtype or "application/octet-stream"
 
@@ -350,9 +343,8 @@ def add_article():
 
     new_article = Article(title=title, author=author, deadline=deadline, cat=cat, position=0)
     db.session.add(new_article)
-    db.session.flush()  # Get the ID before committing
+    db.session.flush()
     
-    # Create initial status history entry
     initial_status = StatusHistory(
         article_id=new_article.id,
         status='Not Started',
@@ -378,6 +370,7 @@ def add_article():
     socketio.emit('update_article_order', {'order': order})
 
     return redirect('/')
+
 
 @app.route('/delete/<int:article_id>', methods=['POST'])
 @login_required
@@ -431,18 +424,13 @@ def update_status(article_id):
         new_status = request.json.get('status')
         old_status = article.status
         
-        # Define status order
         STATUS_ORDER = ['Not Started', 'In Progress', 'Needs Edit', 'Edited', 'Published']
-        
-        # Get all existing history for this article
         existing_history = StatusHistory.query.filter_by(article_id=article.id).all()
         
-        # Check if we're reverting to a previous status
         if existing_history:
             current_status_index = STATUS_ORDER.index(old_status) if old_status in STATUS_ORDER else -1
             new_status_index = STATUS_ORDER.index(new_status) if new_status in STATUS_ORDER else -1
             
-            # If reverting (going to an earlier status), remove all history entries for statuses after the new status
             if new_status_index < current_status_index:
                 for history_entry in existing_history:
                     entry_status_index = STATUS_ORDER.index(history_entry.status) if history_entry.status in STATUS_ORDER else -1
@@ -451,11 +439,9 @@ def update_status(article_id):
         
         article.status = new_status
         
-        # Check if this status already has a history entry
         existing_entry = StatusHistory.query.filter_by(article_id=article.id, status=new_status).first()
         
         if not existing_entry:
-            # Create new status history entry
             status_entry = StatusHistory(
                 article_id=article.id,
                 status=new_status,
@@ -465,7 +451,6 @@ def update_status(article_id):
             )
             db.session.add(status_entry)
         else:
-            # Update existing entry with new timestamp and user
             existing_entry.user_name = current_user.name
             existing_entry.user_email = current_user.email
             existing_entry.timestamp = datetime.utcnow()
@@ -568,15 +553,12 @@ def archive_article(article_id):
 @app.route('/archived')
 @login_required
 def archived():
- 
     page = request.args.get('page', 1, type=int)
-    per_page = 10  
+    per_page = 10
     q = (request.args.get('q') or '').strip()
 
-    # Base query for archived articles
     base_q = Article.query.filter_by(archived=True)
 
-    # If search query provided, filter by title OR author (case-insensitive)
     if q:
         pattern = f"%{q}%"
         base_q = base_q.filter(or_(Article.title.ilike(pattern), Article.author.ilike(pattern)))
@@ -613,10 +595,11 @@ def archived():
         q=q
     )
 
+
+# Calendar Routes
 @app.route('/calendar')
 @login_required
 def calendar():
-
     return render_template('calendar.html')
 
 @app.route('/activate/<int:article_id>', methods=['POST'])
@@ -647,6 +630,8 @@ def update_order():
     except Exception as e:
         return jsonify(success=False, error=str(e)), 500
 
+
+# Admin Management Routes
 @app.route("/manage")
 @login_required
 def manage():
@@ -662,6 +647,7 @@ def manage_attendance():
     return render_template("manage_attendance.html")
 
 
+# Attendance API Routes
 @app.route("/api/attendance/data")
 @login_required
 def attendance_data():
@@ -840,7 +826,7 @@ def manage_about():
     return render_template("manage_about.html")
 
 
-# Permissions: list/add/remove allowed emails 
+# Permissions API Routes
 @app.route('/api/permissions/list')
 @login_required
 def permissions_list():
@@ -885,7 +871,6 @@ def permissions_delete():
     if not email:
         return jsonify({'error': 'invalid email'}), 400
     try:
-        # Prevent removal of protected emails
         protected_lower = set(e.lower() for e in ALLOWED_EMAILS)
         if email in protected_lower:
             return jsonify({'error': 'protected'}), 403
@@ -901,7 +886,7 @@ def permissions_delete():
         return jsonify({'error': 'db error', 'details': str(e)}), 500
 
 
-# Calendar Routes
+# Calendar API Configuration and Routes
 GOOGLE_CALENDAR_ID = '887571597d40c57fb2ca6c658ae6063475908c62860c563ad6aba974e1d90d7f@group.calendar.google.com'
 
 @app.route('/api/calendar_events')
@@ -920,18 +905,17 @@ def calendar_events():
         'start': e.get('start', {}).get('dateTime') or e.get('start', {}).get('date'),
         'end': e.get('end', {}).get('dateTime') or e.get('end', {}).get('date'),
         'description': e.get('description', ''),
-
         'location': e.get('location', '')
     } for e in data.get('items', [])]
 
     return jsonify(events)
 
 
-# Broadcast Socket.io
-
+# WebSocket Events
 @socketio.on('article_archived')
 def handle_article_archived(data):
     emit('article_archived', data, broadcast=True)
+
 
 @socketio.on('article_activated')
 def handle_article_activated(data):
