@@ -146,6 +146,16 @@ class ArticleFile(db.Model):
     filename = db.Column(db.String(200), nullable=False)
     s3_key = db.Column(db.String(200), nullable=False)
 
+class StatusHistory(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    article_id = db.Column(db.Integer, db.ForeignKey('article.id'), nullable=False)
+    status = db.Column(db.String(50), nullable=False)
+    user_name = db.Column(db.String(100), nullable=False)
+    user_email = db.Column(db.String(200), nullable=False)
+    timestamp = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    
+    article = db.relationship('Article', backref=db.backref('status_history', lazy=True, cascade="all, delete-orphan"))
+
 class Person(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False, unique=True)
@@ -340,6 +350,17 @@ def add_article():
 
     new_article = Article(title=title, author=author, deadline=deadline, cat=cat, position=0)
     db.session.add(new_article)
+    db.session.flush()  # Get the ID before committing
+    
+    # Create initial status history entry
+    initial_status = StatusHistory(
+        article_id=new_article.id,
+        status='Not Started',
+        user_name=current_user.name,
+        user_email=current_user.email,
+        timestamp=datetime.utcnow()
+    )
+    db.session.add(initial_status)
     db.session.commit()
 
     socketio.emit('article_added', {
@@ -408,11 +429,45 @@ def update_status(article_id):
     article = Article.query.get(article_id)
     if article:
         new_status = request.json.get('status')
+        old_status = article.status
         article.status = new_status
+        
+        # Create status history entry
+        status_entry = StatusHistory(
+            article_id=article.id,
+            status=new_status,
+            user_name=current_user.name,
+            user_email=current_user.email,
+            timestamp=datetime.utcnow()
+        )
+        db.session.add(status_entry)
         db.session.commit()
-        socketio.emit('status_updated', {'id': article_id, 'status': new_status})
+        
+        socketio.emit('status_updated', {
+            'id': article_id, 
+            'status': new_status,
+            'user_name': current_user.name,
+            'timestamp': status_entry.timestamp.isoformat()
+        })
         return jsonify(success=True)
     return jsonify(success=False), 404
+
+
+@app.route('/status_history/<int:article_id>')
+@login_required
+def get_status_history(article_id):
+    article = Article.query.get_or_404(article_id)
+    history = StatusHistory.query.filter_by(article_id=article_id).order_by(StatusHistory.timestamp.asc()).all()
+    
+    history_data = [{
+        'id': h.id,
+        'status': h.status,
+        'user_name': h.user_name,
+        'user_email': h.user_email,
+        'timestamp': h.timestamp.isoformat()
+    } for h in history]
+    
+    return jsonify({'history': history_data})
 
 
 @app.route('/update_status_color/<int:article_id>', methods=['POST'])
