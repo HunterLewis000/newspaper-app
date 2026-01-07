@@ -219,7 +219,7 @@ tr.published select {
     background-color: #e0e0e0;
     color: #888888;
 }
-tr.published button {
+tr.published button:not(.status-button) {
   background-color: black;
   color: white;
   cursor: pointer;
@@ -229,7 +229,7 @@ tr.published button.mark-complete {
     background-color: black;
     opacity: 1 !important;
 }
-tr.published button:hover {
+tr.published button:not(.status-button):hover {
     background-color: #b91c1c;
 }
 

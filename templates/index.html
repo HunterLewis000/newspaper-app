@@ -46,8 +46,10 @@
         width: 90%;
         max-height: 80vh;
         overflow-y: auto;
+        overflow-x: hidden;
         box-shadow: 0 10px 40px rgba(0,0,0,0.3);
         position: relative;
+        box-sizing: border-box;
       }
 
       .status-modal-close {
@@ -132,6 +134,9 @@
         cursor: pointer;
         display: inline-block;
         transition: color 0.2s;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        max-width: 100%;
       }
 
       .status-timeline-status:hover {
@@ -147,6 +152,9 @@
         color: #666;
         margin-top: 5px;
         line-height: 1.5;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        max-width: 100%;
       }
 
       .status-timeline-meta div {
@@ -163,9 +171,16 @@
         font-size: 13.3333px;
         font-weight: normal;
         font-family: inherit;
-        width: 92px;
+        width: 100px;
+        min-width: 100px;
+        max-width: 100px;
+        box-sizing: border-box;
         text-align: left;
         transition: all 0.2s;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        display: inline-block;
       }
 
       .status-button:hover {
@@ -233,7 +248,7 @@
     <tr id="row-{{ article.id }}" data-id="{{ article.id }}" class="{% if article.status == 'Published' %}published{% endif %}">
       <td class="drag-handle" style="cursor: grab;">☰</td>
       <td class="cat">
-        <select onchange="updateCat({{ article.id }}, this.value)">
+        <select onchange="updateCat({{ article.id }}, this.value)" {% if article.status == 'Published' %}disabled{% endif %}>
           <option value="F" {% if article.cat == 'F' %}selected{% endif %}>F</option>
           <option value="N" {% if article.cat == 'N' %}selected{% endif %}>N</option>
           <option value="O" {% if article.cat == 'O' %}selected{% endif %}>O</option>
@@ -248,7 +263,7 @@
                 <button class="status-color {% if article.status_color == 'red' %}red{% elif article.status_color == 'yellow' %}yellow{% else %}white{% endif %}" aria-label="Status Color" onclick="cycleStatusColor({{ article.id }}, event)"></button>
             </td>
       <td class="editor">
-  <select onchange="updateEditor({{ article.id }}, this.value)">
+  <select onchange="updateEditor({{ article.id }}, this.value)" {% if article.status == 'Published' %}disabled{% endif %}>
     <option value="">-- Select --</option>
     <option value="Copley" {% if article.editor == 'Copley' %}selected{% endif %}>Copley</option>
     <option value="Lewis" {% if article.editor == 'Lewis' %}selected{% endif %}>Lewis</option>
@@ -544,7 +559,7 @@ function addOrUpdateRow(data) {
     row.innerHTML = `
         <td class="drag-handle" style="cursor: grab;">☰</td>
         <td class="cat">
-            <select onchange="updateCat(${data.id}, this.value)">
+            <select onchange="updateCat(${data.id}, this.value)" ${currentStatus === 'Published' ? 'disabled' : ''}>
                 <option value="F" ${(currentCat || data.cat) === 'F' ? 'selected' : ''}>F</option>
                 <option value="N" ${(currentCat || data.cat) === 'N' ? 'selected' : ''}>N</option>
                 <option value="O" ${(currentCat || data.cat) === 'O' ? 'selected' : ''}>O</option>
@@ -560,7 +575,7 @@ function addOrUpdateRow(data) {
             <button class="status-color ${ (data.status_color === 'red') ? 'red' : (data.status_color === 'yellow' ? 'yellow' : 'white') }" aria-label="Status Color" onclick="cycleStatusColor(${data.id}, event)"></button>
         </td>
         <td class="editor">
-            <select onchange="updateEditor(${data.id}, this.value)">
+            <select onchange="updateEditor(${data.id}, this.value)" ${currentStatus === 'Published' ? 'disabled' : ''}>
                 <option value="">-- Select --</option>
                 <option value="Copley" ${(currentEditor || data.editor) === 'Copley' ? 'selected' : ''}>Copley</option>
                 <option value="Lewis" ${(currentEditor || data.editor) === 'Lewis' ? 'selected' : ''}>Lewis</option>
