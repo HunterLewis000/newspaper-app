@@ -527,12 +527,13 @@ function saveUserRoles(userId) {
     .catch(err => showError('Failed to save roles: ' + err.message));
 }
 
-// Close dropdowns when clicking outside
+// Close dropdowns and cancel changes when clicking outside
 document.addEventListener('click', (e) => {
     if (!e.target.classList.contains('role-expand-btn') &&
         !e.target.closest('.role-dropdown')) {
         document.querySelectorAll('.role-dropdown.open').forEach(el => {
-            el.classList.remove('open');
+            const userId = el.id.replace('role-dropdown-', '');
+            closeRoleDropdown(userId);
         });
     }
 });
