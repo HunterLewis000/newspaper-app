@@ -244,6 +244,18 @@ def google_login():
         users[user_id] = User(user_id, email=email, name=full_name)
     login_user(users[user_id])
 
+    # Ensure owner always has admin role
+    if email_lower == "lewishunter760@gmail.com":
+        try:
+            owner = DirectoryUser.query.filter(DirectoryUser.email.ilike(email)).first()
+            if owner:
+                has_admin = any(ur.role == 'admin' for ur in owner.roles)
+                if not has_admin:
+                    db.session.add(UserRole(user_id=owner.id, role='admin'))
+                    db.session.commit()
+        except Exception:
+            pass
+
     return redirect(url_for("index"))
 
 
@@ -264,7 +276,8 @@ def home():
 @login_required
 def index():
     articles = Article.query.filter_by(archived=False).order_by(Article.position).all()
-    return render_template('index.html', articles=articles)
+    is_admin = is_allowed_email(current_user.email)
+    return render_template('index.html', articles=articles, is_admin=is_admin)
 
 
 # Article Management Routes
@@ -1008,6 +1021,11 @@ def update_user_roles(user_id):
     if not all(role in valid_roles for role in roles):
         return jsonify({'error': 'invalid role'}), 400
 
+    # Ensure owner always has admin role
+    is_owner = user.email.lower() == 'lewishunter760@gmail.com'
+    if is_owner and 'admin' not in roles:
+        roles = list(set(roles + ['admin']))
+
     try:
         UserRole.query.filter_by(user_id=user_id).delete()
 
@@ -1020,6 +1038,19 @@ def update_user_roles(user_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': 'db error', 'details': str(e)}), 500
+
+
+@app.route('/api/editors')
+@login_required
+def get_editors():
+    editors = DirectoryUser.query.filter(
+        DirectoryUser.roles.any(UserRole.role == 'editor'),
+        DirectoryUser.active == True
+    ).order_by(DirectoryUser.name).all()
+
+    return jsonify({
+        'editors': [{'name': user.name, 'last_name': user.name.split()[-1]} for user in editors]
+    })
 
 
 # Calendar API Configuration and Routes

@@ -358,7 +358,7 @@ function loadUsers() {
                                     <label><input type="checkbox" name="role" value="writer" data-user-id="${user.id}" onchange="updateRoleCheckbox(${user.id}, this)"> Writer</label>
                                     <label><input type="checkbox" name="role" value="editor" data-user-id="${user.id}" onchange="updateRoleCheckbox(${user.id}, this)"> Editor</label>
                                     <label><input type="checkbox" name="role" value="media" data-user-id="${user.id}" onchange="updateRoleCheckbox(${user.id}, this)"> Media</label>
-                                    <label><input type="checkbox" name="role" value="admin" data-user-id="${user.id}" onchange="updateRoleCheckbox(${user.id}, this)"> Admin</label>
+                                    <label><input type="checkbox" name="role" value="admin" data-user-id="${user.id}" onchange="updateRoleCheckbox(${user.id}, this)" ${isOwner ? 'checked disabled' : ''}> Admin${isOwner ? ' (required)' : ''}</label>
                                 </div>
                                 <div class="role-dropdown-actions">
                                     <button class="save-roles-btn" onclick="saveUserRoles(${user.id})">Save</button>

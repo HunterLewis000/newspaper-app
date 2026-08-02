@@ -11,7 +11,7 @@
 
 <div class="user-box">
   <span class="greeting">Hello, {{ current_user.name }}!</span>
-      {% if current_user.is_authenticated and current_user.email in ALLOWED_EMAILS %}
+      {% if is_admin %}
         <a href="{{ url_for('manage') }}" class="manage-form">
             <button type="button" class="settings-btn">⚙</button>
         </a>
@@ -80,10 +80,8 @@
                 <button class="status-color {% if article.status_color == 'red' %}red{% elif article.status_color == 'yellow' %}yellow{% else %}white{% endif %}" aria-label="Status Color" onclick="cycleStatusColor({{ article.id }}, event)"></button>
             </td>
       <td class="editor">
-  <select onchange="updateEditor({{ article.id }}, this.value)" {% if article.status == 'Published' %}disabled{% endif %}>
+  <select onchange="updateEditor({{ article.id }}, this.value)" class="editor-select" data-article-id="{{ article.id }}" data-current-editor="{{ article.editor }}" {% if article.status == 'Published' %}disabled{% endif %}>
     <option value="">-- Select --</option>
-    <option value="Copley" {% if article.editor == 'Copley' %}selected{% endif %}>Copley</option>
-    <option value="Lewis" {% if article.editor == 'Lewis' %}selected{% endif %}>Lewis</option>
   </select>
 </td>
 
@@ -152,6 +150,48 @@
 <script src="{{ url_for('static', filename='drag-sort.js') }}"></script>
 <script src="{{ url_for('static', filename='tooltip.js') }}"></script>
 <script src="{{ url_for('static', filename='author-autocomplete.js') }}"></script>
+
+<script>
+// Load and populate editor dropdowns
+async function loadEditors() {
+    try {
+        const response = await fetch('/api/editors');
+        const data = await response.json();
+        const editors = data.editors || [];
+
+        // Populate all editor selects
+        document.querySelectorAll('.editor-select').forEach(select => {
+            const currentEditor = select.getAttribute('data-current-editor');
+
+            // Clear existing options except the first one
+            while (select.options.length > 1) {
+                select.remove(1);
+            }
+
+            // Add new options
+            editors.forEach(editor => {
+                const option = document.createElement('option');
+                option.value = editor.last_name;
+                option.textContent = editor.last_name;
+                if (editor.last_name === currentEditor) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
+            });
+        });
+    } catch (error) {
+        console.error('Failed to load editors:', error);
+    }
+}
+
+// Load editors on page load
+loadEditors();
+
+// Reload editors when a new article is added
+socket.on('article_added', () => {
+    setTimeout(loadEditors, 500);
+});
+</script>
 
 </body>
 </html>
