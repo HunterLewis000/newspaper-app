@@ -7,160 +7,223 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='mobile.css') }}" media="(max-width:760px)">
     <style>
         .admin-container {
-            max-width: 900px;
-            margin: 20px auto;
-            padding: 20px;
+            max-width: 950px;
+            margin: 30px auto;
+            padding: 0 20px;
         }
         .admin-section {
-            margin-bottom: 30px;
+            margin-bottom: 35px;
         }
         .admin-section h2 {
             margin-top: 0;
-            border-bottom: 2px solid #ddd;
-            padding-bottom: 10px;
+            margin-bottom: 20px;
+            font-size: 18px;
+            color: #222;
+            font-weight: 700;
+            letter-spacing: 0.3px;
         }
         .form-group {
             display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
+            gap: 12px;
+            margin-bottom: 20px;
             flex-wrap: wrap;
         }
         .form-group input {
             flex: 1;
             min-width: 200px;
-            padding: 8px 12px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
+            padding: 11px 14px;
+            border: 1.5px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
         .form-group button {
-            padding: 8px 16px;
+            padding: 11px 20px;
             background: #3b82f6;
             color: white;
             border: none;
-            border-radius: 4px;
+            border-radius: 8px;
             cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.2s ease;
         }
         .form-group button:hover {
             background: #2563eb;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
         }
         .users-list {
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
         }
         .user-item {
-            display: flex;
-            justify-content: space-between;
+            display: grid;
+            grid-template-columns: 1fr auto auto auto;
             align-items: center;
-            padding: 12px;
-            border-bottom: 1px solid #eee;
+            gap: 16px;
+            padding: 16px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            transition: all 0.2s ease;
+            border: 1px solid #f0f0f0;
         }
-        .user-item:last-child {
-            border-bottom: none;
+        .user-item:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-color: #e0e0e0;
         }
         .user-info {
-            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
         }
         .user-name {
-            font-weight: bold;
-            margin-bottom: 4px;
+            font-weight: 600;
+            font-size: 15px;
+            color: #222;
         }
         .user-email {
-            color: #666;
-            font-size: 14px;
-        }
-        .user-actions {
-            display: flex;
-            gap: 10px;
-        }
-        .user-actions button {
-            padding: 6px 12px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-        }
-        .toggle-btn {
-            background: #28a745;
-            color: white;
-        }
-        .toggle-btn.inactive {
-            background: #ffc107;
-        }
-        .delete-btn {
-            background: #dc3545;
-            color: white;
-        }
-        .empty-state {
-            padding: 20px;
-            text-align: center;
-            color: #999;
-        }
-        .error-message {
-            color: #dc3545;
-            padding: 10px;
-            background: #f8d7da;
-            border: 1px solid #f5c6cb;
-            border-radius: 4px;
-            margin-bottom: 15px;
-        }
-        .success-message {
-            color: #155724;
-            padding: 10px;
-            background: #d4edda;
-            border: 1px solid #c3e6cb;
-            border-radius: 4px;
-            margin-bottom: 15px;
+            color: #888;
+            font-size: 13px;
         }
         .user-roles {
             display: flex;
             align-items: center;
-            gap: 10px;
-            flex: 1;
+            gap: 8px;
+        }
+        .user-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .user-actions button {
+            padding: 8px 14px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        .toggle-btn {
+            background: #10b981;
+            color: white;
+            min-width: 85px;
+            white-space: nowrap;
+        }
+        .toggle-btn:hover {
+            background: #059669;
+        }
+        .toggle-btn.inactive {
+            background: #f59e0b;
+            color: white;
+        }
+        .toggle-btn.inactive:hover {
+            background: #d97706;
+        }
+        .delete-btn {
+            background: #ef4444;
+            color: white;
+        }
+        .delete-btn:hover {
+            background: #dc2626;
+        }
+        .empty-state {
+            padding: 40px 20px;
+            text-align: center;
+            color: #999;
+            background: white;
+            border-radius: 10px;
+            border: 1px dashed #e0e0e0;
+        }
+        .error-message {
+            color: #991b1b;
+            padding: 12px 14px;
+            background: #fee2e2;
+            border: 1px solid #fecaca;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        .success-message {
+            color: #065f46;
+            padding: 12px 14px;
+            background: #dcfce7;
+            border: 1px solid #bbf7d0;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        @media (max-width: 768px) {
+            .user-item {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+            .user-actions {
+                width: 100%;
+            }
+            .user-actions button {
+                flex: 1;
+            }
+        }
+        .user-roles {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            position: relative;
         }
         .role-expand-btn {
             background: #3b82f6;
             color: white;
             border: none;
-            border-radius: 4px;
-            padding: 4px 8px;
+            border-radius: 6px;
+            padding: 6px 8px;
             cursor: pointer;
-            font-weight: bold;
-            min-width: 30px;
+            font-weight: 600;
+            min-width: 32px;
+            font-size: 14px;
+            transition: all 0.2s ease;
         }
         .role-expand-btn:hover {
             background: #2563eb;
         }
         .roles-display {
-            font-size: 13px;
-            color: #555;
-            padding: 6px 12px;
-            background: #f0f0f0;
-            border-radius: 4px;
             display: flex;
             flex-wrap: wrap;
             gap: 6px;
             align-items: center;
-            min-height: 30px;
+            min-height: 28px;
         }
         .role-badge {
-            background: #3b82f6;
-            color: white;
-            padding: 2px 8px;
-            border-radius: 3px;
+            background: #dbeafe;
+            color: #1e40af;
+            padding: 4px 10px;
+            border-radius: 5px;
             font-size: 12px;
-            font-weight: 500;
+            font-weight: 600;
+            letter-spacing: 0.3px;
         }
         .role-dropdown {
             position: absolute;
+            top: 100%;
+            left: 0;
             background: white;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
             z-index: 1000;
-            padding: 12px;
-            min-width: 200px;
+            padding: 14px;
+            min-width: 220px;
             display: none;
+            margin-top: 6px;
         }
         .role-dropdown.open {
             display: block;
@@ -168,48 +231,58 @@
         .role-checkbox-group {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 10px;
         }
         .role-checkbox-group label {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 13px;
             user-select: none;
+            transition: all 0.15s ease;
+            padding: 4px 6px;
+            border-radius: 4px;
+        }
+        .role-checkbox-group label:hover {
+            background: #f3f4f6;
         }
         .role-checkbox-group input[type="checkbox"] {
             cursor: pointer;
+            width: 16px;
+            height: 16px;
+            accent-color: #3b82f6;
         }
         .role-dropdown-actions {
             display: flex;
-            gap: 6px;
-            margin-top: 12px;
-            border-top: 1px solid #eee;
-            padding-top: 12px;
+            gap: 8px;
+            margin-top: 14px;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 14px;
         }
         .role-dropdown-actions button {
             flex: 1;
-            padding: 6px 12px;
+            padding: 8px 12px;
             border: none;
-            border-radius: 4px;
+            border-radius: 6px;
             cursor: pointer;
             font-size: 12px;
-            font-weight: 500;
+            font-weight: 600;
+            transition: all 0.2s ease;
         }
         .save-roles-btn {
-            background: #28a745;
+            background: #10b981;
             color: white;
         }
         .save-roles-btn:hover {
-            background: #218838;
+            background: #059669;
         }
         .cancel-roles-btn {
-            background: #6c757d;
-            color: white;
+            background: #e5e7eb;
+            color: #374151;
         }
         .cancel-roles-btn:hover {
-            background: #5a6268;
+            background: #d1d5db;
         }
     </style>
 </head>
