@@ -112,6 +112,105 @@
             border-radius: 4px;
             margin-bottom: 15px;
         }
+        .user-roles {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+        }
+        .role-expand-btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 8px;
+            cursor: pointer;
+            font-weight: bold;
+            min-width: 30px;
+        }
+        .role-expand-btn:hover {
+            background: #2563eb;
+        }
+        .roles-display {
+            font-size: 13px;
+            color: #555;
+            padding: 6px 12px;
+            background: #f0f0f0;
+            border-radius: 4px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            align-items: center;
+            min-height: 30px;
+        }
+        .role-badge {
+            background: #3b82f6;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .role-dropdown {
+            position: absolute;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+            padding: 12px;
+            min-width: 200px;
+            display: none;
+        }
+        .role-dropdown.open {
+            display: block;
+        }
+        .role-checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .role-checkbox-group label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            user-select: none;
+        }
+        .role-checkbox-group input[type="checkbox"] {
+            cursor: pointer;
+        }
+        .role-dropdown-actions {
+            display: flex;
+            gap: 6px;
+            margin-top: 12px;
+            border-top: 1px solid #eee;
+            padding-top: 12px;
+        }
+        .role-dropdown-actions button {
+            flex: 1;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .save-roles-btn {
+            background: #28a745;
+            color: white;
+        }
+        .save-roles-btn:hover {
+            background: #218838;
+        }
+        .cancel-roles-btn {
+            background: #6c757d;
+            color: white;
+        }
+        .cancel-roles-btn:hover {
+            background: #5a6268;
+        }
     </style>
 </head>
 <body>
@@ -164,10 +263,28 @@ function loadUsers() {
                 return;
             }
             container.innerHTML = data.users.map(user => `
-                <div class="user-item">
+                <div class="user-item" data-user-id="${user.id}">
                     <div class="user-info">
                         <div class="user-name">${escapeHtml(user.name)}</div>
                         <div class="user-email">${escapeHtml(user.email)}</div>
+                    </div>
+                    <div class="user-roles">
+                        <button class="role-expand-btn" onclick="toggleRoleDropdown(${user.id})">▼</button>
+                        <div class="roles-display" id="roles-display-${user.id}">
+                            ${(user.roles || []).map(role => `<span class="role-badge">${escapeHtml(role)}</span>`).join('')}
+                        </div>
+                        <div class="role-dropdown" id="role-dropdown-${user.id}">
+                            <div class="role-checkbox-group">
+                                <label><input type="checkbox" name="role" value="writer" data-user-id="${user.id}" onchange="updateRoleCheckbox(${user.id}, this)"> Writer</label>
+                                <label><input type="checkbox" name="role" value="editor" data-user-id="${user.id}" onchange="updateRoleCheckbox(${user.id}, this)"> Editor</label>
+                                <label><input type="checkbox" name="role" value="media" data-user-id="${user.id}" onchange="updateRoleCheckbox(${user.id}, this)"> Media</label>
+                                <label><input type="checkbox" name="role" value="admin" data-user-id="${user.id}" onchange="updateRoleCheckbox(${user.id}, this)"> Admin</label>
+                            </div>
+                            <div class="role-dropdown-actions">
+                                <button class="save-roles-btn" onclick="saveUserRoles(${user.id})">Save</button>
+                                <button class="cancel-roles-btn" onclick="closeRoleDropdown(${user.id})">Cancel</button>
+                            </div>
+                        </div>
                     </div>
                     <div class="user-actions">
                         <button class="toggle-btn ${!user.active ? 'inactive' : ''}"
@@ -178,6 +295,14 @@ function loadUsers() {
                     </div>
                 </div>
             `).join('');
+
+            // Initialize checkboxes with current roles
+            data.users.forEach(user => {
+                (user.roles || []).forEach(role => {
+                    const checkbox = document.querySelector(`input[value="${role}"][data-user-id="${user.id}"]`);
+                    if (checkbox) checkbox.checked = true;
+                });
+            });
         })
         .catch(err => showError('Failed to load users: ' + err.message));
 }
@@ -265,9 +390,76 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
+function toggleRoleDropdown(userId) {
+    const dropdown = document.getElementById(`role-dropdown-${userId}`);
+    dropdown.classList.toggle('open');
+
+    // Close other dropdowns
+    document.querySelectorAll('.role-dropdown.open').forEach(el => {
+        const elUserId = el.id.replace('role-dropdown-', '');
+        if (elUserId !== String(userId)) {
+            el.classList.remove('open');
+        }
+    });
+}
+
+function closeRoleDropdown(userId) {
+    const dropdown = document.getElementById(`role-dropdown-${userId}`);
+    dropdown.classList.remove('open');
+
+    // Reset checkboxes to current state
+    fetch(`/api/users/${userId}/roles`)
+        .then(r => r.json())
+        .then(data => {
+            document.querySelectorAll(`input[data-user-id="${userId}"]`).forEach(checkbox => {
+                checkbox.checked = (data.roles || []).includes(checkbox.value);
+            });
+        })
+        .catch(err => console.error('Error resetting roles:', err));
+}
+
+function updateRoleCheckbox(userId, checkbox) {
+    // Just update the checkbox state, don't save yet
+}
+
+function saveUserRoles(userId) {
+    const roles = [];
+    document.querySelectorAll(`input[data-user-id="${userId}"]:checked`).forEach(checkbox => {
+        roles.push(checkbox.value);
+    });
+
+    fetch(`/api/users/${userId}/roles`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roles })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.error) {
+            showError('Failed to save roles: ' + data.error);
+        } else {
+            showSuccess('Roles updated successfully!');
+            closeRoleDropdown(userId);
+            loadUsers();
+        }
+    })
+    .catch(err => showError('Failed to save roles: ' + err.message));
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', (e) => {
+    if (!e.target.classList.contains('role-expand-btn') &&
+        !e.target.closest('.role-dropdown')) {
+        document.querySelectorAll('.role-dropdown.open').forEach(el => {
+            el.classList.remove('open');
+        });
+    }
+});
+
 socket.on('user_added', () => loadUsers());
 socket.on('user_deleted', () => loadUsers());
 socket.on('user_toggled', () => loadUsers());
+socket.on('user_roles_updated', () => loadUsers());
 
 loadUsers();
 </script>

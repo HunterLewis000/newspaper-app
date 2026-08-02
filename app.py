@@ -193,6 +193,16 @@ class DirectoryUser(db.Model):
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(200), nullable=False, unique=True)
     active = db.Column(db.Boolean, default=True)
+    roles = db.relationship('UserRole', backref='user', lazy=True, cascade="all, delete-orphan")
+
+
+class UserRole(db.Model):
+    __tablename__ = 'user_role'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('directory_user.id'), nullable=False)
+    role = db.Column(db.String(50), nullable=False)
+
+    __table_args__ = (db.UniqueConstraint('user_id', 'role', name='uq_user_role'),)
 
 
 # Authentication Routes
@@ -952,7 +962,8 @@ def users_list():
         'id': u.id,
         'name': u.name,
         'email': u.email,
-        'active': u.active
+        'active': u.active,
+        'roles': sorted([ur.role for ur in u.roles])
     } for u in users]})
 
 
@@ -976,6 +987,9 @@ def users_add():
 
         new_user = DirectoryUser(name=name, email=email, active=True)
         db.session.add(new_user)
+        db.session.flush()
+
+        db.session.add(UserRole(user_id=new_user.id, role='writer'))
         db.session.commit()
 
         socketio.emit('user_added', {'id': new_user.id, 'name': new_user.name, 'email': new_user.email})
@@ -1024,6 +1038,50 @@ def users_toggle():
         db.session.commit()
         socketio.emit('user_toggled', {'id': user_id, 'active': user.active})
         return jsonify({'ok': True, 'active': user.active})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': 'db error', 'details': str(e)}), 500
+
+
+@app.route('/api/users/<int:user_id>/roles', methods=['GET'])
+@login_required
+def get_user_roles(user_id):
+    if not is_allowed_email(current_user.email):
+        return jsonify({'error': 'forbidden'}), 403
+
+    user = DirectoryUser.query.get(user_id)
+    if not user:
+        return jsonify({'error': 'not found'}), 404
+
+    roles = [ur.role for ur in user.roles]
+    return jsonify({'roles': roles})
+
+
+@app.route('/api/users/<int:user_id>/roles', methods=['POST'])
+@login_required
+def update_user_roles(user_id):
+    if not is_allowed_email(current_user.email):
+        return jsonify({'error': 'forbidden'}), 403
+
+    user = DirectoryUser.query.get(user_id)
+    if not user:
+        return jsonify({'error': 'not found'}), 404
+
+    roles = (request.json or {}).get('roles', [])
+    valid_roles = {'writer', 'editor', 'media', 'admin'}
+
+    if not all(role in valid_roles for role in roles):
+        return jsonify({'error': 'invalid role'}), 400
+
+    try:
+        UserRole.query.filter_by(user_id=user_id).delete()
+
+        for role in roles:
+            db.session.add(UserRole(user_id=user_id, role=role))
+
+        db.session.commit()
+        socketio.emit('user_roles_updated', {'user_id': user_id, 'roles': roles})
+        return jsonify({'ok': True, 'roles': roles})
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': 'db error', 'details': str(e)}), 500
