@@ -65,7 +65,7 @@
         }
         .user-item {
             display: grid;
-            grid-template-columns: 1fr auto auto auto;
+            grid-template-columns: 1fr auto auto auto auto;
             align-items: center;
             gap: 16px;
             padding: 16px;
@@ -133,6 +133,37 @@
         }
         .delete-btn:hover {
             background: #dc2626;
+        }
+        .access-btn {
+            padding: 8px 14px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        .access-btn.has-access {
+            background: #10b981;
+            color: white;
+        }
+        .access-btn.has-access:hover {
+            background: #059669;
+        }
+        .access-btn.no-access {
+            background: #e5e7eb;
+            color: #6b7280;
+        }
+        .access-btn.no-access:hover {
+            background: #d1d5db;
+        }
+        .access-btn.owner-btn {
+            background: #fbbf24;
+            color: white;
+            cursor: default;
+        }
+        .access-btn.owner-btn:hover {
+            background: #fbbf24;
         }
         .empty-state {
             padding: 40px 20px;
@@ -327,25 +358,34 @@
 const socket = io();
 
 function loadUsers() {
-    fetch('/api/users/list')
-        .then(r => r.json())
-        .then(data => {
-            const container = document.getElementById('usersList');
-            if (!data.users || data.users.length === 0) {
-                container.innerHTML = '<div class="empty-state">No users yet. Add one to get started!</div>';
-                return;
-            }
-            container.innerHTML = data.users.map(user => `
+    Promise.all([
+        fetch('/api/users/list').then(r => r.json()),
+        fetch('/api/permissions/list').then(r => r.json())
+    ])
+    .then(([userData, permData]) => {
+        const container = document.getElementById('usersList');
+        if (!userData.users || userData.users.length === 0) {
+            container.innerHTML = '<div class="empty-state">No users yet. Add one to get started!</div>';
+            return;
+        }
+
+        const allowedEmails = new Set((permData.allowed || []).map(p => p.email.toLowerCase()));
+
+        container.innerHTML = userData.users.map(user => {
+            const hasAccess = allowedEmails.has(user.email.toLowerCase());
+            const isOwner = user.email.toLowerCase() === 'lewishunter760@gmail.com';
+
+            return `
                 <div class="user-item" data-user-id="${user.id}">
                     <div class="user-info">
                         <div class="user-name">${escapeHtml(user.name)}</div>
                         <div class="user-email">${escapeHtml(user.email)}</div>
                     </div>
                     <div class="user-roles">
-                        <button class="role-expand-btn" onclick="toggleRoleDropdown(${user.id})">▼</button>
                         <div class="roles-display" id="roles-display-${user.id}">
                             ${(user.roles || []).map(role => `<span class="role-badge">${escapeHtml(role)}</span>`).join('')}
                         </div>
+                        <button class="role-expand-btn" onclick="toggleRoleDropdown(${user.id})">▼</button>
                         <div class="role-dropdown" id="role-dropdown-${user.id}">
                             <div class="role-checkbox-group">
                                 <label><input type="checkbox" name="role" value="writer" data-user-id="${user.id}" onchange="updateRoleCheckbox(${user.id}, this)"> Writer</label>
@@ -360,6 +400,16 @@ function loadUsers() {
                         </div>
                     </div>
                     <div class="user-actions">
+                        ${isOwner ? `
+                            <button class="access-btn owner-btn" title="Owner - cannot be removed" disabled>
+                                👑 Owner
+                            </button>
+                        ` : `
+                            <button class="access-btn ${hasAccess ? 'has-access' : 'no-access'}"
+                                    onclick="toggleAdminAccess('${user.email}')">
+                                ${hasAccess ? '✓ Access' : 'No Access'}
+                            </button>
+                        `}
                         <button class="toggle-btn ${!user.active ? 'inactive' : ''}"
                                 onclick="toggleUser(${user.id})">
                             ${user.active ? 'Active' : 'Inactive'}
@@ -367,17 +417,18 @@ function loadUsers() {
                         <button class="delete-btn" onclick="deleteUser(${user.id})">Delete</button>
                     </div>
                 </div>
-            `).join('');
+            `;
+        }).join('');
 
-            // Initialize checkboxes with current roles
-            data.users.forEach(user => {
-                (user.roles || []).forEach(role => {
-                    const checkbox = document.querySelector(`input[value="${role}"][data-user-id="${user.id}"]`);
-                    if (checkbox) checkbox.checked = true;
-                });
+        // Initialize checkboxes with current roles
+        userData.users.forEach(user => {
+            (user.roles || []).forEach(role => {
+                const checkbox = document.querySelector(`input[value="${role}"][data-user-id="${user.id}"]`);
+                if (checkbox) checkbox.checked = true;
             });
-        })
-        .catch(err => showError('Failed to load users: ' + err.message));
+        });
+    })
+    .catch(err => showError('Failed to load users: ' + err.message));
 }
 
 function addUser() {
@@ -528,6 +579,59 @@ document.addEventListener('click', (e) => {
         });
     }
 });
+
+function toggleAdminAccess(email) {
+    fetch('/api/permissions/list')
+        .then(r => r.json())
+        .then(data => {
+            const hasAccess = (data.allowed || []).some(p => p.email.toLowerCase() === email.toLowerCase());
+
+            if (hasAccess) {
+                removeAdminAccess(email);
+            } else {
+                addAdminAccess(email);
+            }
+        })
+        .catch(err => showError('Failed to check access: ' + err.message));
+}
+
+function addAdminAccess(email) {
+    fetch('/api/permissions/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.toLowerCase() })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.error) {
+            showError('Failed to add access: ' + data.error);
+        } else {
+            showSuccess('Admin access granted!');
+            loadUsers();
+        }
+    })
+    .catch(err => showError('Failed to add access: ' + err.message));
+}
+
+function removeAdminAccess(email) {
+    if (!confirm(`Remove admin access from ${email}?`)) return;
+
+    fetch('/api/permissions/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.toLowerCase() })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.error) {
+            showError('Failed to remove access: ' + data.error);
+        } else {
+            showSuccess('Admin access removed!');
+            loadUsers();
+        }
+    })
+    .catch(err => showError('Failed to remove access: ' + err.message));
+}
 
 socket.on('user_added', () => loadUsers());
 socket.on('user_deleted', () => loadUsers());
