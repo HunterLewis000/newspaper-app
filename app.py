@@ -187,6 +187,14 @@ class Attendance(db.Model):
     date = db.relationship("AttendanceDate")
 
 
+class DirectoryUser(db.Model):
+    __tablename__ = 'directory_user'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(200), nullable=False, unique=True)
+    active = db.Column(db.Boolean, default=True)
+
+
 # Authentication Routes
 @app.route("/google_login")
 def google_login():
@@ -897,6 +905,125 @@ def permissions_delete():
         db.session.delete(existing)
         db.session.commit()
         return jsonify({'ok': True, 'email': email})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': 'db error', 'details': str(e)}), 500
+
+
+# User Directory Management Routes
+@app.route("/manage/users")
+@login_required
+def manage_users():
+    if not is_allowed_email(current_user.email):
+        return "Forbidden", 403
+    return render_template("manage_users.html")
+
+
+@app.route('/api/users/search', methods=['GET'])
+@login_required
+def users_search():
+    q = (request.args.get('q') or '').strip().lower()
+    limit = request.args.get('limit', 10, type=int)
+
+    if not q:
+        users = DirectoryUser.query.filter_by(active=True).limit(limit).all()
+    else:
+        pattern = f"%{q}%"
+        users = DirectoryUser.query.filter(
+            DirectoryUser.active == True,
+            or_(DirectoryUser.name.ilike(pattern), DirectoryUser.email.ilike(pattern))
+        ).limit(limit).all()
+
+    return jsonify([{
+        'id': u.id,
+        'name': u.name,
+        'email': u.email
+    } for u in users])
+
+
+@app.route('/api/users/list')
+@login_required
+def users_list():
+    if not is_allowed_email(current_user.email):
+        return jsonify({'error': 'forbidden'}), 403
+
+    users = DirectoryUser.query.order_by(DirectoryUser.name).all()
+    return jsonify({'users': [{
+        'id': u.id,
+        'name': u.name,
+        'email': u.email,
+        'active': u.active
+    } for u in users]})
+
+
+@app.route('/api/users/add', methods=['POST'])
+@login_required
+def users_add():
+    if not is_allowed_email(current_user.email):
+        return jsonify({'error': 'forbidden'}), 403
+
+    data = request.json or {}
+    name = (data.get('name') or '').strip()
+    email = (data.get('email') or '').strip().lower()
+
+    if not name or not email or '@' not in email:
+        return jsonify({'error': 'invalid input'}), 400
+
+    try:
+        existing = DirectoryUser.query.filter_by(email=email).first()
+        if existing:
+            return jsonify({'error': 'user exists'}), 400
+
+        new_user = DirectoryUser(name=name, email=email, active=True)
+        db.session.add(new_user)
+        db.session.commit()
+
+        socketio.emit('user_added', {'id': new_user.id, 'name': new_user.name, 'email': new_user.email})
+        return jsonify({'ok': True, 'id': new_user.id, 'name': new_user.name, 'email': new_user.email})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': 'db error', 'details': str(e)}), 500
+
+
+@app.route('/api/users/delete', methods=['POST'])
+@login_required
+def users_delete():
+    if not is_allowed_email(current_user.email):
+        return jsonify({'error': 'forbidden'}), 403
+
+    user_id = (request.json or {}).get('user_id')
+    user = DirectoryUser.query.get(user_id)
+
+    if not user:
+        return jsonify({'error': 'not found'}), 404
+
+    try:
+        db.session.delete(user)
+        db.session.commit()
+        socketio.emit('user_deleted', {'id': user_id})
+        return jsonify({'ok': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': 'db error', 'details': str(e)}), 500
+
+
+@app.route('/api/users/toggle', methods=['POST'])
+@login_required
+def users_toggle():
+    if not is_allowed_email(current_user.email):
+        return jsonify({'error': 'forbidden'}), 403
+
+    user_id = (request.json or {}).get('user_id')
+    user = DirectoryUser.query.get(user_id)
+
+    if not user:
+        return jsonify({'error': 'not found'}), 404
+
+    try:
+        user.active = not user.active
+        db.session.commit()
+        socketio.emit('user_toggled', {'id': user_id, 'active': user.active})
+        return jsonify({'ok': True, 'active': user.active})
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': 'db error', 'details': str(e)}), 500

@@ -28,9 +28,12 @@
     </div>
    
 
-    <form method="POST" class="typ" action="/add">
+    <form method="POST" class="typ" action="/add" id="addArticleForm">
         <input type="text" name="title" placeholder="Article Title" required>
-        <input type="text" name="author" placeholder="Author Name" required>
+        <div class="autocomplete-container">
+            <input type="text" id="authorInput" name="author" placeholder="Author Name" required autocomplete="off">
+            <ul id="authorSuggestions" class="autocomplete-suggestions"></ul>
+        </div>
         <select id="cat" name="cat">
           <option value="F">-- Type --</option>
           <option value="F">Features</option>
@@ -148,6 +151,7 @@
 <script src="{{ url_for('static', filename='socket-manager.js') }}"></script>
 <script src="{{ url_for('static', filename='drag-sort.js') }}"></script>
 <script src="{{ url_for('static', filename='tooltip.js') }}"></script>
+<script src="{{ url_for('static', filename='author-autocomplete.js') }}"></script>
 
 </body>
 </html>
