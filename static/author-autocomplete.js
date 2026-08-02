@@ -8,6 +8,7 @@ authorInput.addEventListener('input', () => {
 
     if (query.length < 1) {
         suggestionsList.innerHTML = '';
+        suggestionsList.style.display = 'none';
         return;
     }
 
@@ -16,6 +17,7 @@ authorInput.addEventListener('input', () => {
         .then(users => {
             if (users.length === 0) {
                 suggestionsList.innerHTML = '';
+                suggestionsList.style.display = 'none';
                 return;
             }
 
@@ -25,6 +27,7 @@ authorInput.addEventListener('input', () => {
                     <div class="suggestion-email">${user.email}</div>
                 </li>
             `).join('');
+            suggestionsList.style.display = 'block';
         })
         .catch(err => console.error('Autocomplete error:', err));
 });
@@ -47,6 +50,7 @@ authorInput.addEventListener('keydown', (e) => {
         }
     } else if (e.key === 'Escape') {
         suggestionsList.innerHTML = '';
+        suggestionsList.style.display = 'none';
     }
 });
 
@@ -65,6 +69,7 @@ function selectAuthor(element) {
     const name = element.getAttribute('data-name');
     authorInput.value = name;
     suggestionsList.innerHTML = '';
+    suggestionsList.style.display = 'none';
     selectedSuggestion = -1;
 }
 
@@ -76,5 +81,6 @@ function highlightMatch(text, query) {
 document.addEventListener('click', (e) => {
     if (e.target !== authorInput && !suggestionsList.contains(e.target)) {
         suggestionsList.innerHTML = '';
+        suggestionsList.style.display = 'none';
     }
 });

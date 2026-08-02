@@ -34,14 +34,14 @@
         }
         .form-group button {
             padding: 8px 16px;
-            background: #007bff;
+            background: #3b82f6;
             color: white;
             border: none;
             border-radius: 4px;
             cursor: pointer;
         }
         .form-group button:hover {
-            background: #0056b3;
+            background: #2563eb;
         }
         .users-list {
             border: 1px solid #ddd;
@@ -96,18 +96,6 @@
             text-align: center;
             color: #999;
         }
-        .back-link {
-            display: inline-block;
-            margin-bottom: 20px;
-            padding: 8px 12px;
-            background: #6c757d;
-            color: white;
-            text-decoration: none;
-            border-radius: 4px;
-        }
-        .back-link:hover {
-            background: #5a6268;
-        }
         .error-message {
             color: #dc3545;
             padding: 10px;
@@ -127,13 +115,21 @@
     </style>
 </head>
 <body>
+
+<a href="{{ url_for('manage') }}" class="back-button">← Back to Admin Settings</a>
+
 <div class="user-box">
-    <span class="greeting">Hello, {{ current_user.name }}!</span>
-    <a href="{{ url_for('manage') }}" class="back-link">← Back to Admin</a>
+  <span class="greeting">Hello, {{ current_user.name }}!</span>
+  <form action="{{ url_for('logout') }}" method="get">
+    <button type="submit">Logout</button>
+  </form>
+</div>
+
+<div style="display: flex; justify-content: center; align-items: center;">
+  <h1 style="display: inline;"><a href="https://www.ccpstudentnews.org" style="font-family: 'Brush Script MT'; text-decoration: none; color: #222; font-size: 45px;">Cardinal and White&nbsp; </a></h1><h1 style="display: inline;">User Directory</h1>
 </div>
 
 <div class="admin-container">
-    <h1>User Directory Management</h1>
 
     <div id="messageContainer"></div>
 
