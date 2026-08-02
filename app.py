@@ -22,6 +22,9 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.utils import secure_filename
 from sqlalchemy import desc, and_, or_
 from sqlalchemy.exc import IntegrityError
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Application Configuration
 app = Flask(__name__)
@@ -53,6 +56,16 @@ users = {}
 ALLOWED_EMAILS = {
     "hlewis26@ccp-stl.org"
 }
+
+# Parse additional whitelisted emails from environment variable
+WHITELISTED_EMAILS_ENV = os.environ.get("WHITELISTED_EMAILS", "")
+WHITELISTED_EMAILS = set()
+if WHITELISTED_EMAILS_ENV:
+    WHITELISTED_EMAILS = set(
+        email.strip().lower()
+        for email in WHITELISTED_EMAILS_ENV.split(',')
+        if email.strip()
+    )
 
 
 class AllowedEmail(db.Model):
@@ -194,10 +207,13 @@ def google_login():
         return redirect(url_for("home"))
 
     email = id_info.get("email", "")
+    email_lower = email.lower()
 
     allowed_domains = ["@ccp-stl.org", "@chaminade-stl.org"]
+    is_allowed_domain = any(email_lower.endswith(domain) for domain in allowed_domains)
+    is_whitelisted = email_lower in WHITELISTED_EMAILS
 
-    if not any(email.lower().endswith(domain) for domain in allowed_domains):
+    if not (is_allowed_domain or is_whitelisted):
         flash("Access denied: only @ccp-stl.org or @chaminade-stl.org accounts allowed.", "error")
         return redirect(url_for("home"))
 

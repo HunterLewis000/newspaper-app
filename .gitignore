@@ -1,1 +1,9 @@
 .vs/
+.env
+.env.local
+.env.*.local
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.DS_Store

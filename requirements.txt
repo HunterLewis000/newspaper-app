@@ -51,6 +51,7 @@ python-docx==1.2.0
 python-engineio==4.12.2
 python-socketio==5.13.0
 pytz==2025.2
+python-dotenv==1.0.1
 requests==2.32.5
 requests-oauthlib==2.0.0
 rsa==4.9.1
