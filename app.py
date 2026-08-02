@@ -108,10 +108,12 @@ def is_allowed_email(email: str) -> bool:
         return False
     email = email.lower()
     try:
-        allowed = _get_allowed_emails_from_db()
-        return email in allowed
+        user = DirectoryUser.query.filter(DirectoryUser.email.ilike(email)).first()
+        if user:
+            return any(ur.role == 'admin' for ur in user.roles)
+        return False
     except Exception:
-        return email in set(ALLOWED_EMAILS)
+        return False
 
 
 @login_manager.user_loader
@@ -845,79 +847,12 @@ def attendance_delete_date():
     return jsonify({"ok": True})
 
 
-@app.route("/manage/permissions")
-@login_required
-def manage_permissions():
-    if not is_allowed_email(current_user.email):
-        return "Forbidden", 403
-    return render_template("manage_permissions.html")
-
 @app.route("/manage/about")
 @login_required
 def manage_about():
     if not is_allowed_email(current_user.email):
         return "Forbidden", 403
     return render_template("manage_about.html")
-
-
-# Permissions API Routes
-@app.route('/api/permissions/list')
-@login_required
-def permissions_list():
-    if not is_allowed_email(current_user.email):
-        return jsonify({'error': 'forbidden'}), 403
-
-    raw_allowed = list(_get_allowed_emails_from_db())
-    protected_lower = set(e.lower() for e in ALLOWED_EMAILS)
-    allowed = [{'email': e, 'protected': (e.lower() in protected_lower)} for e in raw_allowed]
-    return jsonify({'allowed': allowed})
-
-
-@app.route('/api/permissions/add', methods=['POST'])
-@login_required
-def permissions_add():
-    if not is_allowed_email(current_user.email):
-        return jsonify({'error': 'forbidden'}), 403
-    data = request.json or {}
-    email = (data.get('email') or '').strip().lower()
-    if not email or '@' not in email:
-        return jsonify({'error': 'invalid email'}), 400
-    try:
-        existing = AllowedEmail.query.filter_by(email=email).first()
-        if existing:
-            return jsonify({'error': 'exists'}), 400
-        new = AllowedEmail(email=email)
-        db.session.add(new)
-        db.session.commit()
-        return jsonify({'ok': True, 'email': email})
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': 'db error', 'details': str(e)}), 500
-
-
-@app.route('/api/permissions/delete', methods=['POST'])
-@login_required
-def permissions_delete():
-    if not is_allowed_email(current_user.email):
-        return jsonify({'error': 'forbidden'}), 403
-    data = request.json or {}
-    email = (data.get('email') or '').strip().lower()
-    if not email:
-        return jsonify({'error': 'invalid email'}), 400
-    try:
-        protected_lower = set(e.lower() for e in ALLOWED_EMAILS)
-        if email in protected_lower:
-            return jsonify({'error': 'protected'}), 403
-
-        existing = AllowedEmail.query.filter_by(email=email).first()
-        if not existing:
-            return jsonify({'error': 'not found'}), 404
-        db.session.delete(existing)
-        db.session.commit()
-        return jsonify({'ok': True, 'email': email})
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': 'db error', 'details': str(e)}), 500
 
 
 # User Directory Management Routes
