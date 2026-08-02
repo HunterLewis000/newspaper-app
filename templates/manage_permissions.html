@@ -25,22 +25,29 @@
 
 <main style="max-width:800px;margin:20px auto;padding:10px;">
   <section>
-    <p>Manage which users are allowed to access admin sections. Entries should be full email addresses.</p>
+    <p>Manage which users are allowed to access admin sections. Select a name from the user directory.</p>
 
     <div id="messages" style="color: red; margin-bottom: 8px;"></div>
 
-    <div style="display:flex; gap:8px; margin-bottom:12px;">
-      <input id="new-email" type="text" placeholder="user@example.org" style="flex:1;padding:6px;" />
+    <div style="display:flex; gap:8px; margin-bottom:12px; position: relative;">
+      <div style="position: relative; flex: 1;">
+        <input id="new-name" type="text" placeholder="Search by name..." style="width:100%;padding:6px;" autocomplete="off" />
+        <ul id="name-suggestions" style="list-style:none;padding:0;margin:0;position:absolute;top:100%;left:0;right:0;background:white;border:1px solid #ddd;border-top:none;border-radius:0 0 4px 4px;max-height:200px;overflow-y:auto;z-index:100;display:none;"></ul>
+      </div>
       <button id="add-btn">Add</button>
     </div>
 
     <ul id="allowed-list" style="list-style:none;padding:0;margin:0;">
-  
+
     </ul>
   </section>
 </main>
 
 <script>
+const nameInput = document.getElementById('new-name');
+const suggestionsList = document.getElementById('name-suggestions');
+let selectedUser = null;
+
 async function showMessage(msg, isError=true){
   const el = document.getElementById('messages');
   el.textContent = msg;
@@ -54,7 +61,7 @@ async function fetchList(){
   const data = await res.json();
   const ul = document.getElementById('allowed-list');
   ul.innerHTML = '';
-  
+
   (data.allowed || []).sort((a,b)=>a.email.localeCompare(b.email)).forEach(item=>{
     const li = document.createElement('li');
     li.style.display='flex'; li.style.justifyContent='space-between'; li.style.padding='6px 0';
@@ -90,11 +97,63 @@ async function removeEmail(email){
   else showMessage((data && data.error) ? data.error : 'Remove failed');
 }
 
+// Autocomplete for names
+nameInput.addEventListener('input', async ()=>{
+  const query = nameInput.value.trim();
+  if(query.length < 1){
+    suggestionsList.innerHTML = '';
+    suggestionsList.style.display = 'none';
+    return;
+  }
+  try{
+    const res = await fetch(`/api/users/search?q=${encodeURIComponent(query)}&limit=10`);
+    const users = await res.json();
+    if(users.length === 0){
+      suggestionsList.innerHTML = '';
+      suggestionsList.style.display = 'none';
+      return;
+    }
+    suggestionsList.innerHTML = users.map((user, idx) => `
+      <li style="padding:8px;cursor:pointer;border-bottom:1px solid #eee;" data-name="${user.name}" data-email="${user.email}" onclick="selectUserForPermission(this)">
+        <strong>${user.name}</strong><br/><span style="font-size:0.85em;color:#666;">${user.email}</span>
+      </li>
+    `).join('');
+    suggestionsList.style.display = 'block';
+  }catch(err){
+    showMessage('Error searching users');
+  }
+});
+
+nameInput.addEventListener('keydown', (e)=>{
+  if(e.key === 'Escape'){
+    suggestionsList.innerHTML = '';
+    suggestionsList.style.display = 'none';
+  }
+});
+
+function selectUserForPermission(element){
+  const name = element.getAttribute('data-name');
+  const email = element.getAttribute('data-email');
+  nameInput.value = name;
+  selectedUser = { name, email };
+  suggestionsList.innerHTML = '';
+  suggestionsList.style.display = 'none';
+}
+
+document.addEventListener('click', (e)=>{
+  if(e.target !== nameInput && !suggestionsList.contains(e.target)){
+    suggestionsList.innerHTML = '';
+    suggestionsList.style.display = 'none';
+  }
+});
+
 document.getElementById('add-btn').addEventListener('click', ()=>{
-  const v = document.getElementById('new-email').value.trim();
-  if(!v) return showMessage('Enter an email');
-  addEmail(v);
-  document.getElementById('new-email').value='';
+  if(!selectedUser){
+    return showMessage('Please select a user from the directory');
+  }
+  addEmail(selectedUser.email);
+  nameInput.value = '';
+  selectedUser = null;
 });
 
 fetchList().catch(()=>showMessage('Unable to load permissions'));
