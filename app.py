@@ -54,7 +54,7 @@ class User(UserMixin):
 users = {}
 
 ALLOWED_EMAILS = {
-    "hlewis26@ccp-stl.org"
+    "lewishunter760@gmail.com"
 }
 
 # Parse additional whitelisted emails from environment variable
