@@ -32,6 +32,10 @@ form input, form button {
   border-radius: 6px;
   transition: border-color 0.3s ease;
 }
+form input[name="title"] {
+  flex: 1;
+  min-width: 200px;
+}
 form input:focus {
   outline: none;
   border-color: #3b82f6; /* blue */
