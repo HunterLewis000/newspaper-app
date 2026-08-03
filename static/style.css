@@ -65,7 +65,7 @@ th, td {
   padding: 14px 15px;
 }
 td.actions {
-  width: 1%;
+  width: 4%;
   white-space: nowrap;
   padding: 14px 4px;
 }
@@ -307,7 +307,7 @@ td.cat, th.cat {
 }
 
 td.filescol, th.filescol {
-  width: 8%;
+  width: 5%;
   padding: 14px 6px;
 }
 .user-box {
