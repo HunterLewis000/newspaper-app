@@ -81,14 +81,14 @@
             </td>
       <td class="editor">
   <select onchange="updateEditor({{ article.id }}, this.value)" class="editor-select" data-article-id="{{ article.id }}" data-current-editor="{{ article.editor }}" {% if article.status == 'Published' %}disabled{% endif %}>
-    <option value="">-- Select --</option>
+    <option value="">- Select -</option>
   </select>
 </td>
 
       <td class="deadline" data-deadline="{{ article.deadline }}">{{ article.deadline }}</td>
 
       <td class="filescol">
-        <button class="file-icon-btn" onclick="openFileManager({{ article.id }})">Files</button>
+        <button class="file-icon-btn" onclick="openFileManager({{ article.id }})" title="Files">📄</button>
       </td>
 
       <td class="actions">
