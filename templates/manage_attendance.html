@@ -31,7 +31,6 @@
   </div>
   <br />
    <div class="controls">
-    <button id="btn-add-person">Add Person</button>
     <button id="btn-add-date">Add Date</button>
     <button id="btn-export-csv">Export CSV</button>
   </div>
@@ -109,9 +108,6 @@ function buildTable() {
     const nameTd = document.createElement('td');
     nameTd.className = "person";
     nameTd.textContent = p.name;
-    nameTd.style.cursor = 'pointer';
-    nameTd.title = "Click to edit / delete person";
-    nameTd.addEventListener('click', () => handlePersonClick(p));
     tr.appendChild(nameTd);
 
     dates.forEach(d => {
@@ -181,54 +177,6 @@ async function toggleCellServer(personId, dateId, present=null) {
   }
 }
 
-async function addPerson() {
-  const name = prompt("New person's name:");
-  if (!name) return;
-  const resp = await fetch('/api/attendance/add_person', {
-    method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({name})
-  });
-  if (resp.ok) {
-    await loadData();
-  } else {
-    const j = await resp.json();
-    alert("Error: " + (j.error||resp.statusText));
-  }
-}
-
-async function deletePerson(personId) {
-  if (!confirm("Delete this person and their attendance rows?")) return;
-  const resp = await fetch('/api/attendance/delete_person', {
-    method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({person_id: personId})
-  });
-  if (resp.ok) {
-    await loadData();
-  } else {
-    const j = await resp.json();
-    alert("Error: " + (j.error||resp.statusText));
-  }
-}
-
-function handlePersonClick(p) {
-  const action = prompt(`Edit person "${p.name}":\nType 'rename' to rename or 'delete' to remove.`, "");
-  if (!action) return;
-  if (action.toLowerCase() === 'rename') {
-    const newName = prompt("New name:", p.name);
-    if (!newName) return;
-    fetch('/api/attendance/rename_person', {
-      method: 'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({person_id: p.id, name: newName})
-    }).then(async r => {
-      if (r.ok) await loadData();
-      else {
-        const j = await r.json();
-        alert("Error: " + (j.error || r.statusText));
-      }
-    });
-  } else if (action.toLowerCase() === 'delete') {
-    deletePerson(p.id);
-  }
-}
-
 async function addDate() {
   const dateStr = prompt("Add date (YYYY-MM-DD):", new Date().toISOString().slice(0,10));
   if (!dateStr) return;
@@ -294,7 +242,6 @@ function exportCSV() {
   setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1000);
 }
 
-document.getElementById('btn-add-person').addEventListener('click', addPerson);
 document.getElementById('btn-add-date').addEventListener('click', addDate);
 document.getElementById('btn-export-csv').addEventListener('click', exportCSV);
 

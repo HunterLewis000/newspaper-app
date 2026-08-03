@@ -703,8 +703,31 @@ def attendance_data():
     if not is_allowed_email(current_user.email):
         return jsonify({"error": "forbidden"}), 403
 
-    people = Person.query.order_by(Person.name).all()
+    writers = DirectoryUser.query.filter(
+        DirectoryUser.roles.any(UserRole.role == 'writer'),
+        DirectoryUser.active == True
+    ).order_by(DirectoryUser.name).all()
+
     dates = AttendanceDate.query.order_by(AttendanceDate.date).all()
+
+    people_data = {}
+    for writer in writers:
+        existing_person = Person.query.filter_by(name=writer.name).first()
+        if not existing_person:
+            existing_person = Person(name=writer.name, active=True)
+            db.session.add(existing_person)
+            db.session.flush()
+
+        people_data[existing_person.id] = existing_person
+
+        for date in dates:
+            att = Attendance.query.filter_by(person_id=existing_person.id, date_id=date.id).first()
+            if not att:
+                db.session.add(Attendance(person_id=existing_person.id, date_id=date.id, present=False))
+
+    db.session.commit()
+
+    people = list(people_data.values())
     attendances = Attendance.query.all()
 
     att_map = {f"{a.person_id}_{a.date_id}": a.present for a in attendances}
