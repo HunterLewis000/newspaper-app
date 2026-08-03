@@ -891,6 +891,22 @@ def manage_about():
     return render_template("manage_about.html")
 
 
+@app.route("/manage/editor_tools")
+@login_required
+def manage_editor_tools():
+    if not is_allowed_email(current_user.email):
+        return "Forbidden", 403
+    return render_template("manage_editor_tools.html")
+
+
+@app.route("/manage/media_tools")
+@login_required
+def manage_media_tools():
+    if not is_allowed_email(current_user.email):
+        return "Forbidden", 403
+    return render_template("manage_media_tools.html")
+
+
 # User Directory Management Routes
 @app.route("/manage/users")
 @login_required
