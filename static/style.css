@@ -310,6 +310,11 @@ td.filescol, th.filescol {
   width: 5%;
   padding: 14px 6px;
 }
+.file-icon-btn {
+  padding: 8px 10px !important;
+  min-width: auto !important;
+  width: auto !important;
+}
 .user-box {
     position: fixed;
     top: 10px;
