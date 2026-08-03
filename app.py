@@ -907,6 +907,38 @@ def manage_media_tools():
     return render_template("manage_media_tools.html")
 
 
+@app.route("/api/editor_articles")
+@login_required
+def editor_articles():
+    if not is_allowed_email(current_user.email):
+        return jsonify({"error": "forbidden"}), 403
+
+    editor = request.args.get('editor')
+
+    active_query = Article.query.filter_by(status='Needs Edit', archived=False)
+    past_query = Article.query.filter_by(status='Edited', archived=False)
+
+    if editor:
+        active_query = active_query.filter_by(editor=editor)
+        past_query = past_query.filter_by(editor=editor)
+
+    active = active_query.order_by(Article.position).all()
+    past = past_query.order_by(Article.position).all()
+
+    def serialize_article(article):
+        return {
+            'id': article.id,
+            'title': article.title,
+            'author': article.author,
+            'editor': article.editor
+        }
+
+    return jsonify({
+        'active': [serialize_article(a) for a in active],
+        'past': [serialize_article(a) for a in past]
+    })
+
+
 # User Directory Management Routes
 @app.route("/manage/users")
 @login_required
