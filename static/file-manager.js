@@ -27,8 +27,8 @@ function categorizeFile(filename, fileCategory) {
 
     if (fileCategory === 'unedited' || fileCategory === 'edited') {
         return docExts.includes(ext) ? fileCategory : null;
-    } else if (fileCategory === 'photos') {
-        return photoExts.includes(ext) ? 'photos' : null;
+    } else if (fileCategory === 'media') {
+        return 'other';
     }
     return fileCategory;
 }
@@ -37,7 +37,7 @@ function loadFiles(articleId) {
     const categories = ['unedited', 'edited', 'photos', 'other'];
     categories.forEach(cat => {
         const ul = document.getElementById(`fileList-${cat}`);
-        ul.innerHTML = '';
+        if (ul) ul.innerHTML = '';
     });
 
     fetch(`/files/${articleId}`)
@@ -61,43 +61,91 @@ function loadFiles(articleId) {
                 }
             });
 
-            Object.entries(categorized).forEach(([category, fileList]) => {
+            // Combine photos and other into media for display
+            const mediaFiles = [...(categorized.photos || []), ...(categorized.other || [])];
+
+            // Check if unedited has files
+            const uneditedFiles = categorized.unedited || [];
+            const hasUnedited = uneditedFiles.length > 0;
+
+            // Display unedited and edited
+            ['unedited', 'edited'].forEach(category => {
                 const ul = document.getElementById(`fileList-${category}`);
+                if (!ul) return;
                 ul.innerHTML = '';
 
+                const fileList = categorized[category] || [];
                 fileList.forEach(f => {
-                    const li = document.createElement('li');
-                    li.id = `file-${f.id}`;
-                    li.className = 'file-item-wrapper';
-                    li.innerHTML = `
-                        <div class="upload-info">
-                            <span class="upload-info-text"><span class="upload-info-user">${f.uploaded_by || 'Unknown'}</span></span>
-                            <span class="upload-info-text upload-info-time">${f.uploaded_at || ''}</span>
-                        </div>
-                        <div class="file-actions">
-                            <a href="/download_file/${f.id}" target="_blank">
-                                <button class="download-btn">${f.filename}</button>
-                            </a>
-                            <button onclick="deleteFile(${f.id}, '${category}')" class="delete-btn">Remove</button>
-                        </div>
-                    `;
+                    const li = createFileItem(f, category);
                     ul.appendChild(li);
                 });
 
                 // Hide/show upload zone for single-file categories
                 const form = document.querySelector(`.upload-drop-zone[data-category="${category}"]`);
-                if (form && (category === 'unedited' || category === 'edited')) {
+                if (form) {
                     if (fileList.length > 0) {
                         form.style.display = 'none';
                     } else {
                         form.style.display = 'block';
                     }
+
+                    // Disable edited if no unedited file
+                    if (category === 'edited') {
+                        const editedStep = document.getElementById('edited-step');
+                        if (!hasUnedited) {
+                            editedStep.classList.add('disabled-section');
+                            form.disabled = true;
+                            form.querySelectorAll('input').forEach(input => input.disabled = true);
+                        } else {
+                            editedStep.classList.remove('disabled-section');
+                            form.disabled = false;
+                            form.querySelectorAll('input').forEach(input => input.disabled = false);
+                        }
+                    }
                 }
             });
+
+            // Display media files combined
+            const mediaList = document.getElementById('fileList-photos');
+            if (mediaList) {
+                mediaList.innerHTML = '';
+                mediaFiles.forEach(f => {
+                    const li = createFileItem(f, 'media');
+                    mediaList.appendChild(li);
+                });
+            }
+
+            // Hide other files list since we combined it
+            const otherList = document.getElementById('fileList-other');
+            if (otherList) {
+                otherList.style.display = 'none';
+            }
         })
         .catch(err => {
             console.error('Failed to load files:', err);
         });
+}
+
+function createFileItem(f, category) {
+    const li = document.createElement('li');
+    li.id = `file-${f.id}`;
+    li.className = 'file-item-wrapper';
+
+    const uploadInfo = f.uploaded_by ? `${f.uploaded_by}` : 'Unknown';
+    const uploadTime = f.uploaded_at ? ` • ${f.uploaded_at}` : '';
+
+    li.innerHTML = `
+        <div class="upload-info">
+            <span class="upload-info-user">${uploadInfo}</span><span class="upload-info-time">${uploadTime}</span>
+        </div>
+        <div class="file-actions">
+            <a href="/download_file/${f.id}" target="_blank">
+                <button class="download-btn">${f.filename}</button>
+            </a>
+            <button onclick="deleteFile(${f.id}, '${category}')" class="delete-btn">Remove</button>
+        </div>
+    `;
+    return li;
 }
 
 function deleteFile(fileId, category) {
@@ -106,14 +154,7 @@ function deleteFile(fileId, category) {
         .then(res => res.json())
         .then(data => {
             if (data.success) {
-                document.getElementById(`file-${fileId}`).remove();
-                // Show upload zone again for single-file categories
-                if (category === 'unedited' || category === 'edited') {
-                    const form = document.querySelector(`.upload-drop-zone[data-category="${category}"]`);
-                    if (form) {
-                        form.style.display = 'block';
-                    }
-                }
+                loadFiles(currentArticleId);
             }
         });
 }
@@ -180,7 +221,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!validatedCategory) {
             const expected = category === 'unedited' || category === 'edited'
                 ? 'Word documents (.doc, .docx)'
-                : category === 'photos' ? 'image files' : 'any file type';
+                : 'any file type';
             alert(`Invalid file type. Please upload ${expected}.`);
             fileInput.value = '';
             return;

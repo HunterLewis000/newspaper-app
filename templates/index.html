@@ -134,8 +134,11 @@
           </form>
         </div>
 
+        <!-- Arrow -->
+        <div class="article-arrow">→</div>
+
         <!-- Step 2: Edited Version -->
-        <div class="workflow-step">
+        <div class="workflow-step" id="edited-step">
           <div class="step-header">
             <div class="step-number">2</div>
             <h4>Edited Version</h4>
@@ -161,38 +164,19 @@
           <div class="step-number">3</div>
           <h4>Media & Assets</h4>
         </div>
-        <div class="media-grid">
-          <div class="media-section">
-            <h5>📸 Photos</h5>
-            <ul id="fileList-photos" class="file-list-modern"></ul>
-            <form class="upload-drop-zone" enctype="multipart/form-data" data-category="photos">
-              <input type="file" name="file" class="fileInput" accept="image/*" required />
-              <div class="drop-zone-content">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                  <polyline points="17 8 12 3 7 8"></polyline>
-                  <line x1="12" y1="3" x2="12" y2="15"></line>
-                </svg>
-                <span>Drag photos</span>
-              </div>
-            </form>
+        <ul id="fileList-photos" class="file-list-modern"></ul>
+        <ul id="fileList-other" class="file-list-modern"></ul>
+        <form class="upload-drop-zone" enctype="multipart/form-data" data-category="media">
+          <input type="file" name="file" class="fileInput" required />
+          <div class="drop-zone-content">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+            <span>Click or drag files (photos, documents, etc.)</span>
           </div>
-          <div class="media-section">
-            <h5>📋 Supporting Files</h5>
-            <ul id="fileList-other" class="file-list-modern"></ul>
-            <form class="upload-drop-zone" enctype="multipart/form-data" data-category="other">
-              <input type="file" name="file" class="fileInput" required />
-              <div class="drop-zone-content">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                  <polyline points="17 8 12 3 7 8"></polyline>
-                  <line x1="12" y1="3" x2="12" y2="15"></line>
-                </svg>
-                <span>Drag files</span>
-              </div>
-            </form>
-          </div>
-        </div>
+        </form>
       </div>
     </div>
   </div>
