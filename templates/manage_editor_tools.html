@@ -65,13 +65,17 @@
         }
         .open-btn {
             padding: 8px 14px;
-            background: #ccc;
-            color: #666;
+            background: #3b82f6;
+            color: white;
             border: none;
             border-radius: 6px;
             font-size: 13px;
             font-weight: 600;
-            cursor: default;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .open-btn:hover {
+            background: #dc2626;
         }
         .empty-state {
             padding: 40px;
@@ -128,6 +132,7 @@
 </div>
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js" crossorigin="anonymous"></script>
+<script src="{{ url_for('static', filename='editor-tools.js') }}"></script>
 <script>
 const socket = io();
 
@@ -187,7 +192,7 @@ function displayArticles(articles, containerId) {
             <div class="article-title">${escapeHtml(article.title)}</div>
             <div class="article-meta">${escapeHtml(article.author)}</div>
             <div class="article-meta">${escapeHtml(article.editor || '—')}</div>
-            <button class="open-btn" disabled>Open</button>
+            <button class="open-btn" onclick="openEditorTools(${article.id})">Open</button>
         </div>
     `).join('');
 }
