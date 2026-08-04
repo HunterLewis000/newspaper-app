@@ -156,6 +156,7 @@ class ArticleFile(db.Model):
     article_id = db.Column(db.Integer, db.ForeignKey('article.id'), nullable=False)
     filename = db.Column(db.String(200), nullable=False)
     s3_key = db.Column(db.String(200), nullable=False)
+    category = db.Column(db.String(50), nullable=False, default='other')
 
 
 class StatusHistory(db.Model):
@@ -309,10 +310,13 @@ def upload_file(article_id):
         app.logger.error(f"S3 upload failed: {e}")
         return jsonify(success=False, message="Upload failed"), 500
 
+    category = request.form.get('category', 'other')
+
     new_file = ArticleFile(
         article_id=article.id,
         filename=filename,
-        s3_key=s3_key
+        s3_key=s3_key,
+        category=category
     )
     db.session.add(new_file)
     db.session.commit()
@@ -337,6 +341,7 @@ def list_files(article_id):
         files.append({
             "id": f.id,
             "filename": f.filename,
+            "category": f.category,
             "file_url": url_for('download_file', file_id=f.id)
         })
     return jsonify(files=files)

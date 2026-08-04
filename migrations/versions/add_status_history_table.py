@@ -1,6 +1,6 @@
 """add status history table
 
-Revision ID: f8b9c3d4e5f6
+Revision ID: add_status_history
 Revises: eaa9201f2486
 Create Date: 2026-01-06 12:00:00.000000
 
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'f8b9c3d4e5f6'
+revision = 'add_status_history'
 down_revision = 'eaa9201f2486'
 branch_labels = None
 depends_on = None
