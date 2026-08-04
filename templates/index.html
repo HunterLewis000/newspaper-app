@@ -111,53 +111,40 @@
   <div class="modal-content">
     <button type="button" class="close" aria-label="Close" onclick="closeFileManager()">×</button>
 
-    <h3>Article Files</h3>
+    <h3>Files</h3>
 
-    <!-- Unedited Article -->
-    <div class="file-category-section">
-      <h4>Unedited Article</h4>
-      <ul id="fileList-unedited" class="file-list"></ul>
-      <div class="upload-section">
-        <form class="typ upload-form" enctype="multipart/form-data" data-category="unedited">
+    <div class="file-manager-compact">
+      <div class="file-col">
+        <h4>Unedited</h4>
+        <ul id="fileList-unedited" class="file-list"></ul>
+        <form class="upload-form-compact" enctype="multipart/form-data" data-category="unedited">
           <input type="file" name="file" class="fileInput" accept=".doc,.docx" required />
           <button type="submit">Upload</button>
         </form>
       </div>
-    </div>
 
-    <!-- Arrow -->
-    <div class="arrow-down">↓</div>
-
-    <!-- Edited Article -->
-    <div class="file-category-section">
-      <h4>Edited Article</h4>
-      <ul id="fileList-edited" class="file-list"></ul>
-      <div class="upload-section">
-        <form class="typ upload-form" enctype="multipart/form-data" data-category="edited">
+      <div class="file-col">
+        <h4>Edited</h4>
+        <ul id="fileList-edited" class="file-list"></ul>
+        <form class="upload-form-compact" enctype="multipart/form-data" data-category="edited">
           <input type="file" name="file" class="fileInput" accept=".doc,.docx" required />
           <button type="submit">Upload</button>
         </form>
       </div>
-    </div>
 
-    <!-- Photos -->
-    <div class="file-category-section">
-      <h4>Photos</h4>
-      <ul id="fileList-photos" class="file-list"></ul>
-      <div class="upload-section">
-        <form class="typ upload-form" enctype="multipart/form-data" data-category="photos">
+      <div class="file-col">
+        <h4>Photos</h4>
+        <ul id="fileList-photos" class="file-list"></ul>
+        <form class="upload-form-compact" enctype="multipart/form-data" data-category="photos">
           <input type="file" name="file" class="fileInput" accept="image/*" required />
           <button type="submit">Upload</button>
         </form>
       </div>
-    </div>
 
-    <!-- Other Files -->
-    <div class="file-category-section">
-      <h4>Other Files</h4>
-      <ul id="fileList-other" class="file-list"></ul>
-      <div class="upload-section">
-        <form class="typ upload-form" enctype="multipart/form-data" data-category="other">
+      <div class="file-col">
+        <h4>Other</h4>
+        <ul id="fileList-other" class="file-list"></ul>
+        <form class="upload-form-compact" enctype="multipart/form-data" data-category="other">
           <input type="file" name="file" class="fileInput" required />
           <button type="submit">Upload</button>
         </form>

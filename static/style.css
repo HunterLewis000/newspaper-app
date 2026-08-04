@@ -145,16 +145,21 @@ td.title, td.author {
 
 .modal-content {
   background: #fff;
-  width: 600px;              
+  width: 550px;
   max-width: calc(100vw - 40px);
   margin: 6vh auto;
-  padding: 18px;
+  padding: 16px;
   border-radius: 10px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.2);
   box-sizing: border-box;
 }
 
-/* Close button */
+/* Modal heading and close button */
+.modal-content h3 {
+  margin: 0 0 12px 0;
+  font-size: 1.1rem;
+}
+
 .modal-content .close {
   float: right;
   border: none;
@@ -162,6 +167,7 @@ td.title, td.author {
   color: red;
   font-size: 1.5rem;
   cursor: pointer;
+  margin-top: -6px;
 }
 
 /* File list inside modal */
@@ -1048,45 +1054,80 @@ select:disabled {
   color: #999;
 }
 
-/* File Manager Sections */
-.file-category-section {
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 15px;
-  background: #fafafa;
-  margin-bottom: 15px;
+/* File Manager Compact Grid */
+.file-manager-compact {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 10px;
 }
 
-.file-category-section h4 {
-  margin: 0 0 12px 0;
-  font-size: 0.95rem;
+.file-col {
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 12px;
+  background: #fafafa;
+}
+
+.file-col h4 {
+  margin: 0 0 8px 0;
+  font-size: 0.85rem;
   font-weight: 600;
   color: #333;
 }
 
-.arrow-down {
-  text-align: center;
-  font-size: 1.5rem;
-  color: #3b82f6;
-  margin: 8px 0;
-  font-weight: bold;
+.upload-form-compact {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.upload-form-compact input[type="file"] {
+  flex: 1;
+  padding: 4px 6px;
+  font-size: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+}
+
+.upload-form-compact button {
+  padding: 4px 10px;
+  font-size: 0.8rem;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.upload-form-compact button:hover {
+  background: #2563eb;
+}
+
+.upload-form-compact button:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
 }
 
 .file-list {
   list-style: none;
   padding: 0;
-  margin: 0 0 12px 0;
-  max-height: 150px;
+  margin: 0 0 8px 0;
+  max-height: 100px;
   overflow-y: auto;
 }
 
 .file-list li {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 0;
+  gap: 6px;
+  padding: 4px 0;
   border-bottom: 1px solid #e5e7eb;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
 }
 
 .file-list li:last-child {
@@ -1097,7 +1138,7 @@ select:disabled {
   display: flex;
   width: 100%;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .file-list .file-actions > a {
@@ -1120,7 +1161,7 @@ select:disabled {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
 }
 
 .file-list .download-btn:hover {
@@ -1129,62 +1170,18 @@ select:disabled {
 
 .file-list .delete-btn {
   flex: 0 0 auto;
-  padding: 4px 8px;
+  padding: 2px 6px;
   background: #dc2626;
   color: white;
-  border-radius: 4px;
+  border-radius: 3px;
   border: none;
   cursor: pointer;
   font-weight: 600;
-  font-size: 0.8rem;
+  font-size: 0.7rem;
 }
 
 .file-list .delete-btn:hover {
   background: #b91c1c;
 }
 
-.upload-section {
-  border-top: 1px solid #e5e7eb;
-  padding-top: 12px;
-  margin-top: 12px;
-}
-
-.upload-section form.typ {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin: 0;
-  padding: 0;
-  background: transparent;
-  box-shadow: none;
-}
-
-.upload-section input[type="file"] {
-  padding: 8px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  cursor: pointer;
-}
-
-.upload-section button {
-  padding: 8px 12px;
-  font-size: 0.9rem;
-  background: #3b82f6;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: background-color 0.2s;
-}
-
-.upload-section button:hover {
-  background: #2563eb;
-}
-
-.upload-section button:disabled {
-  background: #9ca3af;
-  cursor: not-allowed;
-}
 
