@@ -154,6 +154,11 @@ td.title, td.author {
   box-sizing: border-box;
 }
 
+.file-manager-modal {
+  height: 550px;
+  overflow-y: auto;
+}
+
 /* Modal heading and close button */
 .modal-content h3 {
   margin: 0 0 12px 0;
@@ -1067,7 +1072,7 @@ select:disabled {
 
 .articles-grid {
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  grid-template-columns: 360px auto 360px;
   gap: 16px;
   align-items: center;
 }
@@ -1102,6 +1107,7 @@ select:disabled {
   padding: 16px;
   background: #fafafa;
   transition: all 0.2s ease;
+  overflow: hidden;
 }
 
 .workflow-step:hover {
@@ -1110,6 +1116,11 @@ select:disabled {
 }
 
 .workflow-step.full-width {
+  width: 100%;
+}
+
+.articles-grid .workflow-step {
+  max-width: 360px;
   width: 100%;
 }
 
@@ -1195,6 +1206,8 @@ select:disabled {
   border: 1px solid #e5e7eb;
   margin-bottom: 6px;
   font-size: 0.85rem;
+  overflow: hidden;
+  min-width: 0;
 }
 
 .file-list-modern li:last-child {
