@@ -68,16 +68,31 @@ function loadFiles(articleId) {
                 fileList.forEach(f => {
                     const li = document.createElement('li');
                     li.id = `file-${f.id}`;
+                    li.className = 'file-item-wrapper';
                     li.innerHTML = `
+                        <div class="upload-info">
+                            <span class="upload-info-text"><span class="upload-info-user">${f.uploaded_by || 'Unknown'}</span></span>
+                            <span class="upload-info-text upload-info-time">${f.uploaded_at || ''}</span>
+                        </div>
                         <div class="file-actions">
                             <a href="/download_file/${f.id}" target="_blank">
                                 <button class="download-btn">${f.filename}</button>
                             </a>
-                            <button onclick="deleteFile(${f.id})" class="delete-btn">Remove</button>
+                            <button onclick="deleteFile(${f.id}, '${category}')" class="delete-btn">Remove</button>
                         </div>
                     `;
                     ul.appendChild(li);
                 });
+
+                // Hide/show upload zone for single-file categories
+                const form = document.querySelector(`.upload-drop-zone[data-category="${category}"]`);
+                if (form && (category === 'unedited' || category === 'edited')) {
+                    if (fileList.length > 0) {
+                        form.style.display = 'none';
+                    } else {
+                        form.style.display = 'block';
+                    }
+                }
             });
         })
         .catch(err => {
@@ -85,11 +100,22 @@ function loadFiles(articleId) {
         });
 }
 
-function deleteFile(fileId) {
+function deleteFile(fileId, category) {
     if (!confirm('Delete this file?')) return;
     fetch(`/delete_file/${fileId}`, { method: 'POST' })
         .then(res => res.json())
-        .then(data => { if (data.success) document.getElementById(`file-${fileId}`).remove(); });
+        .then(data => {
+            if (data.success) {
+                document.getElementById(`file-${fileId}`).remove();
+                // Show upload zone again for single-file categories
+                if (category === 'unedited' || category === 'edited') {
+                    const form = document.querySelector(`.upload-drop-zone[data-category="${category}"]`);
+                    if (form) {
+                        form.style.display = 'block';
+                    }
+                }
+            }
+        });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -137,6 +163,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const fileInput = form.querySelector('.fileInput');
         if (!fileInput.files.length) return;
+
+        // Check if category allows only 1 file
+        if (category === 'unedited' || category === 'edited') {
+            const fileList = document.getElementById(`fileList-${category}`);
+            if (fileList.children.length > 0) {
+                alert(`You can only upload one ${category} article. Please delete the existing file first.`);
+                fileInput.value = '';
+                return;
+            }
+        }
 
         const file = fileInput.files[0];
         const validatedCategory = categorizeFile(file.name, category);

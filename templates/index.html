@@ -112,60 +112,54 @@
     <button type="button" class="close" aria-label="Close" onclick="closeFileManager()">×</button>
 
     <div class="file-manager-workflow">
-      <!-- Step 1: Original Article -->
-      <div class="workflow-step">
-        <div class="step-header">
-          <div class="step-number">1</div>
-          <div>
+      <!-- Steps 1 & 2: Articles (side by side) -->
+      <div class="articles-grid">
+        <!-- Step 1: Original Article -->
+        <div class="workflow-step">
+          <div class="step-header">
+            <div class="step-number">1</div>
             <h4>Original Article</h4>
-            <p>Submit your first draft</p>
           </div>
+          <ul id="fileList-unedited" class="file-list-modern"></ul>
+          <form class="upload-drop-zone" enctype="multipart/form-data" data-category="unedited">
+            <input type="file" name="file" class="fileInput" accept=".doc,.docx" required />
+            <div class="drop-zone-content">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+              </svg>
+              <span>Click or drag file</span>
+            </div>
+          </form>
         </div>
-        <ul id="fileList-unedited" class="file-list-modern"></ul>
-        <form class="upload-drop-zone" enctype="multipart/form-data" data-category="unedited">
-          <input type="file" name="file" class="fileInput" accept=".doc,.docx" required />
-          <div class="drop-zone-content">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <polyline points="17 8 12 3 7 8"></polyline>
-              <line x1="12" y1="3" x2="12" y2="15"></line>
-            </svg>
-            <span>Click or drag file</span>
-          </div>
-        </form>
-      </div>
 
-      <!-- Step 2: Edited Version -->
-      <div class="workflow-step">
-        <div class="step-header">
-          <div class="step-number">2</div>
-          <div>
+        <!-- Step 2: Edited Version -->
+        <div class="workflow-step">
+          <div class="step-header">
+            <div class="step-number">2</div>
             <h4>Edited Version</h4>
-            <p>Upload the final draft after editing</p>
           </div>
+          <ul id="fileList-edited" class="file-list-modern"></ul>
+          <form class="upload-drop-zone" enctype="multipart/form-data" data-category="edited">
+            <input type="file" name="file" class="fileInput" accept=".doc,.docx" required />
+            <div class="drop-zone-content">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+              </svg>
+              <span>Click or drag file</span>
+            </div>
+          </form>
         </div>
-        <ul id="fileList-edited" class="file-list-modern"></ul>
-        <form class="upload-drop-zone" enctype="multipart/form-data" data-category="edited">
-          <input type="file" name="file" class="fileInput" accept=".doc,.docx" required />
-          <div class="drop-zone-content">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <polyline points="17 8 12 3 7 8"></polyline>
-              <line x1="12" y1="3" x2="12" y2="15"></line>
-            </svg>
-            <span>Click or drag file</span>
-          </div>
-        </form>
       </div>
 
       <!-- Step 3: Media & Assets -->
       <div class="workflow-step full-width">
         <div class="step-header">
           <div class="step-number">3</div>
-          <div>
-            <h4>Media & Assets</h4>
-            <p>Photos, images, and supporting files</p>
-          </div>
+          <h4>Media & Assets</h4>
         </div>
         <div class="media-grid">
           <div class="media-section">
@@ -184,7 +178,7 @@
             </form>
           </div>
           <div class="media-section">
-            <h5>📎 Other Files</h5>
+            <h5>📋 Supporting Files</h5>
             <ul id="fileList-other" class="file-list-modern"></ul>
             <form class="upload-drop-zone" enctype="multipart/form-data" data-category="other">
               <input type="file" name="file" class="fileInput" required />

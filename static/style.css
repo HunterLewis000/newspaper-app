@@ -1056,13 +1056,19 @@ select:disabled {
 
 /* File Manager Workflow */
 .file-manager-modal {
-  width: 650px;
+  width: 700px;
 }
 
 .file-manager-workflow {
   display: flex;
   flex-direction: column;
   gap: 20px;
+}
+
+.articles-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
 }
 
 .workflow-step {
@@ -1086,7 +1092,7 @@ select:disabled {
   display: flex;
   gap: 12px;
   margin-bottom: 12px;
-  align-items: flex-start;
+  align-items: center;
 }
 
 .step-number {
@@ -1108,12 +1114,6 @@ select:disabled {
   font-size: 1rem;
   color: #1f2937;
   font-weight: 600;
-}
-
-.step-header p {
-  margin: 2px 0 0 0;
-  font-size: 0.85rem;
-  color: #6b7280;
 }
 
 .upload-drop-zone {
@@ -1237,12 +1237,55 @@ select:disabled {
   color: #2563eb;
 }
 
+.file-item-wrapper {
+  position: relative;
+}
+
+.upload-info {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  background: #1f2937;
+  color: #f3f4f6;
+  padding: 8px 10px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  margin-bottom: 6px;
+  z-index: 10;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.file-item-wrapper:hover .upload-info {
+  opacity: 1;
+  visibility: visible;
+}
+
+.upload-info-text {
+  display: block;
+  margin: 2px 0;
+}
+
+.upload-info-user {
+  font-weight: 600;
+  color: #3b82f6;
+}
+
+.upload-info-time {
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
 .file-list-modern .delete-btn {
   flex: 0 0 auto;
-  padding: 4px 8px;
-  background: #fee2e2;
-  color: #dc2626;
-  border-radius: 4px;
+  padding: 6px 10px;
+  background: black;
+  color: #ff0000;
+  border-radius: 6px;
   border: none;
   cursor: pointer;
   font-weight: 600;
@@ -1251,8 +1294,7 @@ select:disabled {
 }
 
 .file-list-modern .delete-btn:hover {
-  background: #fecaca;
-  color: #b91c1c;
+  background: #b91c1c;
 }
 
 

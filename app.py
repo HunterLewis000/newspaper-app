@@ -157,6 +157,8 @@ class ArticleFile(db.Model):
     filename = db.Column(db.String(200), nullable=False)
     s3_key = db.Column(db.String(200), nullable=False)
     category = db.Column(db.String(50), nullable=False, default='other')
+    uploaded_by = db.Column(db.String(100), nullable=True)
+    uploaded_at = db.Column(db.DateTime, nullable=True, default=datetime.utcnow)
 
 
 class StatusHistory(db.Model):
@@ -316,7 +318,9 @@ def upload_file(article_id):
         article_id=article.id,
         filename=filename,
         s3_key=s3_key,
-        category=category
+        category=category,
+        uploaded_by=current_user.name,
+        uploaded_at=datetime.utcnow()
     )
     db.session.add(new_file)
     db.session.commit()
@@ -338,10 +342,15 @@ def list_files(article_id):
     article = Article.query.get_or_404(article_id)
     files = []
     for f in article.files:
+        uploaded_time = ''
+        if f.uploaded_at:
+            uploaded_time = f.uploaded_at.strftime('%b %d, %Y at %I:%M %p')
         files.append({
             "id": f.id,
             "filename": f.filename,
             "category": f.category,
+            "uploaded_by": f.uploaded_by or 'Unknown',
+            "uploaded_at": uploaded_time,
             "file_url": url_for('download_file', file_id=f.id)
         })
     return jsonify(files=files)
