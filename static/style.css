@@ -1056,7 +1056,7 @@ select:disabled {
 
 /* File Manager Workflow */
 .file-manager-modal {
-  width: 700px;
+  width: 875px;
 }
 
 .file-manager-workflow {
@@ -1211,12 +1211,14 @@ select:disabled {
   width: 100%;
   align-items: center;
   gap: 8px;
+  min-width: 0;
 }
 
 .file-list-modern .file-actions > a {
   flex: 1 1 auto;
   min-width: 0;
   display: block;
+  overflow: hidden;
 }
 
 .file-list-modern .download-btn {
@@ -1235,6 +1237,7 @@ select:disabled {
   text-overflow: ellipsis;
   font-size: 0.85rem;
   font-weight: 500;
+  min-width: 0;
 }
 
 .file-list-modern .download-btn:hover {

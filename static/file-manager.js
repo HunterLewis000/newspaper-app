@@ -142,12 +142,30 @@ function createFileItem(f, category) {
 }
 
 function deleteFile(fileId, category) {
-    if (!confirm('Delete this file?')) return;
+    let confirmMsg = 'Delete this file?';
+    if (category === 'unedited') {
+        confirmMsg = 'Delete the original article? This will also delete the edited version.';
+    }
+    if (!confirm(confirmMsg)) return;
+
     fetch(`/delete_file/${fileId}`, { method: 'POST' })
         .then(res => res.json())
         .then(data => {
             if (data.success) {
-                loadFiles(currentArticleId);
+                // If deleting unedited, also delete edited
+                if (category === 'unedited') {
+                    const editedList = document.getElementById('fileList-edited');
+                    if (editedList && editedList.children.length > 0) {
+                        const editedFileId = editedList.children[0].id.replace('file-', '');
+                        fetch(`/delete_file/${editedFileId}`, { method: 'POST' })
+                            .then(res => res.json())
+                            .then(() => loadFiles(currentArticleId));
+                    } else {
+                        loadFiles(currentArticleId);
+                    }
+                } else {
+                    loadFiles(currentArticleId);
+                }
             }
         });
 }
