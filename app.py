@@ -388,6 +388,66 @@ def delete_file(file_id):
     socketio.emit('file_deleted', {'file_id': file.id, 'article_id': file.article_id})
     return jsonify(success=True)
 
+@app.route('/compare_files/<int:file1_id>/<int:file2_id>')
+@login_required
+def compare_files(file1_id, file2_id):
+    file1 = ArticleFile.query.get_or_404(file1_id)
+    file2 = ArticleFile.query.get_or_404(file2_id)
+
+    try:
+        file1_obj = BytesIO()
+        file2_obj = BytesIO()
+
+        s3_client.download_fileobj(BUCKET_NAME, file1.s3_key, file1_obj)
+        s3_client.download_fileobj(BUCKET_NAME, file2.s3_key, file2_obj)
+
+        file1_obj.seek(0)
+        file2_obj.seek(0)
+
+        try:
+            from docx import Document
+            doc1 = Document(file1_obj)
+            doc2 = Document(file2_obj)
+
+            text1 = '\n'.join([p.text for p in doc1.paragraphs])
+            text2 = '\n'.join([p.text for p in doc2.paragraphs])
+        except:
+            text1 = file1_obj.read().decode('utf-8', errors='ignore')
+            text2 = file2_obj.read().decode('utf-8', errors='ignore')
+
+        differences = compute_diff(text1, text2)
+
+        return jsonify(success=True, differences=differences)
+    except Exception as e:
+        app.logger.error(f"File comparison failed: {e}")
+        return jsonify(success=False, message="Could not compare files"), 500
+
+def compute_diff(text1, text2):
+    lines1 = text1.split('\n')
+    lines2 = text2.split('\n')
+
+    differences = []
+    i, j = 0, 0
+
+    while i < len(lines1) or j < len(lines2):
+        if i < len(lines1) and j < len(lines2):
+            if lines1[i] == lines2[j]:
+                if lines1[i].strip():
+                    differences.append({'type': 'same', 'text': lines1[i]})
+                i += 1
+                j += 1
+            else:
+                differences.append({'type': 'removed', 'text': lines1[i]})
+                i += 1
+        elif i < len(lines1):
+            differences.append({'type': 'removed', 'text': lines1[i]})
+            i += 1
+        else:
+            differences.append({'type': 'added', 'text': lines2[j]})
+            j += 1
+
+    return differences
+
 @app.route('/add', methods=['POST'])
 @login_required
 def add_article():

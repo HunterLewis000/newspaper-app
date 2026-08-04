@@ -95,6 +95,7 @@
         {% if article.status == 'Published' %}
             <button onclick="markComplete({{ article.id }})" style="color:green;">Mark Complete</button>
         {% else %}
+            <button onclick="openEditorTools({{ article.id }})" style="background: #10b981;">Open</button>
             <button onclick="toggleEdit({{ article.id }})" id="edit-btn-{{ article.id }}">Edit</button>
             <button onclick="deleteArticle({{ article.id }})" style="color:red;">Delete</button>
         {% endif %}
@@ -191,6 +192,91 @@
   </div>
 </div>
 
+<div id="editorToolsModal" class="modal" aria-hidden="true">
+  <div class="modal-content editor-tools-modal">
+    <button type="button" class="close" aria-label="Close" onclick="closeEditorTools()">×</button>
+
+    <div class="editor-tools-container">
+      <!-- Left Panel: Files -->
+      <div class="editor-left-panel">
+        <h3 id="editorArticleTitle">Article Editor</h3>
+
+        <div class="editor-section">
+          <h4>Original Article</h4>
+          <div id="editorUneditedFile" class="editor-file-display">
+            <p style="color: #999;">No file uploaded</p>
+          </div>
+          <a id="downloadUneditedBtn" href="#" class="editor-download-btn" style="display: none;">
+            <button>Download Original</button>
+          </a>
+        </div>
+
+        <div class="editor-section">
+          <h4>Upload Edited Version</h4>
+          <form class="upload-drop-zone" enctype="multipart/form-data" id="editorUploadForm">
+            <input type="file" name="file" class="fileInput" accept=".doc,.docx" required />
+            <div class="drop-zone-content">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+              </svg>
+              <span>Click or drag file</span>
+            </div>
+          </form>
+          <div id="editorEditedFile" class="editor-file-display" style="margin-top: 12px;">
+            <p style="color: #999;">No file uploaded</p>
+          </div>
+        </div>
+
+        <button id="compareBtn" class="compare-button" onclick="compareFiles()" style="display: none;">
+          Compare Files
+        </button>
+      </div>
+
+      <!-- Right Panel: Checklist -->
+      <div class="editor-right-panel">
+        <h4>Editing Checklist</h4>
+        <div class="editor-checklist">
+          <label class="checklist-item">
+            <input type="checkbox" class="checklist-checkbox">
+            <span>Grammar and spelling</span>
+          </label>
+          <label class="checklist-item">
+            <input type="checkbox" class="checklist-checkbox">
+            <span>Clarity and flow</span>
+          </label>
+          <label class="checklist-item">
+            <input type="checkbox" class="checklist-checkbox">
+            <span>Fact-checked</span>
+          </label>
+          <label class="checklist-item">
+            <input type="checkbox" class="checklist-checkbox">
+            <span>Formatting correct</span>
+          </label>
+          <label class="checklist-item">
+            <input type="checkbox" class="checklist-checkbox">
+            <span>Headline reviewed</span>
+          </label>
+          <label class="checklist-item">
+            <input type="checkbox" class="checklist-checkbox">
+            <span>Images/captions ready</span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Comparison Panel (hidden by default) -->
+    <div id="comparisonPanel" class="comparison-panel" style="display: none;">
+      <button class="back-to-editor-btn" onclick="backToEditor()">← Back to Editor</button>
+      <h3>File Comparison</h3>
+      <div id="comparisonResult" class="comparison-result">
+        Loading...
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="footerbut" style="display: flex; justify-content: center; align-items: center; margin: 20px; gap: 15px;">
     <a href="{{ url_for('archived') }}">View Archived Articles</a>
 
@@ -205,6 +291,7 @@
 <script src="{{ url_for('static', filename='status-modal.js') }}"></script>
 <script src="{{ url_for('static', filename='article-manager.js') }}"></script>
 <script src="{{ url_for('static', filename='file-manager.js') }}"></script>
+<script src="{{ url_for('static', filename='editor-tools.js') }}"></script>
 <script src="{{ url_for('static', filename='socket-manager.js') }}"></script>
 <script src="{{ url_for('static', filename='drag-sort.js') }}"></script>
 <script src="{{ url_for('static', filename='tooltip.js') }}"></script>

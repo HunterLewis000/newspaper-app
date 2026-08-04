@@ -133,7 +133,7 @@ function createFileItem(f, category) {
     li.innerHTML = `
         <div class="file-actions">
             <a href="/download_file/${f.id}" target="_blank">
-                <button class="download-btn">${f.filename}</button>
+                <button class="download-btn" title="${f.filename}">${f.filename}</button>
             </a>
             <button onclick="deleteFile(${f.id}, '${category}')" class="delete-btn">Remove</button>
         </div>
