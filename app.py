@@ -342,15 +342,10 @@ def list_files(article_id):
     article = Article.query.get_or_404(article_id)
     files = []
     for f in article.files:
-        uploaded_time = ''
-        if f.uploaded_at:
-            uploaded_time = f.uploaded_at.strftime('%b %d, %Y at %I:%M %p')
         files.append({
             "id": f.id,
             "filename": f.filename,
             "category": f.category,
-            "uploaded_by": f.uploaded_by or 'Unknown',
-            "uploaded_at": uploaded_time,
             "file_url": url_for('download_file', file_id=f.id)
         })
     return jsonify(files=files)

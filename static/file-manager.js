@@ -129,15 +129,8 @@ function loadFiles(articleId) {
 function createFileItem(f, category) {
     const li = document.createElement('li');
     li.id = `file-${f.id}`;
-    li.className = 'file-item-wrapper';
-
-    const uploadInfo = f.uploaded_by ? `${f.uploaded_by}` : 'Unknown';
-    const uploadTime = f.uploaded_at ? ` • ${f.uploaded_at}` : '';
 
     li.innerHTML = `
-        <div class="upload-info">
-            <span class="upload-info-user">${uploadInfo}</span><span class="upload-info-time">${uploadTime}</span>
-        </div>
         <div class="file-actions">
             <a href="/download_file/${f.id}" target="_blank">
                 <button class="download-btn">${f.filename}</button>

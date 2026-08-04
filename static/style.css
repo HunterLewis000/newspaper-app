@@ -1145,7 +1145,7 @@ select:disabled {
   position: relative;
   border: 2px dashed #d1d5db;
   border-radius: 6px;
-  padding: 20px;
+  padding: 12px;
   text-align: center;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -1166,9 +1166,9 @@ select:disabled {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   color: #6b7280;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   pointer-events: none;
 }
 
@@ -1242,45 +1242,6 @@ select:disabled {
   color: #2563eb;
 }
 
-.file-item-wrapper {
-  position: relative;
-}
-
-.upload-info {
-  position: absolute;
-  bottom: 100%;
-  left: 0;
-  right: 0;
-  background: #1f2937;
-  color: #f3f4f6;
-  padding: 6px 10px;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-bottom: 6px;
-  z-index: 10;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.3s ease, visibility 0.3s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.file-item-wrapper:hover .upload-info {
-  opacity: 1;
-  visibility: visible;
-}
-
-.upload-info-user {
-  font-weight: 600;
-  color: #3b82f6;
-}
-
-.upload-info-time {
-  font-size: 0.8rem;
-  color: #9ca3af;
-}
 
 .file-list-modern .delete-btn {
   flex: 0 0 auto;
