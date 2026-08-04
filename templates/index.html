@@ -113,46 +113,35 @@
 
     <h3>Article Files</h3>
 
-    <div class="file-manager-grid">
-      <!-- Unedited Article -->
-      <div class="file-category">
-        <h4>Unedited Article</h4>
-        <ul id="fileList-unedited" class="file-list"></ul>
-        <div class="upload-section">
-          <form class="typ upload-form" enctype="multipart/form-data" data-category="unedited">
-            <input type="file" name="file" class="fileInput" accept=".doc,.docx" required />
-            <button type="submit">Upload</button>
-          </form>
-        </div>
+    <!-- Unedited Article -->
+    <div class="file-category-section">
+      <h4>Unedited Article</h4>
+      <ul id="fileList-unedited" class="file-list"></ul>
+      <div class="upload-section">
+        <form class="typ upload-form" enctype="multipart/form-data" data-category="unedited">
+          <input type="file" name="file" class="fileInput" accept=".doc,.docx" required />
+          <button type="submit">Upload</button>
+        </form>
       </div>
+    </div>
 
-      <!-- Arrow Indicator -->
-      <div class="arrow-indicator">
-        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
-              <polygon points="0 0, 10 3, 0 6" fill="#3b82f6" />
-            </marker>
-          </defs>
-          <line x1="10" y1="50" x2="85" y2="50" stroke="#3b82f6" stroke-width="2" marker-end="url(#arrowhead)" />
-        </svg>
-      </div>
+    <!-- Arrow -->
+    <div class="arrow-down">↓</div>
 
-      <!-- Edited Article -->
-      <div class="file-category">
-        <h4>Edited Article</h4>
-        <ul id="fileList-edited" class="file-list"></ul>
-        <div class="upload-section">
-          <form class="typ upload-form" enctype="multipart/form-data" data-category="edited">
-            <input type="file" name="file" class="fileInput" accept=".doc,.docx" required />
-            <button type="submit">Upload</button>
-          </form>
-        </div>
+    <!-- Edited Article -->
+    <div class="file-category-section">
+      <h4>Edited Article</h4>
+      <ul id="fileList-edited" class="file-list"></ul>
+      <div class="upload-section">
+        <form class="typ upload-form" enctype="multipart/form-data" data-category="edited">
+          <input type="file" name="file" class="fileInput" accept=".doc,.docx" required />
+          <button type="submit">Upload</button>
+        </form>
       </div>
     </div>
 
     <!-- Photos -->
-    <div class="file-category-full">
+    <div class="file-category-section">
       <h4>Photos</h4>
       <ul id="fileList-photos" class="file-list"></ul>
       <div class="upload-section">
@@ -164,7 +153,7 @@
     </div>
 
     <!-- Other Files -->
-    <div class="file-category-full">
+    <div class="file-category-section">
       <h4>Other Files</h4>
       <ul id="fileList-other" class="file-list"></ul>
       <div class="upload-section">

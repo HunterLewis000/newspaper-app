@@ -1048,30 +1048,8 @@ select:disabled {
   color: #999;
 }
 
-/* File Manager Grid */
-.file-manager-grid {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  gap: 20px;
-  align-items: flex-start;
-  margin-bottom: 30px;
-}
-
-.file-category {
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 15px;
-  background: #fafafa;
-}
-
-.file-category h4 {
-  margin: 0 0 12px 0;
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: #333;
-}
-
-.file-category-full {
+/* File Manager Sections */
+.file-category-section {
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   padding: 15px;
@@ -1079,23 +1057,19 @@ select:disabled {
   margin-bottom: 15px;
 }
 
-.file-category-full h4 {
+.file-category-section h4 {
   margin: 0 0 12px 0;
   font-size: 0.95rem;
   font-weight: 600;
   color: #333;
 }
 
-.arrow-indicator {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 100px;
-}
-
-.arrow-indicator svg {
-  width: 60px;
-  height: 60px;
+.arrow-down {
+  text-align: center;
+  font-size: 1.5rem;
+  color: #3b82f6;
+  margin: 8px 0;
+  font-weight: bold;
 }
 
 .file-list {
@@ -1214,13 +1188,3 @@ select:disabled {
   cursor: not-allowed;
 }
 
-@media (max-width: 760px) {
-  .file-manager-grid {
-    grid-template-columns: 1fr;
-    gap: 15px;
-  }
-
-  .arrow-indicator {
-    display: none;
-  }
-}
