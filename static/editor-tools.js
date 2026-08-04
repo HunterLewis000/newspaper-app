@@ -26,6 +26,8 @@ window.addEventListener('keydown', e => {
 });
 
 function loadEditorFiles(articleId) {
+    loadChecklist(articleId);
+
     fetch(`/files/${articleId}`)
         .then(res => res.json())
         .then(data => {
@@ -141,7 +143,55 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
+function loadChecklist(articleId) {
+    fetch(`/api/checklist/${articleId}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.success && data.checklist) {
+                const checklist = data.checklist;
+                document.querySelectorAll('.checklist-checkbox').forEach((checkbox, index) => {
+                    const itemKey = `item_${index}`;
+                    checkbox.checked = checklist[itemKey] || false;
+                });
+            }
+        })
+        .catch(err => console.error('Failed to load checklist:', err));
+}
+
+function saveChecklist(articleId) {
+    const checklist = {};
+    document.querySelectorAll('.checklist-checkbox').forEach((checkbox, index) => {
+        const itemKey = `item_${index}`;
+        checklist[itemKey] = checkbox.checked;
+    });
+
+    fetch(`/api/checklist/${articleId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ checklist })
+    })
+    .catch(err => console.error('Failed to save checklist:', err));
+}
+
+function clearChecklist(articleId) {
+    fetch(`/api/checklist/${articleId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ checklist: {} })
+    })
+    .catch(err => console.error('Failed to clear checklist:', err));
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+    // Add checklist change listeners
+    document.querySelectorAll('.checklist-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', () => {
+            if (currentEditorArticleId) {
+                saveChecklist(currentEditorArticleId);
+            }
+        });
+    });
+
     const editorUploadForm = document.getElementById('editorUploadForm');
     const fileInput = editorUploadForm.querySelector('.fileInput');
 

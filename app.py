@@ -151,6 +151,14 @@ class Article(db.Model):
     cat = db.Column(db.String(50), nullable=True)
 
 
+class EditorChecklist(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    article_id = db.Column(db.Integer, db.ForeignKey('article.id'), nullable=False)
+    checklist_data = db.Column(db.JSON, nullable=False, default={})
+
+    __table_args__ = (db.UniqueConstraint('article_id', name='uq_article_checklist'),)
+
+
 class ArticleFile(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     article_id = db.Column(db.Integer, db.ForeignKey('article.id'), nullable=False)
@@ -388,6 +396,31 @@ def delete_file(file_id):
     socketio.emit('file_deleted', {'file_id': file.id, 'article_id': file.article_id})
     return jsonify(success=True)
 
+@app.route('/api/checklist/<int:article_id>', methods=['GET', 'POST'])
+@login_required
+def manage_checklist(article_id):
+    article = Article.query.get_or_404(article_id)
+
+    if request.method == 'POST':
+        data = request.json
+        checklist_data = data.get('checklist', {})
+
+        existing = EditorChecklist.query.filter_by(article_id=article_id).first()
+        if existing:
+            existing.checklist_data = checklist_data
+        else:
+            new_checklist = EditorChecklist(article_id=article_id, checklist_data=checklist_data)
+            db.session.add(new_checklist)
+
+        db.session.commit()
+        return jsonify(success=True)
+
+    else:  # GET
+        checklist = EditorChecklist.query.filter_by(article_id=article_id).first()
+        if checklist:
+            return jsonify(success=True, checklist=checklist.checklist_data)
+        return jsonify(success=True, checklist={})
+
 @app.route('/compare_files/<int:file1_id>/<int:file2_id>')
 @login_required
 def compare_files(file1_id, file2_id):
@@ -556,9 +589,15 @@ def update_status(article_id):
                         db.session.delete(history_entry)
         
         article.status = new_status
-        
+
+        # Clear checklist if article is published
+        if new_status == 'Published':
+            checklist = EditorChecklist.query.filter_by(article_id=article.id).first()
+            if checklist:
+                db.session.delete(checklist)
+
         existing_entry = StatusHistory.query.filter_by(article_id=article.id, status=new_status).first()
-        
+
         if not existing_entry:
             status_entry = StatusHistory(
                 article_id=article.id,
@@ -573,7 +612,7 @@ def update_status(article_id):
             existing_entry.user_email = current_user.email
             existing_entry.timestamp = datetime.utcnow()
             status_entry = existing_entry
-        
+
         db.session.commit()
         
         socketio.emit('status_updated', {

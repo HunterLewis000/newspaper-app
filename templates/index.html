@@ -95,7 +95,6 @@
         {% if article.status == 'Published' %}
             <button onclick="markComplete({{ article.id }})" style="color:green;">Mark Complete</button>
         {% else %}
-            <button onclick="openEditorTools({{ article.id }})" style="background: #10b981;">Open</button>
             <button onclick="toggleEdit({{ article.id }})" id="edit-btn-{{ article.id }}">Edit</button>
             <button onclick="deleteArticle({{ article.id }})" style="color:red;">Delete</button>
         {% endif %}
