@@ -26,12 +26,6 @@ window.addEventListener('keydown', e => {
 });
 
 function loadEditorFiles(articleId) {
-    // Clear the complete state when switching articles
-    const rightPanel = document.querySelector('.editor-right-panel');
-    if (rightPanel) {
-        rightPanel.classList.remove('complete');
-    }
-
     loadChecklist(articleId);
 
     fetch(`/files/${articleId}`)
@@ -101,8 +95,13 @@ function compareFiles() {
     fetch(`/compare_files/${editorFileIds.unedited}/${editorFileIds.edited}`)
         .then(res => res.json())
         .then(data => {
-            if (data.success) {
-                displayComparison(data.differences);
+            if (data.success && data.differences) {
+                try {
+                    displayComparison(data.differences);
+                } catch (err) {
+                    console.error('Error displaying comparison:', err);
+                    comparisonResult.innerHTML = '<p style="color: #d32f2f;">Error displaying comparison. Please try again.</p>';
+                }
             } else {
                 comparisonResult.innerHTML = '<p style="color: #d32f2f;">Could not compare files. Make sure both files are accessible.</p>';
             }
@@ -252,7 +251,7 @@ function displayComparison(differences) {
         }
     });
 
-    comparisonResult.innerHTML = html + summary;
+    comparisonResult.innerHTML = html;
 }
 
 function backToEditor() {
@@ -280,6 +279,7 @@ function loadChecklist(articleId) {
                     checkbox.checked = checklist[itemKey] || false;
                 });
             }
+            updateChecklistCompletion();
         })
         .catch(err => console.error('Failed to load checklist:', err));
 }

@@ -112,15 +112,21 @@
             margin-top: 12px;
         }
         .editor-file-display {
-            word-break: break-word;
-            overflow-wrap: break-word;
+            min-width: 0;
+            display: block;
+            overflow: hidden;
+        }
+        .editor-file-display a {
+            min-width: 0;
+            display: block;
+            overflow: hidden;
         }
         .editor-file-display strong {
-            display: inline-block;
-            max-width: 100%;
+            display: block;
             overflow: hidden;
-            text-overflow: ellipsis;
             white-space: nowrap;
+            text-overflow: ellipsis;
+            min-width: 0;
         }
         @keyframes checklistComplete {
             0% {
