@@ -530,6 +530,14 @@ def delete_article(article_id):
     if not article:
         return jsonify(success=False), 404
 
+    # Delete all associated files first
+    files = ArticleFile.query.filter_by(article_id=article_id).all()
+    for file in files:
+        s3_client.delete_object(Bucket=BUCKET_NAME, Key=file.s3_key)
+        db.session.delete(file)
+    db.session.commit()
+
+    # Then delete the article
     deleted_position = article.position
     db.session.delete(article)
     db.session.commit()

@@ -160,13 +160,26 @@ function updateEditor(articleId, editor) {
 function deleteArticle(articleId) {
     if (!confirm("Are you sure you want to delete this article?")) return;
     fetch(`/delete/${articleId}`, { method: 'POST' })
-        .then(res => res.json())
+        .then(res => {
+            if (!res.ok) {
+                throw new Error(`HTTP ${res.status}`);
+            }
+            return res.json();
+        })
         .then(data => {
             if (data.success) {
                 const row = document.getElementById(`row-${articleId}`);
                 if (row) row.remove();
-                socket.emit('article_deleted', { id: articleId });
-            } else alert('Error deleting article!');
+                if (typeof socket !== 'undefined') {
+                    socket.emit('article_deleted', { id: articleId });
+                }
+            } else {
+                alert('Error deleting article: ' + (data.error || 'Unknown error'));
+            }
+        })
+        .catch(err => {
+            console.error('Delete failed:', err);
+            alert('Failed to delete article: ' + err.message);
         });
 }
 
