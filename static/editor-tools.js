@@ -212,6 +212,12 @@ function displayComparison(differences) {
             // Show modified lines with inline diffs
             group.removed.forEach((removedLine, idx) => {
                 const addedLine = group.added[idx];
+
+                // Skip if lines are identical
+                if (removedLine.text === addedLine.text) {
+                    return;
+                }
+
                 const inlineDiff = getInlineDiff(removedLine.text || '', addedLine.text || '');
 
                 const oldContent = inlineDiff.oldParts.map(p => {
