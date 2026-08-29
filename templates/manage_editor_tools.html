@@ -98,6 +98,22 @@
             text-overflow: ellipsis;
             max-width: 100%;
         }
+        .editor-checklist {
+            transition: border-color 0.4s ease, box-shadow 0.4s ease;
+        }
+        .editor-checklist.complete {
+            border: 3px solid #d4af37;
+            box-shadow: inset 0 0 15px rgba(212, 175, 55, 0.3);
+            animation: checklistComplete 0.5s ease-out;
+        }
+        @keyframes checklistComplete {
+            0% {
+                box-shadow: inset 0 0 0px rgba(212, 175, 55, 0);
+            }
+            100% {
+                box-shadow: inset 0 0 15px rgba(212, 175, 55, 0.3);
+            }
+        }
     </style>
 </head>
 <body>
@@ -301,6 +317,24 @@ loadArticles();
 
 socket.on('article_updated', () => loadArticles());
 socket.on('status_updated', () => loadArticles());
+
+function updateChecklistCompletion() {
+    const checklist = document.querySelector('.editor-checklist');
+    const checkboxes = document.querySelectorAll('.checklist-checkbox');
+    const allChecked = Array.from(checkboxes).every(checkbox => checkbox.checked);
+
+    if (allChecked && checkboxes.length > 0) {
+        checklist.classList.add('complete');
+    } else {
+        checklist.classList.remove('complete');
+    }
+}
+
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('checklist-checkbox')) {
+        updateChecklistCompletion();
+    }
+}, true);
 </script>
 
 </body>
