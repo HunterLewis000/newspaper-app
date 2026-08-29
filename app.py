@@ -526,32 +526,43 @@ def add_article():
 @app.route('/delete/<int:article_id>', methods=['POST'])
 @login_required
 def delete_article(article_id):
-    article = Article.query.get(article_id)
-    if not article:
-        return jsonify(success=False), 404
+    try:
+        article = Article.query.get(article_id)
+        if not article:
+            return jsonify(success=False, error='Article not found'), 404
 
-    # Delete all associated files first
-    files = ArticleFile.query.filter_by(article_id=article_id).all()
-    for file in files:
-        s3_client.delete_object(Bucket=BUCKET_NAME, Key=file.s3_key)
-        db.session.delete(file)
-    db.session.commit()
+        # Delete all associated files first
+        files = ArticleFile.query.filter_by(article_id=article_id).all()
+        for file in files:
+            try:
+                s3_client.delete_object(Bucket=BUCKET_NAME, Key=file.s3_key)
+            except Exception as e:
+                print(f"Error deleting file from S3: {e}")
+            db.session.delete(file)
+        db.session.commit()
 
-    # Then delete the article
-    deleted_position = article.position
-    db.session.delete(article)
-    db.session.commit()
+        # Delete associated checklist entries
+        EditorChecklist.query.filter_by(article_id=article_id).delete()
+        db.session.commit()
 
-    for a in Article.query.filter(Article.position > deleted_position).all():
-        a.position -= 1
-    db.session.commit()
+        # Then delete the article
+        deleted_position = article.position
+        db.session.delete(article)
+        db.session.commit()
 
-    socketio.emit('article_deleted', {'id': article_id})
+        for a in Article.query.filter(Article.position > deleted_position).all():
+            a.position -= 1
+        db.session.commit()
 
-    order = [a.id for a in Article.query.order_by(Article.position).all()]
-    socketio.emit('update_article_order', {'order': order})
+        socketio.emit('article_deleted', {'id': article_id})
 
-    return jsonify(success=True)
+        order = [a.id for a in Article.query.order_by(Article.position).all()]
+        socketio.emit('update_article_order', {'order': order})
+
+        return jsonify(success=True)
+    except Exception as e:
+        print(f"Error deleting article: {e}")
+        return jsonify(success=False, error=str(e)), 500
 
 
 @app.route('/update/<int:article_id>', methods=['POST'])
