@@ -111,22 +111,61 @@ function displayComparison(differences) {
     const comparisonResult = document.getElementById('comparisonResult');
 
     if (!differences || differences.length === 0) {
-        comparisonResult.innerHTML = '<p style="text-align: center; color: #666;">No differences found between files.</p>';
+        comparisonResult.innerHTML = '<p style="text-align: center; color: #666; padding: 40px;">No differences found between files.</p>';
         return;
     }
 
-    let html = '';
-    differences.forEach((diff, idx) => {
-        if (diff.type === 'added') {
-            html += `<div><span class="diff-added">+ ${escapeHtml(diff.text)}</span></div>`;
-        } else if (diff.type === 'removed') {
-            html += `<div><span class="diff-removed">- ${escapeHtml(diff.text)}</span></div>`;
+    let html = '<div class="diff-container">';
+    html += '<div class="diff-file-header">Changes between original and edited version</div>';
+
+    let lineNumber = 1;
+    let removedCount = 0;
+    let addedCount = 0;
+
+    differences.forEach((diff) => {
+        const content = escapeHtml(diff.text || '');
+
+        if (diff.type === 'removed') {
+            html += `
+                <div class="diff-line diff-removed">
+                    <div class="diff-line-number" style="background: #ffeef0;">−${lineNumber}</div>
+                    <div class="diff-line-content diff-removed">
+                        <span class="diff-removed-marker">−</span>${content}
+                    </div>
+                </div>
+            `;
+            removedCount++;
+        } else if (diff.type === 'added') {
+            html += `
+                <div class="diff-line diff-added">
+                    <div class="diff-line-number" style="background: #dffcf0;">+${lineNumber}</div>
+                    <div class="diff-line-content diff-added">
+                        <span class="diff-added-marker">+</span>${content}
+                    </div>
+                </div>
+            `;
+            addedCount++;
         } else {
-            html += `<div>${escapeHtml(diff.text)}</div>`;
+            html += `
+                <div class="diff-line diff-context">
+                    <div class="diff-line-number"> ${lineNumber}</div>
+                    <div class="diff-line-content diff-context">
+                        <span class="diff-context-marker"> </span>${content}
+                    </div>
+                </div>
+            `;
         }
+        lineNumber++;
     });
 
-    comparisonResult.innerHTML = html;
+    html += '</div>';
+
+    const summary = `<div style="margin-top: 16px; padding: 12px; background: #f6f8fa; border-radius: 6px; font-size: 14px;">
+        <span style="color: #f85149; margin-right: 16px;"><strong>${removedCount}</strong> removed</span>
+        <span style="color: #3fb950;"><strong>${addedCount}</strong> added</span>
+    </div>`;
+
+    comparisonResult.innerHTML = html + summary;
 }
 
 function backToEditor() {
