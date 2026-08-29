@@ -26,6 +26,12 @@ window.addEventListener('keydown', e => {
 });
 
 function loadEditorFiles(articleId) {
+    // Clear the complete state when switching articles
+    const rightPanel = document.querySelector('.editor-right-panel');
+    if (rightPanel) {
+        rightPanel.classList.remove('complete');
+    }
+
     loadChecklist(articleId);
 
     fetch(`/files/${articleId}`)
@@ -107,6 +113,48 @@ function compareFiles() {
         });
 }
 
+function getInlineDiff(oldText, newText) {
+    // Simple word-level diff to find changed portions
+    const oldWords = oldText.split(/(\s+)/);
+    const newWords = newText.split(/(\s+)/);
+
+    const result = { oldParts: [], newParts: [] };
+
+    // Find common start
+    let startIdx = 0;
+    while (startIdx < oldWords.length && startIdx < newWords.length && oldWords[startIdx] === newWords[startIdx]) {
+        result.oldParts.push({ text: oldWords[startIdx], changed: false });
+        result.newParts.push({ text: newWords[startIdx], changed: false });
+        startIdx++;
+    }
+
+    // Find common end
+    let oldEndIdx = oldWords.length - 1;
+    let newEndIdx = newWords.length - 1;
+    while (oldEndIdx >= startIdx && newEndIdx >= startIdx && oldWords[oldEndIdx] === newWords[newEndIdx]) {
+        oldEndIdx--;
+        newEndIdx--;
+    }
+
+    // Mark changed middle parts
+    for (let i = startIdx; i <= oldEndIdx; i++) {
+        result.oldParts.push({ text: oldWords[i], changed: true });
+    }
+    for (let i = startIdx; i <= newEndIdx; i++) {
+        result.newParts.push({ text: newWords[i], changed: true });
+    }
+
+    // Add common end
+    for (let i = oldEndIdx + 1; i < oldWords.length; i++) {
+        result.oldParts.push({ text: oldWords[i], changed: false });
+    }
+    for (let i = newEndIdx + 1; i < newWords.length; i++) {
+        result.newParts.push({ text: newWords[i], changed: false });
+    }
+
+    return result;
+}
+
 function displayComparison(differences) {
     const comparisonResult = document.getElementById('comparisonResult');
 
@@ -115,55 +163,94 @@ function displayComparison(differences) {
         return;
     }
 
-    let html = '<div class="diff-container">';
-    html += '<div class="diff-file-header">Changes between original and edited version</div>';
+    // Group consecutive removed and added lines
+    const grouped = [];
+    let i = 0;
+    while (i < differences.length) {
+        if (differences[i].type === 'removed') {
+            const removedGroup = [differences[i]];
+            i++;
+            while (i < differences.length && differences[i].type === 'removed') {
+                removedGroup.push(differences[i]);
+                i++;
+            }
 
-    let lineNumber = 1;
+            // Check if next lines are added
+            const addedGroup = [];
+            let tempI = i;
+            while (tempI < differences.length && differences[tempI].type === 'added') {
+                addedGroup.push(differences[tempI]);
+                tempI++;
+            }
+
+            // If we have matching counts, pair them for inline diff
+            if (addedGroup.length > 0 && addedGroup.length === removedGroup.length) {
+                grouped.push({ type: 'modified', removed: removedGroup, added: addedGroup });
+                i = tempI;
+            } else {
+                grouped.push({ type: 'removed', lines: removedGroup });
+            }
+        } else if (differences[i].type === 'added') {
+            const addedGroup = [differences[i]];
+            i++;
+            while (i < differences.length && differences[i].type === 'added') {
+                addedGroup.push(differences[i]);
+                i++;
+            }
+            grouped.push({ type: 'added', lines: addedGroup });
+        } else {
+            grouped.push({ type: 'context', line: differences[i] });
+            i++;
+        }
+    }
+
+    let html = '';
     let removedCount = 0;
     let addedCount = 0;
 
-    differences.forEach((diff) => {
-        const content = escapeHtml(diff.text || '');
+    grouped.forEach((group) => {
+        if (group.type === 'modified') {
+            // Show modified lines with inline diffs
+            group.removed.forEach((removedLine, idx) => {
+                const addedLine = group.added[idx];
+                const inlineDiff = getInlineDiff(removedLine.text || '', addedLine.text || '');
 
-        if (diff.type === 'removed') {
-            html += `
-                <div class="diff-line diff-removed">
-                    <div class="diff-line-number" style="background: #ffeef0;">−${lineNumber}</div>
-                    <div class="diff-line-content diff-removed">
-                        <span class="diff-removed-marker">−</span>${content}
-                    </div>
-                </div>
-            `;
-            removedCount++;
-        } else if (diff.type === 'added') {
-            html += `
-                <div class="diff-line diff-added">
-                    <div class="diff-line-number" style="background: #dffcf0;">+${lineNumber}</div>
-                    <div class="diff-line-content diff-added">
-                        <span class="diff-added-marker">+</span>${content}
-                    </div>
-                </div>
-            `;
-            addedCount++;
+                const oldContent = inlineDiff.oldParts.map(p => {
+                    if (p.changed) {
+                        return `<span style="background: #ff9999; text-decoration: line-through;">${escapeHtml(p.text)}</span>`;
+                    }
+                    return escapeHtml(p.text);
+                }).join('');
+
+                const newContent = inlineDiff.newParts.map(p => {
+                    if (p.changed) {
+                        return `<span style="background: #99ff99; font-weight: 600;">${escapeHtml(p.text)}</span>`;
+                    }
+                    return escapeHtml(p.text);
+                }).join('');
+
+                html += `<div><span class="diff-removed">− ${oldContent}</span></div>`;
+                html += `<div><span class="diff-added">+ ${newContent}</span></div>`;
+                removedCount++;
+                addedCount++;
+            });
+        } else if (group.type === 'removed') {
+            group.lines.forEach((diff) => {
+                const content = escapeHtml(diff.text || '');
+                html += `<div><span class="diff-removed">− ${content}</span></div>`;
+                removedCount++;
+            });
+        } else if (group.type === 'added') {
+            group.lines.forEach((diff) => {
+                const content = escapeHtml(diff.text || '');
+                html += `<div><span class="diff-added">+ ${content}</span></div>`;
+                addedCount++;
+            });
         } else {
-            html += `
-                <div class="diff-line diff-context">
-                    <div class="diff-line-number"> ${lineNumber}</div>
-                    <div class="diff-line-content diff-context">
-                        <span class="diff-context-marker"> </span>${content}
-                    </div>
-                </div>
-            `;
+            const content = escapeHtml(group.line.text || '');
+            html += `<div>${content}</div>`;
         }
-        lineNumber++;
     });
-
-    html += '</div>';
-
-    const summary = `<div style="margin-top: 16px; padding: 12px; background: #f6f8fa; border-radius: 6px; font-size: 14px;">
-        <span style="color: #f85149; margin-right: 16px;"><strong>${removedCount}</strong> removed</span>
-        <span style="color: #3fb950;"><strong>${addedCount}</strong> added</span>
-    </div>`;
 
     comparisonResult.innerHTML = html + summary;
 }

@@ -98,13 +98,29 @@
             text-overflow: ellipsis;
             max-width: 100%;
         }
-        .editor-checklist {
+        .editor-right-panel {
             transition: border-color 0.4s ease, box-shadow 0.4s ease;
+            padding: 16px;
+            border-radius: 8px;
         }
-        .editor-checklist.complete {
+        .editor-right-panel.complete {
             border: 3px solid #d4af37;
             box-shadow: inset 0 0 15px rgba(212, 175, 55, 0.3);
             animation: checklistComplete 0.5s ease-out;
+        }
+        .editor-checklist {
+            margin-top: 12px;
+        }
+        .editor-file-display {
+            word-break: break-word;
+            overflow-wrap: break-word;
+        }
+        .editor-file-display strong {
+            display: inline-block;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
         @keyframes checklistComplete {
             0% {
@@ -389,14 +405,14 @@ socket.on('article_updated', () => loadArticles());
 socket.on('status_updated', () => loadArticles());
 
 function updateChecklistCompletion() {
-    const checklist = document.querySelector('.editor-checklist');
+    const rightPanel = document.querySelector('.editor-right-panel');
     const checkboxes = document.querySelectorAll('.checklist-checkbox');
     const allChecked = Array.from(checkboxes).every(checkbox => checkbox.checked);
 
     if (allChecked && checkboxes.length > 0) {
-        checklist.classList.add('complete');
+        rightPanel.classList.add('complete');
     } else {
-        checklist.classList.remove('complete');
+        rightPanel.classList.remove('complete');
     }
 }
 
