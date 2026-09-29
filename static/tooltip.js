@@ -17,7 +17,7 @@
       const rect = cell.getBoundingClientRect();
       const ttRect = tooltip.getBoundingClientRect();
 
-      let top = rect.top + rect.height / 2 - ttRect.height - 4;
+      let top = rect.top + rect.height / 2 - ttRect.height - 8;
       if (top < 8) top = rect.bottom + 4;
 
       let left = rect.left;
