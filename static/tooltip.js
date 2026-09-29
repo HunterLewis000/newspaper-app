@@ -1,5 +1,5 @@
 (function(){
-  const HOVER_DELAY = 800;
+  const HOVER_DELAY = 700;
   let hoverTimer = null;
   let currentCell = null;
 
@@ -16,9 +16,9 @@
     requestAnimationFrame(() => {
       const rect = cell.getBoundingClientRect();
       const ttRect = tooltip.getBoundingClientRect();
-  
-      let top = rect.top - ttRect.height - 8;
-      if (top < 8) top = rect.bottom + 8;
+
+      let top = rect.top + rect.height / 2 - ttRect.height - 4;
+      if (top < 8) top = rect.bottom + 4;
 
       let left = rect.left;
       if (left + ttRect.width > window.innerWidth - 8) {
@@ -35,9 +35,9 @@
   }
 
   document.addEventListener('mouseover', (e) => {
-    const cell = e.target.closest('td.title, th.title');
+    const cell = e.target.closest('td.title, th.title, td.author, th.author');
     if (!cell) return;
-    
+
     const isOverflowing = cell.scrollWidth > cell.clientWidth;
     if (!isOverflowing) return;
     currentCell = cell;
@@ -49,9 +49,9 @@
 
   document.addEventListener('mouseout', (e) => {
     const related = e.relatedTarget;
-    const cell = e.target.closest('td.title, th.title');
+    const cell = e.target.closest('td.title, th.title, td.author, th.author');
     if (hoverTimer) { clearTimeout(hoverTimer); hoverTimer = null; }
-    if (cell && (!related || !related.closest || !related.closest('td.title, th.title'))) {
+    if (cell && (!related || !related.closest || !related.closest('td.title, th.title, td.author, th.author'))) {
       hideTooltip();
       currentCell = null;
     }
@@ -65,7 +65,7 @@
   });
 
   document.addEventListener('focusin', (e) => {
-    const cell = e.target.closest && e.target.closest('td.title, th.title');
+    const cell = e.target.closest && e.target.closest('td.title, th.title, td.author, th.author');
     if (!cell) return;
     const isOverflowing = cell.scrollWidth > cell.clientWidth;
     if (!isOverflowing) return;
